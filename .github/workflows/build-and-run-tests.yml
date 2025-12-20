@@ -57,8 +57,8 @@ jobs:
           # The ubuntu-latest does not include python 3.7 anymore.
           - python-version: "3.7"
             os: ubuntu-22.04
-          # Oldest supported python on MacOS
-          - python-version: "3.7"
+          # Oldest supported python on MacOS runners
+          - python-version: "3.8"
             os: macos-14
           # Newest supported python on MacOS
           - python-version: "3.14"
