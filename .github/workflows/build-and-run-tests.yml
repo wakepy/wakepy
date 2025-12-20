@@ -59,7 +59,7 @@ jobs:
             os: ubuntu-22.04
           # Oldest supported python on MacOS
           - python-version: "3.7"
-            os: macos-latest
+            os: macos-14
           # Newest supported python on MacOS
           - python-version: "3.14"
             os: macos-latest
