@@ -94,7 +94,7 @@ The Mode has following important attributes:
 ```{versionadded} 0.8.0
 ```
 ```{versionchanged} 0.10.0
-`on_fail` defaults to "warn" instead of "error". See: [wakepy/#376](https://github.com/fohrloop/wakepy/issues/376).
+`on_fail` defaults to "warn" instead of "error". See: [wakepy/#376](https://github.com/wakepy/wakepy/issues/376).
 ```
 
 The wakepy Modes (e.g. [`keep.running`](#keep-running-mode) and  [`keep.presenting`](#keep-presenting-mode)) also take an `on_fail` input argument which may be used to alter the behavior. Example:

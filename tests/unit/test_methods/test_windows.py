@@ -15,7 +15,7 @@ from wakepy.methods.windows import Flags, WindowsKeepPresenting, WindowsKeepRunn
 windows.WindowsSetThreadExecutionState._release_event_timeout = 0.5
 """Make tests *not* to wait forever. A too small value may cause flaky tests.
 Previously, a value of 0.001 caused tests on PyPy on Windows to fail randomly.
-See: https://github.com/fohrloop/wakepy/pull/447
+See: https://github.com/wakepy/wakepy/pull/447
 """
 
 patch_SetThreadExecutionState_working = patch(

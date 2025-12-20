@@ -401,7 +401,7 @@ class TestOrderSetOfMethodsByPriority:
     @pytest.mark.usefixtures("set_current_platform_to_linux")
     def test_on_linux_2(self):
         # This has failed previously.
-        # See: https://github.com/fohrloop/wakepy/issues/428
+        # See: https://github.com/wakepy/wakepy/issues/428
 
         ordered = _order_set_of_methods_by_priority(
             {

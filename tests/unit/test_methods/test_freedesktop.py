@@ -257,7 +257,7 @@ class TestGetKDEPlasmaVersion:
             assert _get_kde_plasma_version() == (4, 5, 6)
 
     def test_success_qthread_storage_pre(self):
-        # Test for bug: https://github.com/fohrloop/wakepy/issues/415
+        # Test for bug: https://github.com/wakepy/wakepy/issues/415
         with patch(
             "wakepy.methods.freedesktop.subprocess.getoutput",
             return_value="QThreadStorage: entry 3 destroyed before end of thread 0x61b4ee73d540\nQThreadStorage: entry 2 destroyed before end of thread 0x61b4ee73d540\nplasmashell 6.3.4",  # noqa: E501
@@ -265,7 +265,7 @@ class TestGetKDEPlasmaVersion:
             assert _get_kde_plasma_version() == (6, 3, 4)
 
     def test_success_qthread_storage_post(self):
-        # Test for bug: https://github.com/fohrloop/wakepy/issues/415
+        # Test for bug: https://github.com/wakepy/wakepy/issues/415
         with patch(
             "wakepy.methods.freedesktop.subprocess.getoutput",
             return_value="plasmashell 6.3.4\nQThreadStorage: entry 3 destroyed before end of thread 0x61b4ee73d540\nQThreadStorage: entry 2 destroyed before end of thread 0x61b4ee73d540",  # noqa: E501
@@ -273,7 +273,7 @@ class TestGetKDEPlasmaVersion:
             assert _get_kde_plasma_version() == (6, 3, 4)
 
     def test_success_qthread_storage_mid(self):
-        # Test for bug: https://github.com/fohrloop/wakepy/issues/415
+        # Test for bug: https://github.com/wakepy/wakepy/issues/415
         with patch(
             "wakepy.methods.freedesktop.subprocess.getoutput",
             return_value="QThreadStorage: entry 3 destroyed before end of thread 0x61b4ee73d540\nplasmashell 6.3.4\nQThreadStorage: entry 2 destroyed before end of thread 0x61b4ee73d540",  # noqa: E501

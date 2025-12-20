@@ -9,7 +9,7 @@ Wakepy Modes are states that you activate, and while the mode is active, wakepy 
 | Screenlock is prevented  | No[^win-slock]          | Yes             |
 | Screensaver is prevented | No          | Yes             |
 
-[^win-slock]: Depending on system settings, it is possible that Windows will not automatically lock the system, because Windows will lock the screen either when (1) returning from suspend (which is now inhibited) or (2) when returning from Screen Saver, *if ScreenSaverIsSecure is set or enforced by a Group Policy (GPO)*.  See: [wakepy/#169](https://github.com/fohrloop/wakepy/issues/169)
+[^win-slock]: Depending on system settings, it is possible that Windows will not automatically lock the system, because Windows will lock the screen either when (1) returning from suspend (which is now inhibited) or (2) when returning from Screen Saver, *if ScreenSaverIsSecure is set or enforced by a Group Policy (GPO)*.  See: [wakepy/#169](https://github.com/wakepy/wakepy/issues/169)
 
 ```{note}
 The table above only considers the *automatic* actions (go to sleep, start screenlock, start screensaver), which are based on the *idle timer*; It is still possible to put system to sleep by selecting Suspend/Sleep from a menu, closing the laptop lid or pressing a power key, for example. It is also possible to manually lock the session/screen or start screensaver.
@@ -58,7 +58,7 @@ continue execution regardless of the lock.
 
 What about automatical lockscreen / screensaver in `keep.running` mode??
 : The system may still automatically log out user, enable lockscreen or turn off the
-display. Automatic lock screen is not guaranteed, but it is  not prevented in any way. Most systems are configured to automatically lock the session after a timeout. One exception is Windows which will lock the screen only either when (1) returning from suspend (which is now inhibited) or (2) when returning from Screen Saver, *if ScreenSaverIsSecure is set or enforced by a Group Policy (GPO)*.  See: [wakepy/#169](https://github.com/fohrloop/wakepy/issues/169)
+display. Automatic lock screen is not guaranteed, but it is  not prevented in any way. Most systems are configured to automatically lock the session after a timeout. One exception is Windows which will lock the screen only either when (1) returning from suspend (which is now inhibited) or (2) when returning from Screen Saver, *if ScreenSaverIsSecure is set or enforced by a Group Policy (GPO)*.  See: [wakepy/#169](https://github.com/wakepy/wakepy/issues/169)
 
 (keep-presenting-mode)=
 ## keep.presenting

@@ -117,7 +117,7 @@ class Method(ABC):
     if the Method should not be listed anywhere (e.g. when Method is meant to
     be subclassed)."""
 
-    # waits for https://github.com/fohrloop/wakepy/issues/256
+    # waits for https://github.com/wakepy/wakepy/issues/256
     # method_kwargs: Dict[str, object]
     """The method arguments. This is created from two parts
 
@@ -135,7 +135,7 @@ class Method(ABC):
         # only on methods using D-Bus.
         self.dbus_adapter = cast("DBusAdapter | None", kwargs.pop("dbus_adapter", None))
 
-        # waits for https://github.com/fohrloop/wakepy/issues/256
+        # waits for https://github.com/wakepy/wakepy/issues/256
         # self.method_kwargs = kwargs
         _check_supported_platforms(self.supported_platforms, self.__class__.__name__)
 
@@ -261,7 +261,7 @@ class Method(ABC):
 
         **NOTE** Heartbeat support is not yet implemented.
 
-        Ticket: https://github.com/fohrloop/wakepy/issues/109
+        Ticket: https://github.com/wakepy/wakepy/issues/109
 
         Returns
         -------

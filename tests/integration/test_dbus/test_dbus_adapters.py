@@ -33,7 +33,7 @@ from wakepy.dbus_adapters.jeepney import DBusNotFoundError
 #
 # Ref1: https://docs.pytest.org/en/7.1.x/reference/reference.html#pytest-mark-filterwarnings
 # Ref2: https://docs.pytest.org/en/7.1.x/reference/reference.html#globalvar-pytestmark
-# Ref3: https://github.com/fohrloop/wakepy/issues/380
+# Ref3: https://github.com/wakepy/wakepy/issues/380
 ignore_resource_warning_regex = r"unclosed <socket.*raddr=[^=]*/tmp/dbus-.*"
 pytestmark = pytest.mark.filterwarnings(
     f"ignore:{ignore_resource_warning_regex}:ResourceWarning"

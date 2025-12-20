@@ -139,7 +139,7 @@ def _get_activation_error_text(result: ActivationResult) -> str:
     error_text = f"""
     Wakepy could not activate the "{result.mode_name}" mode. This might occur because of a bug or because your current platform is not yet supported or your system is missing required software.
 
-    Check if there is already a related issue in the issue tracker at https://github.com/fohrloop/wakepy/issues/ and if not, please create a new one.
+    Check if there is already a related issue in the issue tracker at https://github.com/wakepy/wakepy/issues/ and if not, please create a new one.
 
     Include the following:
     - wakepy version: {__version__}
@@ -344,7 +344,7 @@ def get_should_use_ascii_only() -> bool:
         # Windows + PyPy combination does not support unicode well, at least
         # yet at version 7.3.17. See:
         # https://github.com/pypy/pypy/issues/3890
-        # https://github.com/fohrloop/wakepy/issues/274#issuecomment-2363293422
+        # https://github.com/wakepy/wakepy/issues/274#issuecomment-2363293422
         return True
     return False
 

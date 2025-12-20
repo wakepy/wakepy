@@ -53,9 +53,9 @@ classifiers = [
 
 
 [project.urls]
-Homepage = "https://github.com/fohrloop/wakepy"
-"Source Code" = "https://github.com/fohrloop/wakepy"
-"Issue Tracker" = "https://github.com/fohrloop/wakepy/issues"
+Homepage = "https://github.com/wakepy/wakepy"
+"Source Code" = "https://github.com/wakepy/wakepy"
+"Issue Tracker" = "https://github.com/wakepy/wakepy/issues"
 Documentation = "https://wakepy.readthedocs.io/"
 Changelog = "https://wakepy.readthedocs.io/stable/changelog.html"
 

@@ -248,7 +248,7 @@ def _get_kde_plasma_version() -> Optional[Tuple[int, ...]]:
 
     """
     # returns for example 'plasmashell 5.27.9' but may also return some
-    # additional text. See: https://github.com/fohrloop/wakepy/issues/415
+    # additional text. See: https://github.com/wakepy/wakepy/issues/415
     output = subprocess.getoutput("plasmashell --version")
     for line in output.splitlines():
         match = re.match(".*plasmashell ([0-9.]*).*", line)
