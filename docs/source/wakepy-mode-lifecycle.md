@@ -138,7 +138,7 @@ The {numref}`fig-activate-with-a-method` presents the activity diagram for the "
 ```{admonition} Heartbeat is not yet supported
 :class: note
 
-Heartbeat support is not yet fully implemented. Ticket: [fohrloop/wakepy#109](https://github.com/wakepy/wakepy/issues/109)
+Heartbeat support is not yet fully implemented. Ticket: [wakepy/wakepy#109](https://github.com/wakepy/wakepy/issues/109)
 ```
 
 If the first two steps do not fail, at least one of `Method.enter_mode()` and `Method.caniuse()` is defined and they do not raise Exceptions, the Mode activation is successful. This process happens in the `activate_method` function and it returns an `MethodActivationResult` object, and a `Heartbeat` instance (if used and activation was successful).
