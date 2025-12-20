@@ -40,7 +40,7 @@ class _MacCaffeinate(Method, ABC):
         # The pipes need to be closed before terminating the process, otherwise
         # will get ResourceWarning: unclosed file
         # See: https://stackoverflow.com/a/58696973/3015186 and
-        # https://github.com/fohrloop/wakepy/issues/478
+        # https://github.com/wakepy/wakepy/issues/478
         #
         # The cast is required because we know that these are not None, but
         # mypy doesn't, and using if statements would ruin test coverage.

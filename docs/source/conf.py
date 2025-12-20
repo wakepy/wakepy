@@ -88,7 +88,7 @@ html_logo = "img/logo-small.svg"
 html_theme = "sphinx_book_theme"
 html_title = f"wakepy {__version__}"
 html_theme_options = {
-    "repository_url": "https://github.com/fohrloop/wakepy",
+    "repository_url": "https://github.com/wakepy/wakepy",
     "use_repository_button": True,
     "use_download_button": False,
     "use_fullscreen_button": False,
@@ -107,7 +107,7 @@ numpydoc_class_members_toctree = False
 # listings (duplicate info).
 numpydoc_show_class_members = False
 
-# This is a fix for https://github.com/fohrloop/wakepy/issues/448
+# This is a fix for https://github.com/wakepy/wakepy/issues/448
 autodoc_mock_imports = []
 try:
     from wakepy import JeepneyDBusAdapter  # noqa: F401

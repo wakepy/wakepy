@@ -52,7 +52,7 @@ If a wakepy Method has Post-Exit inhibit behavior, there will be an additional i
 # How to test and document the behavior?
 
 - Make your system sleep in a short time like 5 minutes. Instructions for changing the settings on some systems are included at: {ref}`how-to-test-wakepy-modes`
-- Run the [scripts/example-test-with-wakepy.py](https://github.com/fohrloop/wakepy/blob/main/scripts/example-test-with-wakepy.py) (Edit the `MODE_ACTIVE_TIME` to set the *Mode Active time* if wanted). If the Mode starts with a different Method that you're trying to test, use the `methods` or `omit` [arguments](#api-reference) of the Mode.
+- Run the [scripts/example-test-with-wakepy.py](https://github.com/wakepy/wakepy/blob/main/scripts/example-test-with-wakepy.py) (Edit the `MODE_ACTIVE_TIME` to set the *Mode Active time* if wanted). If the Mode starts with a different Method that you're trying to test, use the `methods` or `omit` [arguments](#api-reference) of the Mode.
 - Wait until the system suspends. Wait about 30 seconds extra just to make sure it really did suspend. Wake up the computer.
 - Check the latest timestamp before the larger delta. For example the printout below would mean that the system started suspend between 11:00 min and 11:02 min (because last timestamp is from 11:00 seconds and it's printed every 2 seconds).
 
@@ -66,5 +66,5 @@ Jul 20 21:47:14 | elapsed 0:11:26.799312 | delta: 26.632451s
 Jul 20 21:47:16 | elapsed 0:11:28.799807 | delta: 2.000495s
 ```
 
-- Testing just one time might be enough for a system. For example, if you can clearly see from the results that the Method must be of [Resetting](#idle-timer-resetting) Type. If the results are unclear, or if there is random element in the results, you might want to re-run the test with different idle timer timeout limits and with different `MODE_ACTIVE_TIME` values in the `example-test-with-wakepy.py`, and create a table, like in [#450](https://github.com/fohrloop/wakepy/issues/450#issuecomment-3074518760).
-- If you have conducted a test, please open a new [issue](https://github.com/fohrloop/wakepy/issues) or comment an existing one to share the results 🙏
+- Testing just one time might be enough for a system. For example, if you can clearly see from the results that the Method must be of [Resetting](#idle-timer-resetting) Type. If the results are unclear, or if there is random element in the results, you might want to re-run the test with different idle timer timeout limits and with different `MODE_ACTIVE_TIME` values in the `example-test-with-wakepy.py`, and create a table, like in [#450](https://github.com/wakepy/wakepy/issues/450#issuecomment-3074518760).
+- If you have conducted a test, please open a new [issue](https://github.com/wakepy/wakepy/issues) or comment an existing one to share the results 🙏

@@ -39,5 +39,5 @@ If you just installed `wakepy`, you might need to restart shell / terminal appli
 ````
 
 ```{versionchanged} 0.10.0
-Renamed `-k` to `-r` and `--presentation` to `--keep-presenting` ([wakepy/#355](https://github.com/fohrloop/wakepy/issues/355)).
+Renamed `-k` to `-r` and `--presentation` to `--keep-presenting` ([wakepy/#355](https://github.com/wakepy/wakepy/issues/355)).
 ```

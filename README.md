@@ -105,7 +105,7 @@ Here's some reasons why you might want to consider using wakepy:
   <dt>✂️ You want to keep the amount of dependencies low 📦</dt>
   <dd>If you're running wakepy on Linux,  <a href="https://jeepney.readthedocs.io/">jeepney</A> (a dependecy free package) is required for D-Bus based methods. On Python 3.9 and earlier,  <a href="https://pypi.org/project/typing-extensions/">typing-extensions</a> is needed for typing. Otherwise: wakepy has no python dependencies.</dd>
   <dt>⚖️ Package needs to have a permissive licence ✔️</dt>
-  <dd>Wakepy is licenced under permissive <a href="https://github.com/fohrloop/wakepy/blob/main/LICENSE.txt">MIT License</a>.</dd>
+  <dd>Wakepy is licenced under permissive <a href="https://github.com/wakepy/wakepy/blob/main/LICENSE.txt">MIT License</a>.</dd>
 </dl>
 
 
@@ -186,7 +186,7 @@ with keep.running()
 ## Links
 
 
-- 🖤 GitHub: [github.com/fohrloop/wakepy](https://github.com/fohrloop/wakepy)
+- 🖤 GitHub: [github.com/wakepy/wakepy](https://github.com/wakepy/wakepy)
 - 🐍 PyPI: [pypi.org/project/wakepy](https://pypi.org/project/wakepy/)
 - 📖 Documentation: [wakepy.readthedocs.io/stable](https://wakepy.readthedocs.io/stable)
 - 📝 Changelog: [wakepy.readthedocs.io/stable/changelog.html](https://wakepy.readthedocs.io/stable/changelog.html)
@@ -212,56 +212,56 @@ Wakepy vision is to support *any*<sup>†</sup> environment which runs Python. T
   <tbody>
     <tr>
       <td>WSL</td>
-      <td><a href="https://github.com/fohrloop/wakepy/issues/36">wakepy/#36</a></td>
+      <td><a href="https://github.com/wakepy/wakepy/issues/36">wakepy/#36</a></td>
     </tr>
     <tr>
       <td>cygwin</td>
-      <td><a href="https://github.com/fohrloop/wakepy/issues/363">wakepy/#363</a></td>
+      <td><a href="https://github.com/wakepy/wakepy/issues/363">wakepy/#363</a></td>
     </tr>
     <tr>
       <td>Unix + <a href="https://en.wikipedia.org/wiki/Cinnamon_(desktop_environment)">Cinnamon</a></td>
-      <td><a href="https://github.com/fohrloop/wakepy/issues/312">wakepy/#312</a></td>
+      <td><a href="https://github.com/wakepy/wakepy/issues/312">wakepy/#312</a></td>
     </tr>
     <tr>
       <td>Unix + <a href="https://en.wikipedia.org/wiki/Xfce">Xfce</a></td>
-      <td><a href="https://github.com/fohrloop/wakepy/issues/311">wakepy/#311</a></td>
+      <td><a href="https://github.com/wakepy/wakepy/issues/311">wakepy/#311</a></td>
     </tr>
     <tr>
       <td>Unix + <a href="https://en.wikipedia.org/wiki/MATE_(desktop_environment)">Mate</a></td>
-      <td><a href="https://github.com/fohrloop/wakepy/issues/314">wakepy/#314</a></td>
+      <td><a href="https://github.com/wakepy/wakepy/issues/314">wakepy/#314</a></td>
     </tr>
     <tr>
       <td>Unix + <a href="https://en.wikipedia.org/wiki/LXQt">LXQt</a></td>
-      <td><a href="https://github.com/fohrloop/wakepy/issues/313">wakepy/#313</a></td>
+      <td><a href="https://github.com/wakepy/wakepy/issues/313">wakepy/#313</a></td>
     </tr>
     <tr>
       <td>Unix + <a href="https://en.wikipedia.org/wiki/Systemd">systemd</a></td>
-      <td><a href="https://github.com/fohrloop/wakepy/issues/335">wakepy/#335</a></td>
+      <td><a href="https://github.com/wakepy/wakepy/issues/335">wakepy/#335</a></td>
     </tr>
     <tr>
       <td>ChromeOS</td>
-      <td><a href="https://github.com/fohrloop/wakepy/issues/364">wakepy/#364</a></td>
+      <td><a href="https://github.com/wakepy/wakepy/issues/364">wakepy/#364</a></td>
     </tr>
     <tr>
       <td>Android</td>
-      <td><a href="https://github.com/fohrloop/wakepy/issues/358">wakepy/#358</a></td>
+      <td><a href="https://github.com/wakepy/wakepy/issues/358">wakepy/#358</a></td>
     </tr>
     <tr>
       <td>Jupyter Notebook (hosted on eg. Google Colab)</td>
-      <td><a href="https://github.com/fohrloop/wakepy/issues/195">wakepy/#195</a></td>
+      <td><a href="https://github.com/wakepy/wakepy/issues/195">wakepy/#195</a></td>
     </tr>
     <tr>
       <td>Browser (Pyodide, PyPy.js, Brython, Transcrypt, Skulpt)</td>
-      <td><a href="https://github.com/fohrloop/wakepy/issues/362">wakepy/#362</a></td>
+      <td><a href="https://github.com/wakepy/wakepy/issues/362">wakepy/#362</a></td>
     </tr>
   </tbody>
 </table>
 
-If you have ideas or comments, please post yours on [wakepy/#317](https://github.com/fohrloop/wakepy/discussions/317).
+If you have ideas or comments, please post yours on [wakepy/#317](https://github.com/wakepy/wakepy/discussions/317).
 
 ## Licenses
 
-The contents of this repository are licensed with [MIT License](https://github.com/fohrloop/wakepy/blob/main/LICENSE.txt), which is permissive and allows you to use the code as part of any application or library, commercial or not, with the following exception: The GitHub Invertocat logo used in the social share image is property of GitHub, downloaded from [github.com/logos](https://github.com/logos) and is used under the terms specified by GitHub.
+The contents of this repository are licensed with [MIT License](https://github.com/wakepy/wakepy/blob/main/LICENSE.txt), which is permissive and allows you to use the code as part of any application or library, commercial or not, with the following exception: The GitHub Invertocat logo used in the social share image is property of GitHub, downloaded from [github.com/logos](https://github.com/logos) and is used under the terms specified by GitHub.
 
 ---------------
 

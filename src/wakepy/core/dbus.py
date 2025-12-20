@@ -331,7 +331,7 @@ class DBusAdapter:  # pragma: no-cover-if-no-dbus
             # it still makes Gnome freeze if activating and deactivating the
             # keepawake repeatedly. This is a bit ugly but it's required until
             # there's a better solution.
-            # See: https://github.com/fohrloop/wakepy/issues/277
+            # See: https://github.com/wakepy/wakepy/issues/277
             gc.collect()
 
     def close_connection(self, connection: object) -> None:

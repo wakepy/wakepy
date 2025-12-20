@@ -70,7 +70,7 @@ class WindowsSetThreadExecutionState(Method, ABC):
         # Because the ExecutionState flags are global per each thread, and
         # multiple wakepy modes might be activated simultaneously, we must
         # put all the SetThreadExecutionState inhibitor flags into separate
-        # threads. See: https://github.com/fohrloop/wakepy/issues/167
+        # threads. See: https://github.com/wakepy/wakepy/issues/167
         self._inhibiting_thread = threading.Thread(
             target=_inhibit_until_released,
             kwargs=dict(

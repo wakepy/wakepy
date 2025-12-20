@@ -246,7 +246,7 @@ def _order_set_of_methods_by_priority(methods: Set[MethodCls]) -> List[MethodCls
     """
 
     # Later: Use some better logic for this.
-    # See: https://github.com/fohrloop/wakepy/issues/262
+    # See: https://github.com/wakepy/wakepy/issues/262
     return sorted(
         methods,
         key=lambda m: (
