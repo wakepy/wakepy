@@ -2,7 +2,7 @@
 
 The supported python versions are
 
-- CPython 3.7, 3.8, 3.9, 3.10, 3.12, 3.13, and 3.14 (inluding free-threaded)
+- CPython 3.7, 3.8, 3.9, 3.10, 3.12, 3.13, 3.14 and 3.15 (including free-threaded)
 - [PyPy](https://pypy.org/) 3.8, 3.9, 3.10 and 3.11 (PyPy 3.7 might work as well [^pypy37])
 
 [^pypy37]: The PyPy 3.7 also passes unit tests but cannot be used with mypy, so it's not officially supported. See: [this comment in wakepy/#393](https://github.com/wakepy/wakepy/pull/393#issuecomment-2362974437)
