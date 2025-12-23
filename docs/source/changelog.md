@@ -35,6 +35,7 @@
 - The `ActivationResult.mode_name` is now always a string (instead of being a ModeName) ([#462](https://github.com/wakepy/wakepy/pull/462))
 
 ### 👷 Maintenance
+- Switch to uv and remove tox ([#499](https://github.com/wakepy/wakepy/pull/499))
 - Fix development environment setup instructions and requirements on Windows ([#445](https://github.com/wakepy/wakepy/pull/445))
 - Make Run Tox fail on Windows pipelines if pytest fails ([#442](https://github.com/wakepy/wakepy/pull/442)). There was a bug in the workflow file which could make the tests pass on Windows even if pytest fails.
 - Fix flaky tests on pypy+windows ([#447](https://github.com/wakepy/wakepy/pull/447))

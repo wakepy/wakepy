@@ -12,21 +12,9 @@ invoke docs
 invoke test
 * Runs tests and coverage for the source tree (does not test docs build)
 
+In addition to these uv is an important command.
 
-In addition to these, tox is an important command. Some examples (defined in
-tox.ini):
-
-tox
-* run tests with multiple versions of python (if available on the system). Runs
- also run checks (same as in invoke check). Note that this one first builds
- sdist from source tree, then wheel from sdist, and runs all the tests agaist
- the wheel.
-
-tox --skip-build
-* Otherwise same as `tox`, but skips building the wheel. Runs the tests against
-  a wheel that sits in the dist/ folder. Mainly for CI.
-
-tox -e build
+uv build
 * Builds the sdist and wheel into dist/
 
 [1] https://docs.pyinvoke.org/
