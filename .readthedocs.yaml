@@ -1,23 +1,28 @@
-# .readthedocs.yaml
 # Read the Docs configuration file
+#
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
-
+# See https://docs.readthedocs.com/platform/stable/build-customization.html#install-dependencies-with-uv for uv integration docs
 version: 2
 
-python:
-  install:
-    - method: pip
-      path: .
-    - requirements: requirements/requirements-docs.txt
-
 build:
-  os: ubuntu-22.04
-  tools:
-    python: "3.10"
-  jobs:
-    pre_build:
-      #  Need to create the wakepy._version module (setuptools-scm)
-      - python -m build
+   os: ubuntu-24.04
+   tools:
+      python: "3.13"
+   jobs:
+      # These are defined here in the order of execution.
+      # See: https://docs.readthedocs.com/platform/stable/build-customization.html 
+
+      pre_create_environment:
+         - asdf plugin add uv
+         - asdf install uv latest
+         - asdf global uv latest
+      create_environment:
+         - uv venv "${READTHEDOCS_VIRTUALENV_PATH}"
+      install:
+         - UV_PROJECT_ENVIRONMENT="${READTHEDOCS_VIRTUALENV_PATH}" uv sync --frozen --group docs
+      pre_build:
+        #  Need to create the wakepy._version module (setuptools-scm)
+        - python -m build
 
 
 sphinx:

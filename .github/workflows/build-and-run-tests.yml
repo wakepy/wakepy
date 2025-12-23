@@ -1,19 +1,16 @@
-name: Build and test wakepy
+name: Build and test wakepy 🏗️🧪
 
-'on':
-    # Allows for manually starting tests
-    workflow_dispatch:
-    # Make this a reusable workflow
-    workflow_call:
-    # Triggers when pull request is created and when pushing to PR
-    pull_request:
+on:
+  # Allows for manually starting tests
+  workflow_dispatch:
+  # Make this a reusable workflow
+  workflow_call:
+  # Triggers when pull request is created and when pushing to PR
+  pull_request:
 
 
-# Common environment variables
 env:
-  TOX_REQUIREMENT: 'tox -c requirements/requirements-test.txt'
-    # List of available versions: https://github.com/actions/python-versions/blob/main/versions-manifest.json
-  PYTHON_VERSION: '3.13'
+  PYTHON_VERSION: '3.14' # List of available versions: https://github.com/actions/python-versions/blob/main/versions-manifest.json
 
 jobs:
   build-python-distributions:
@@ -26,16 +23,16 @@ jobs:
           git fetch --depth=1 origin +refs/tags/*:refs/tags/*
           git describe --tags
           git describe --tags $(git rev-list --tags --max-count=1)
-      - name: Install python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 #v5.6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 #v7.1.6
         with:
+          version: "0.9.18"
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: install tox
-        run: |
-          python${{ env.PYTHON_VERSION }} -m pip install -U pip wheel && \
-          python${{ env.PYTHON_VERSION }} -m pip install ${{ env.TOX_REQUIREMENT }}
-      - name: Build with tox
-        run: tox -e build
+          enable-cache: true
+
+      - name: Build python distributions
+        run: uv build
       - uses: actions/upload-artifact@v4
         with:
           name: wakepy-python-packages
@@ -50,16 +47,14 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
+        # To check available versions, see: uv python list --all-arches --all-platforms
+        # To check available runners, see: https://github.com/actions/runner-images
         # All supported python versions on linux
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t", "pypy3.8", "pypy3.11"]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t", "pypy3.8", "pypy3.11"]
         include:
-          # Oldest supported python on Linux
-          # The ubuntu-latest does not include python 3.7 anymore.
-          - python-version: "3.7"
-            os: ubuntu-22.04
           # Oldest supported python on MacOS runners
-          - python-version: "3.8"
-            os: macos-14
+          - python-version: "3.7"
+            os: macos-15-intel # CPython 3.7 is only available for x86_64
           # Newest supported python on MacOS
           - python-version: "3.14"
             os: macos-latest
@@ -82,31 +77,68 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 #v7.1.6
+        with:
+          version: "0.9.18"
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
+      - name: Install legacy python version
+        if: matrix.python-version == '3.7'
+        # Python 3.7 was dropped in uv 0.7.x
+        # See: https://github.com/astral-sh/uv/blob/main/changelogs/0.7.x.md
+        # Hacky workaround from https://github.com/astral-sh/uv/pull/13022#issuecomment-2848649176
+        #
+        # NOTE: This will emit some [tool.uv.dependency-groups] warnings. That's expected and ok.
+        run: |
+          uvx uv@0.6.17 python list --all-arches --all-platforms
+          uvx uv@0.6.17 python install 3.7
+        env:
+          # Needs to be any valid version to make uvx work. That version of python must
+          # be available on the used uv version (installed above)
+          UV_PYTHON: ${{ env.PYTHON_VERSION }}
+
+      - name: Show python version and GIL status
+        run: |
+          uv run --no-project python --version --version
+          uv run --no-project python -c "import sys; is_enabled = sys._is_gil_enabled() if hasattr(sys, '_is_gil_enabled') else '?'; print('sys._is_gil_enabled:', is_enabled)"
+          uv run --no-project python -c "import sysconfig; print('Py_GIL_DISABLED:', sysconfig.get_config_var('Py_GIL_DISABLED'))"
+
+      - name: Download built wheel
+        uses: actions/download-artifact@v4
         with:
           name: wakepy-python-packages
           path: ./dist/
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 #v5.6
-        with:
-          python-version: ${{ matrix.python-version }}
-          allow-prereleases: true
-      - run: |
-          python --version --version
-          python -c "import sys; is_enabled = sys._is_gil_enabled() if hasattr(sys, '_is_gil_enabled') else '?'; print('sys._is_gil_enabled:', is_enabled)"
-          python -c "import sysconfig; print('Py_GIL_DISABLED:', sysconfig.get_config_var('Py_GIL_DISABLED'))"
-      - name: Run tox
-        shell: bash
+      - name: Install wakepy from wheel
+        shell: bash # needs bash shell to expand glob
         run: |
-          set -e
-          python -m pip install ${{ env.TOX_REQUIREMENT }}
-          tox -e ${{ matrix.python-version }} --skip-build
-          tox -e mypy --skip-build
+          uv venv
+          uv pip list
+          uv pip install ./dist/wakepy-*.whl
+          uv pip list
+
+      - name: Install test dependencies
+        run: |
+          uv pip install --group test
+          uv pip list
+
+      - name: Run tests
+        # "python -m xxx" used instead of direct "xxx" to avoid "Needs to be any valid version to make uvx work" with CPython 3.7 on Windows.
+        run: |
+          uv run --no-project python -m pytest -W error --cov-branch --cov wakepy --cov-fail-under=100
 
       - name: Show uncovered lines
         if: success() || failure()
-        run: tox -e show-uncovered-lines
+        run: uv run --no-project python -m coverage report --show-missing --skip-covered
+
+      - name: Run mypy on src only
+        run: |
+          uv pip install --group mypy
+          uv run --no-project python --version --version
+          uv run --no-project python -m mypy src/wakepy/
 
   check-code:
     # Reasons this is a separate job
@@ -123,33 +155,50 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 #v5.6
+      - name: Install uv
+        uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 #v7.1.6
         with:
+          version: "0.9.18"
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: install tox
-        run: |
-          python${{ env.PYTHON_VERSION }} -m pip install -U pip wheel && \
-          python${{ env.PYTHON_VERSION }} -m pip install ${{ env.TOX_REQUIREMENT }}
-      - name: Check code
-        run: tox -e check
+          enable-cache: true
+
+      - name: Install the project
+        run: uv sync --locked --group check
+      - name: Isort check
+        run: uv run isort src/wakepy tests/ --check --diff
+      - name: Black check
+        run: uv run black src/wakepy tests/  --check
+      - name: Ruff check
+        run: uv run ruff check --no-fix src/wakepy tests/
+      - name: Mypy check
+        run: uv run mypy src/wakepy tests/
 
   test-build-docs:
     name: Test building docs
     runs-on: ubuntu-latest
-    needs: build-python-distributions
+    needs: build-python-distributions # Does not make sense to try to build docs if build failed
     steps:
       - uses: actions/checkout@v4
-      - name: Install python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 #v5.6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 #v7.1.6
         with:
+          version: "0.9.18"
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: install tox
+          enable-cache: true
+
+      - name: Install docs dependencies
         run: |
-          python${{ env.PYTHON_VERSION }} -m pip install -U pip wheel && \
-          python${{ env.PYTHON_VERSION }} -m pip install ${{ env.TOX_REQUIREMENT }}
+          uv sync --locked --group docs
+          uv pip list
+
       - name: Test building docs
-        run: tox -e builddocs
+        # -E: Don’t use a saved environment (the structure caching all cross-references),
+        #     but rebuild it completely.
+        # -W: Turn warnings into errors. This means that the build stops at the first
+        #     warning and sphinx-build exits with exit status 1.
+        run: |
+          uv run sphinx-build -EW docs/source/ docs/build
 
 
 # Cancel in-progress jobs/runs for the same workflow; if you push to same

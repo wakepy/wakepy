@@ -2,11 +2,12 @@
 name = "wakepy"
 dynamic = ["version"]
 description = "wakelock / keep-awake / stay-awake"
+
 authors = [
     {name = "Niko Föhr", email = "fohrloop@gmail.com"},
 ]
 dependencies = [
-    # For using the D-Bus based methods. All Unix-öike FOSS desktop operating
+    # For using the D-Bus based methods. All Unix-like FOSS desktop operating
     # systems should be listed here (as they might use Gnome, XFCE, etc.)
     # Full list of the environment markers at https://peps.python.org/pep-0508/
     "jeepney >= 0.7.1;platform_system=='Linux' or platform_system=='FreeBSD' or platform_system=='OpenBSD' or platform_system=='NetBSD' or platform_system=='DragonFly' or platform_system=='SunOS' or platform_system=='AIX' or platform_system=='Minix'",
@@ -20,6 +21,7 @@ dependencies = [
 requires-python = ">=3.7"
 readme = "README.md"
 license = { file = "LICENSE.txt"}
+
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
@@ -51,6 +53,105 @@ classifiers = [
     "Typing :: Typed",
 ]
 
+[tool.uv]
+default-groups = []
+
+[dependency-groups]
+
+dev = [
+    {include-group = "test"},
+    {include-group = "docs"},
+    {include-group = "check"},
+    # On Windows, cannot use later version of sphinx-autobuild until
+    # https://github.com/sphinx-doc/sphinx-autobuild/issues/197 is resolved.
+    # See also: https://github.com/wakepy/wakepy/issues/444
+    "sphinx-autobuild==2024.4.16",
+    "IPython",
+    "invoke",
+    # Colorama is used with the tasks.py (invoke commands)
+    "colorama",
+]
+docs = [
+    # Requirements for building the documentation.
+    "accessible-pygments",
+    "alabaster",
+    "Babel",
+    "beautifulsoup4",
+    # Need the build in order to get the _version.py
+    "build",
+    "certifi",
+    "charset-normalizer",
+    "docutils",
+    "idna",
+    "imagesize",
+    "Jinja2",
+    "markdown-it-py",
+    "MarkupSafe",
+    "mdit-py-plugins",
+    "mdurl",
+    "myst-parser==2.0.0",
+    "numpydoc==1.7.0",
+    "packaging",
+    "pydata-sphinx-theme==0.15.3",
+    "Pygments",
+    "pyproject_hooks",
+    "PyYAML",
+    "requests",
+    "snowballstemmer",
+    "soupsieve",
+    "Sphinx==7.2.6",
+    "sphinx-book-theme==1.1.2",
+    "sphinx-copybutton==0.5.2",
+    "sphinx_design==0.5.0",
+    "sphinxcontrib-applehelp==1.0.8",
+    "sphinxcontrib-devhelp==1.0.6",
+    "sphinxcontrib-htmlhelp==2.0.5",
+    "sphinxcontrib-jsmath==1.0.1",
+    "sphinxcontrib-qthelp==1.0.7",
+    "sphinxcontrib-serializinghtml==1.1.10",
+    "tabulate",
+    "tomli",
+    "typing_extensions",
+    "urllib3",
+]
+
+check = [
+    {include-group = "mypy"},
+    "invoke",
+    "black==24.8.0",
+    "isort==5.13.2",
+    "ruff==0.6.5"
+]
+
+mypy = [
+    {include-group = "pytest"},
+    # Last mypy version to support Python 3.7
+    "mypy==1.4.1; python_version=='3.7'",
+    # This only supports Python 3.8+
+    "mypy==1.11.2; python_version>='3.8'",
+    "types-colorama",
+    "types-colorama==0.4.15.12; python_version>='3.7'",
+]
+test = [
+    {include-group = "pytest"},
+    # Python 3.7 support dropped in pytest-cov 5.0.0
+    "pytest-cov==4.1.0; python_version=='3.7'",
+    "pytest-cov==5.0.0; python_version>='3.8'",
+    "coverage-conditional-plugin>=0.9.0",
+    # Jeepney is used in the integration tests for creating a D-Bus server
+    "jeepney==0.8.0;sys_platform=='linux'",
+]
+pytest =[
+    # Python 3.7 support dropped in pytest 8.0.0
+    "pytest==7.4.4; python_version=='3.7'",
+    "pytest==8.3.3; python_version>='3.8'",
+]
+
+[tool.uv.dependency-groups]
+docs = {requires-python = ">=3.9"}
+dev = {requires-python = ">=3.9"}
+check = {requires-python = ">=3.9"}
+test = {requires-python = ">=3.7"}
 
 [project.urls]
 Homepage = "https://github.com/wakepy/wakepy"
@@ -69,8 +170,9 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools_scm]
 version_file = "src/wakepy/_version.py"
 
+
 [tool.mypy]
-exclude = ['venv/*', '.venv/*', 'docs/*', '.tox/*']
+exclude = ['venv/*', '.venv/*', 'docs/*']
 check_untyped_defs = true
 disallow_any_generics = true
 no_implicit_optional = true
@@ -88,7 +190,6 @@ disallow_any_unimported = true
 [[tool.mypy.overrides]]
 module = [
     'jeepney.*',
-    'tox.*'
 ]
 ignore_missing_imports = true
 
@@ -96,9 +197,6 @@ ignore_missing_imports = true
 module = ['tests.*', 'tasks']
 disallow_untyped_defs = false
 
-[[tool.mypy.overrides]]
-module = ['toxfile']
-disallow_any_unimported = false
 
 [tool.coverage.run]
 plugins = ["coverage_conditional_plugin"]
@@ -107,8 +205,8 @@ omit = [
 ]
 [tool.coverage.paths]
 source = [
-    # This makes the coverage report paths shorter for the tox results, which
-    # otherwise are of the format: .tox/py311/lib/python3.11/site-packages/wakepy/somefile.py
+    # This makes the coverage report paths shorter in case wakepy is installed
+    # in a virtual environment
     "src/wakepy",
     "**/site-packages/wakepy"
 ]
@@ -149,7 +247,6 @@ exclude = [
     ".git",
     ".mypy_cache",
     ".ruff_cache",
-    ".tox",
     "__pypackages__",
     "_build",
     "build",

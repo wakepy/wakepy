@@ -12,13 +12,9 @@ docs/build/
 
 # Unit tests, checks, coverage reports
 htmlcov/
-.tox/
 .coverage
 .ruff_cache
 .mypy_cache
-
-# pyenv
-.python-version
 
 # Virtual environments
 .venv
