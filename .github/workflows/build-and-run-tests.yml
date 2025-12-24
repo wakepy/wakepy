@@ -211,6 +211,7 @@ jobs:
           uv run sphinx-build -EW docs/source/ docs/build
 
   github-actions-static-analysis:
+    name: zizmor 🌈 (GitHub Actions static analysis)
     runs-on: ubuntu-latest
     permissions:
       security-events: write
