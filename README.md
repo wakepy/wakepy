@@ -70,7 +70,7 @@ Unix above refers to any Unix-like systems which might use such DEs, e.g. Linux 
 
 ## Installing
 
-Wakepy supports CPython 3.7 to 3.14 (including the free-threaded version) and PyPy 3.8 to 3.11, and may be installed from [PyPI](https://pypi.org/project/wakepy/) with
+Wakepy supports CPython 3.7 to 3.15 (including the free-threaded versions) and PyPy 3.8 to 3.11, and may be installed from [PyPI](https://pypi.org/project/wakepy/) with
 
 ```
 pip install wakepy

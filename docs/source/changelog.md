@@ -40,7 +40,7 @@
 - Make Run Tox fail on Windows pipelines if pytest fails ([#442](https://github.com/wakepy/wakepy/pull/442)). There was a bug in the workflow file which could make the tests pass on Windows even if pytest fails.
 - Fix flaky tests on pypy+windows ([#447](https://github.com/wakepy/wakepy/pull/447))
 - Remove the AttributeError traceback when building docs on Windows/MacOS ([#449](https://github.com/wakepy/wakepy/pull/449))
-- PyPy3.11 and CPython 3.14 and 3.14t (free-threaded) tests in pipelines ([#482](https://github.com/wakepy/wakepy/pull/482))
+- PyPy3.11, CPython 3.14, CPython 3.14t, CPython 3.15 and CPython 3.15t (free-threaded) tests in pipelines ([#482](https://github.com/wakepy/wakepy/pull/482), [#501](https://github.com/wakepy/wakepy/pull/501))
 
 ## wakepy 0.10.2
 🗓️ 2025-04-21
