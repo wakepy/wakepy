@@ -71,6 +71,7 @@ dev = [
     "invoke",
     # Colorama is used with the tasks.py (invoke commands)
     "colorama",
+    "zizmor>=1.16.3",
 ]
 docs = [
     # Requirements for building the documentation.
