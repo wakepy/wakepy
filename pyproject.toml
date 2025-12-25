@@ -144,9 +144,10 @@ test = [
     "jeepney==0.8.0;sys_platform=='linux'",
 ]
 pytest =[
-    # Python 3.7 support dropped in pytest 8.0.0
-    "pytest==7.4.4; python_version=='3.7'",
-    "pytest==8.3.3; python_version>='3.8'",
+    # There are problems with pytest <=8.3.4 on certain builds of CPython
+    # (e.g. python-build-standalone, versions 3.13.0..3.13.7 and 3.14.0)
+    # See: https://github.com/wakepy/wakepy/issues/510 and https://github.com/pytest-dev/pytest/issues/12888
+    "pytest>=8.3.5; python_version>='3.13.0'",
 ]
 
 [tool.uv.dependency-groups]
