@@ -21,7 +21,7 @@ src/wakepy/methods/{windows,macos,gnome,freedesktop}.py - Platform methods
 src/wakepy/dbus_adapters/jeepney.py - Linux/BSD D-Bus adapter
 docs/source/changelog.md - Project changelog
 pyproject.toml - Build config, dependencies, tool settings
-tasks.py - Invoke commands: format, check, docs, test
+.justfile - Just commands: format, check, docs, test, build
 tests/conftest.py - Global pytest fixtures
 tests/unit/ - Mocked unit tests
 tests/integration/ - Platform integration tests
@@ -34,3 +34,6 @@ REQUIREMENTS:
 - Top-level functions before subfunctions
 - Test specific functions first, not full suite
 
+ALWAYS:
+- If changing a file, in the end, format file and run tests (or other command to VERIFY the outcome)
+- Code should be easily READABLE

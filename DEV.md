@@ -21,6 +21,20 @@ uv sync --all-groups
 - To install ruff, You need a recent version of Rust. Recommended to use rustup. You'll also need gmake.
 - You'll also need the Standard Python binding to the SQLite3 library (py3**-sqlite3)
 
+# Just commands
+
+This project uses [just](https://github.com/casey/just) as a command runner. To see all available commands, run:
+
+```
+just
+```
+
+Available commands:
+- `just test` - Run tests with coverage (pass any pytest arguments, e.g. `just test --pdb`, `just test -k test_name`)
+- `just format` - Format code using isort, black, and ruff.
+- `just check` - Static checking of code, linting, formatting checks, etc.
+- `just docs` - Build and serve the documentation with live-reload.
+- `just build` - Build the package (sdist and wheel)
 
 # Testing
 
@@ -28,7 +42,7 @@ The test commands from smallest to largest iteration cycle:
 
 - `python -m pytest /tests/unit/some.py::somefunc` - Run a single test on single python version. Tests against source tree.
 - `python -m pytest ` - Run all unit and integration tests on single python version. Tests against source tree.
-- `inv test` (`invoke test`) - Will (1) run tests in your current python environment against the intalled version of wakepy (if editable install, uses the source tree), (2) Check code coverage, (3) run code formatting checks.
+- `just test` - Will (1) run tests in your current python environment against the intalled version of wakepy (if editable install, uses the source tree), (2) Check code coverage, (3) run code formatting checks.
 - GitHub Actions (PR checks): pytest + mypy on multiple python versions and multiple operating systems. Code check (formatting, linting) on single a python version. Tests also that documentation build does not crash.
 
 ## Running tests against a specific version of python
@@ -56,7 +70,7 @@ That will use the python version You can see the list of available versions of p
 - **Building locally** (for debugging / testing docs), with autobuild:
 
 ```
-invoke docs
+just docs
 ```
 
 - **Deploying**: Just merge in main in GitHub, readthedocs will automatically build documentation (by default, the "latest"). The settings can be adjusted [here](https://readthedocs.org/dashboard), and you can see the history of builds [here](https://app.readthedocs.org/projects/wakepy/).

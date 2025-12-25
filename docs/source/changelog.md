@@ -36,6 +36,7 @@
 
 ### 👷 Maintenance
 - Add AGENTS.md for AI coding assistants ([#508](https://github.com/wakepy/wakepy/pull/508))
+- Replace invoke (tasks.py) with just (.justfile) ([#509](https://github.com/wakepy/wakepy/pull/509))
 - Switch to uv and remove tox ([#499](https://github.com/wakepy/wakepy/pull/499))
 - Fix development environment setup instructions and requirements on Windows ([#445](https://github.com/wakepy/wakepy/pull/445))
 - Make Run Tox fail on Windows pipelines if pytest fails ([#442](https://github.com/wakepy/wakepy/pull/442)). There was a bug in the workflow file which could make the tests pass on Windows even if pytest fails.

@@ -68,9 +68,6 @@ dev = [
     # See also: https://github.com/wakepy/wakepy/issues/444
     "sphinx-autobuild==2024.4.16",
     "IPython",
-    "invoke",
-    # Colorama is used with the tasks.py (invoke commands)
-    "colorama",
     "zizmor>=1.16.3",
 ]
 docs = [
@@ -119,7 +116,6 @@ docs = [
 
 check = [
     {include-group = "mypy"},
-    "invoke",
     "black==24.8.0",
     "isort==5.13.2",
     "ruff==0.6.5"
@@ -131,8 +127,6 @@ mypy = [
     "mypy==1.4.1; python_version=='3.7'",
     # This only supports Python 3.8+
     "mypy==1.11.2; python_version>='3.8'",
-    "types-colorama",
-    "types-colorama==0.4.15.12; python_version>='3.7'",
 ]
 test = [
     {include-group = "pytest"},
@@ -197,7 +191,7 @@ module = [
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ['tests.*', 'tasks']
+module = ['tests.*']
 disallow_untyped_defs = false
 
 
