@@ -892,6 +892,7 @@ def should_fake_success(wakepy_fake_success: str | None) -> bool:
     that wakepy should fake the successful inhibition anyway. Faking the
     success is done after every other method is tried (and failed).
     """
+
     if wakepy_fake_success is None:
         logger.debug("'%s' not set.", WAKEPY_FAKE_SUCCESS)
         return False
