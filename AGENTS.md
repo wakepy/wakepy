@@ -19,6 +19,7 @@ src/wakepy/core/platform.py - Platform detection
 src/wakepy/core/dbus.py - D-Bus abstractions (370 lines)
 src/wakepy/methods/{windows,macos,gnome,freedesktop}.py - Platform methods
 src/wakepy/dbus_adapters/jeepney.py - Linux/BSD D-Bus adapter
+docs/source/changelog.md - Project changelog
 pyproject.toml - Build config, dependencies, tool settings
 tasks.py - Invoke commands: format, check, docs, test
 tests/conftest.py - Global pytest fixtures
