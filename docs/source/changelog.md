@@ -42,6 +42,7 @@
 - Fix flaky tests on pypy+windows ([#447](https://github.com/wakepy/wakepy/pull/447))
 - Remove the AttributeError traceback when building docs on Windows/MacOS ([#449](https://github.com/wakepy/wakepy/pull/449))
 - PyPy3.11, CPython 3.14, CPython 3.14t, CPython 3.15 and CPython 3.15t (free-threaded) tests in pipelines ([#482](https://github.com/wakepy/wakepy/pull/482), [#501](https://github.com/wakepy/wakepy/pull/501))
+- Fix freezing of CLI when running pytest with --pdb on CPython 3.13.x and 3.14.0 ([#512](https://github.com/wakepy/wakepy/pull/512))
 
 ## wakepy 0.10.2
 🗓️ 2025-04-21
