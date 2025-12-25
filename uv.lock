@@ -835,15 +835,6 @@ wheels = [
 ]
 
 [[package]]
-name = "invoke"
-version = "2.2.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f9/42/127e6d792884ab860defc3f4d80a8f9812e48ace584ffc5a346de58cdc6c/invoke-2.2.0.tar.gz", hash = "sha256:ee6cbb101af1a859c7fe84f2a264c059020b0cb7fe3535f9424300ab568f6bd5", size = 299835, upload-time = "2023-07-12T18:05:17.998Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0a/66/7f8c48009c72d73bc6bbe6eb87ac838d6a526146f7dab14af671121eb379/invoke-2.2.0-py3-none-any.whl", hash = "sha256:6ea924cc53d4f78e3d98bc436b08069a03077e6f85ad1ddaa8a116d7dad15820", size = 160274, upload-time = "2023-07-12T18:05:16.294Z" },
-]
-
-[[package]]
 name = "ipython"
 version = "8.18.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2043,15 +2034,6 @@ wheels = [
 ]
 
 [[package]]
-name = "types-colorama"
-version = "0.4.15.12"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/38/87/3bd060c321d6c3d6693931d97a9cc6f226964bfbaa529444823a235fc81e/types-colorama-0.4.15.12.tar.gz", hash = "sha256:fbdfc5d9d24d85c33bd054fbe33adc6cec44eedb19cfbbabfbbb57dc257ae4b8", size = 5202, upload-time = "2023-07-20T15:19:19.128Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6f/ca/d6ef3773b41f2eb6b27ef5ae9ac9287cf219710d162fdd94bca12b4884fc/types_colorama-0.4.15.12-py3-none-any.whl", hash = "sha256:23c9d4a00961227f7ef018d5a1c190c4bbc282119c3ee76a17677a793f13bb82", size = 5696, upload-time = "2023-07-20T15:19:18.056Z" },
-]
-
-[[package]]
 name = "typing-extensions"
 version = "4.7.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2128,12 +2110,10 @@ dependencies = [
 [package.dev-dependencies]
 check = [
     { name = "black", marker = "python_full_version >= '3.9'" },
-    { name = "invoke", marker = "python_full_version >= '3.9'" },
     { name = "isort", marker = "python_full_version >= '3.9'" },
     { name = "mypy", version = "1.11.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
     { name = "pytest", version = "9.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
     { name = "ruff", marker = "python_full_version >= '3.9'" },
-    { name = "types-colorama", marker = "python_full_version >= '3.9'" },
 ]
 dev = [
     { name = "accessible-pygments", marker = "python_full_version >= '3.9'" },
@@ -2144,12 +2124,10 @@ dev = [
     { name = "build", marker = "python_full_version >= '3.9'" },
     { name = "certifi", marker = "python_full_version >= '3.9'" },
     { name = "charset-normalizer", marker = "python_full_version >= '3.9'" },
-    { name = "colorama", marker = "python_full_version >= '3.9'" },
     { name = "coverage-conditional-plugin", marker = "python_full_version >= '3.9'" },
     { name = "docutils", marker = "python_full_version >= '3.9'" },
     { name = "idna", marker = "python_full_version >= '3.9'" },
     { name = "imagesize", marker = "python_full_version >= '3.9'" },
-    { name = "invoke", marker = "python_full_version >= '3.9'" },
     { name = "ipython", version = "8.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*'" },
     { name = "ipython", version = "8.37.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
     { name = "ipython", version = "9.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -2188,7 +2166,6 @@ dev = [
     { name = "sphinxcontrib-serializinghtml", marker = "python_full_version >= '3.9'" },
     { name = "tabulate", marker = "python_full_version >= '3.9'" },
     { name = "tomli", version = "2.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-    { name = "types-colorama", marker = "python_full_version >= '3.9'" },
     { name = "typing-extensions", version = "4.15.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
     { name = "urllib3", marker = "python_full_version >= '3.9'" },
     { name = "zizmor", version = "1.16.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*'" },
@@ -2240,7 +2217,6 @@ mypy = [
     { name = "mypy", version = "1.4.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.8'" },
     { name = "mypy", version = "1.11.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.8'" },
     { name = "pytest", version = "9.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
-    { name = "types-colorama" },
 ]
 pytest = [
     { name = "pytest", version = "9.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
@@ -2262,14 +2238,11 @@ requires-dist = [
 [package.metadata.requires-dev]
 check = [
     { name = "black", marker = "python_full_version >= '3.9'", specifier = "==24.8.0" },
-    { name = "invoke", marker = "python_full_version >= '3.9'" },
     { name = "isort", marker = "python_full_version >= '3.9'", specifier = "==5.13.2" },
     { name = "mypy", marker = "python_version < '0'", specifier = "==1.4.1" },
     { name = "mypy", marker = "python_full_version >= '3.9'", specifier = "==1.11.2" },
     { name = "pytest", marker = "python_full_version >= '3.13'", specifier = ">=8.3.5" },
     { name = "ruff", marker = "python_full_version >= '3.9'", specifier = "==0.6.5" },
-    { name = "types-colorama", marker = "python_full_version >= '3.9'" },
-    { name = "types-colorama", marker = "python_full_version >= '3.9'", specifier = "==0.4.15.12" },
 ]
 dev = [
     { name = "accessible-pygments", marker = "python_full_version >= '3.9'" },
@@ -2280,12 +2253,10 @@ dev = [
     { name = "build", marker = "python_full_version >= '3.9'" },
     { name = "certifi", marker = "python_full_version >= '3.9'" },
     { name = "charset-normalizer", marker = "python_full_version >= '3.9'" },
-    { name = "colorama", marker = "python_full_version >= '3.9'" },
     { name = "coverage-conditional-plugin", marker = "python_full_version >= '3.9'", specifier = ">=0.9.0" },
     { name = "docutils", marker = "python_full_version >= '3.9'" },
     { name = "idna", marker = "python_full_version >= '3.9'" },
     { name = "imagesize", marker = "python_full_version >= '3.9'" },
-    { name = "invoke", marker = "python_full_version >= '3.9'" },
     { name = "ipython", marker = "python_full_version >= '3.9'" },
     { name = "isort", marker = "python_full_version >= '3.9'", specifier = "==5.13.2" },
     { name = "jeepney", marker = "python_full_version >= '3.9' and sys_platform == 'linux'", specifier = "==0.8.0" },
@@ -2323,8 +2294,6 @@ dev = [
     { name = "sphinxcontrib-serializinghtml", marker = "python_full_version >= '3.9'", specifier = "==1.1.10" },
     { name = "tabulate", marker = "python_full_version >= '3.9'" },
     { name = "tomli", marker = "python_full_version >= '3.9'" },
-    { name = "types-colorama", marker = "python_full_version >= '3.9'" },
-    { name = "types-colorama", marker = "python_full_version >= '3.9'", specifier = "==0.4.15.12" },
     { name = "typing-extensions", marker = "python_full_version >= '3.9'" },
     { name = "urllib3", marker = "python_full_version >= '3.9'" },
     { name = "zizmor", marker = "python_full_version >= '3.9'", specifier = ">=1.16.3" },
@@ -2374,8 +2343,6 @@ mypy = [
     { name = "mypy", marker = "python_full_version == '3.7.*'", specifier = "==1.4.1" },
     { name = "mypy", marker = "python_full_version >= '3.8'", specifier = "==1.11.2" },
     { name = "pytest", marker = "python_full_version >= '3.13'", specifier = ">=8.3.5" },
-    { name = "types-colorama" },
-    { name = "types-colorama", marker = "python_full_version >= '3.7'", specifier = "==0.4.15.12" },
 ]
 pytest = [{ name = "pytest", marker = "python_full_version >= '3.13'", specifier = ">=8.3.5" }]
 test = [
