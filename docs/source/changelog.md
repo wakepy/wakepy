@@ -23,6 +23,7 @@
 - Raise ContextAlreadyEnteredError (subclass of RuntimeError) if trying to use context manager twice without exiting first ([#476](https://github.com/wakepy/wakepy/pull/476))
 
 ### 📖 Documentation
+- Add [CONTRIBUTING.md](https://github.com/wakepy/wakepy/blob/main/CONTRIBUTING.md) ([#513](https://github.com/wakepy/wakepy/pull/513))
 - Documentation page for [Post Keepawake behavior](https://wakepy.readthedocs.io/stable/post-keepawake-behavior.html). Documented the behavior on Windows, KDE and GNOME ([#472](https://github.com/wakepy/wakepy/pull/472))
 - Simplify and clarify the documentation of the [Mode](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.Mode) ([#458](https://github.com/wakepy/wakepy/pull/458))
 
