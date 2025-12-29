@@ -55,7 +55,7 @@ classifiers = [
 ]
 
 [tool.uv]
-default-groups = []
+default-groups = ["dev"]
 
 [dependency-groups]
 
