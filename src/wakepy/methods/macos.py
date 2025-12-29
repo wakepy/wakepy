@@ -10,7 +10,7 @@ from typing import cast
 from wakepy.core import Method, ModeName, PlatformType
 
 if typing.TYPE_CHECKING:
-    from typing import Optional
+    from typing import List, Optional
 
 
 class _MacCaffeinate(Method, ABC):
@@ -28,14 +28,15 @@ class _MacCaffeinate(Method, ABC):
         self._process: Optional[Popen[bytes]] = None
 
     def enter_mode(self) -> None:
-        self.logger.debug('Running "%s"', self.command)
-        self._process = Popen(self.command.split(), stdin=PIPE, stdout=PIPE)
+        self.logger.debug('Running "%s"', " ".join(self.command))
+        # command is a hardcoded list, safe from injection (-> skip S603)
+        self._process = Popen(self.command, stdin=PIPE, stdout=PIPE)  # noqa: S603
 
     def exit_mode(self) -> None:
         if self._process is None:
             self.logger.debug("No need to terminate process (not started)")
             return
-        self.logger.debug('Terminating process ("%s")', self.command)
+        self.logger.debug('Terminating process ("%s")', " ".join(self.command))
 
         # The pipes need to be closed before terminating the process, otherwise
         # will get ResourceWarning: unclosed file
@@ -54,17 +55,17 @@ class _MacCaffeinate(Method, ABC):
 
     @property
     @abstractmethod
-    def command(self) -> str: ...
+    def command(self) -> List[str]: ...
 
 
 class CaffeinateKeepRunning(_MacCaffeinate):
     mode_name = ModeName.KEEP_RUNNING
-    command = "caffeinate"
+    command = ["caffeinate"]
     name = "caffeinate"
 
 
 class CaffeinateKeepPresenting(_MacCaffeinate):
     mode_name = ModeName.KEEP_PRESENTING
     # -d:  Create an assertion to prevent the display from sleeping.
-    command = "caffeinate -d"
+    command = ["caffeinate", "-d"]
     name = "caffeinate"

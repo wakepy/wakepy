@@ -255,10 +255,12 @@ exclude = [
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 select = [
-    # E: pycodestyle
-    "E",
-    # F: Pyflakes
-    "F",
+    "E", # pycodestyle
+    "F", # Pyflakes
+    # S: flake8-bandit. Listings are in two places: (Tests and Blacklists)
+    # 1) https://bandit.readthedocs.io/en/latest/plugins/index.html#complete-test-plugin-listing
+    # 2) https://bandit.readthedocs.io/en/latest/blacklists/index.html
+    "S", 
     # W505: doc-line-too-long. Ref: https://docs.astral.sh/ruff/rules/doc-line-too-long/
     "W505",
     # W291: trailing-whitespace. Ref: https://docs.astral.sh/ruff/rules/trailing-whitespace/
@@ -275,6 +277,12 @@ ignore = []
 fixable = ["ALL"]
 unfixable = []
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**.py" = [
+    "S101", # flake8-bandit should not check for asserts in test files
+]
+
 [tool.ruff.lint.pycodestyle]
 # limits docstring and comments to 79 characters.
 max-doc-length = 79
+

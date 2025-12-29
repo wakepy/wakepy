@@ -68,42 +68,41 @@ def method2_broken(mode_name_broken):
     return BrokenMethod
 
 
-@pytest.mark.parametrize(
-    "sysargs",
-    [
-        ["-r"],
-        ["--keep-running"],
-        # Also no args means keep running
-        [],
-    ],
-)
-def test_get_argparser_keep_running(sysargs):
-    assert _get_mode_name(parse_args(sysargs)) == ModeName.KEEP_RUNNING
+class TestGetModeName:
+    @pytest.mark.parametrize(
+        "sysargs",
+        [
+            ["-r"],
+            ["--keep-running"],
+            # Also no args means keep running
+            [],
+        ],
+    )
+    def test_keep_running(self, sysargs):
+        assert _get_mode_name(parse_args(sysargs)) == ModeName.KEEP_RUNNING
 
+    @pytest.mark.parametrize(
+        "sysargs",
+        [
+            ["-p"],
+            ["--keep-presenting"],
+        ],
+    )
+    def test_keep_presenting(self, sysargs):
+        assert _get_mode_name(parse_args(sysargs)) == ModeName.KEEP_PRESENTING
 
-@pytest.mark.parametrize(
-    "sysargs",
-    [
-        ["-p"],
-        ["--keep-presenting"],
-    ],
-)
-def test_get_argparser_keep_presenting(sysargs):
-    assert _get_mode_name(parse_args(sysargs)) == ModeName.KEEP_PRESENTING
-
-
-@pytest.mark.parametrize(
-    "sysargs",
-    [
-        ["-r", "-p"],
-        ["--keep-presenting", "-r"],
-        ["-p", "--keep-running"],
-        ["--keep-presenting", "--keep-running"],
-    ],
-)
-def test_get_argparser_too_many_modes(sysargs):
-    with pytest.raises(ValueError, match="You may only select one of the modes!"):
-        assert _get_mode_name(parse_args(sysargs))
+    @pytest.mark.parametrize(
+        "sysargs",
+        [
+            ["-r", "-p"],
+            ["--keep-presenting", "-r"],
+            ["-p", "--keep-running"],
+            ["--keep-presenting", "--keep-running"],
+        ],
+    )
+    def test_too_many_modes(self, sysargs):
+        with pytest.raises(ValueError, match="You may only select one of the modes!"):
+            assert _get_mode_name(parse_args(sysargs))
 
 
 @pytest.mark.parametrize(
@@ -255,5 +254,5 @@ class TestGetLoggingLevel:
         assert _get_logging_level(verbosity) == expected_level
 
     def test_with_bad_verbosity(self):
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError, match="Verbosity level cannot be negative."):
             _get_logging_level(-2)

@@ -214,7 +214,6 @@ class DBusMethodCall:
         (self.method) does not have params defined, returns None."""
         if self.method.params is None:
             return None
-        assert isinstance(self.method.params, tuple)
 
         return {p: arg for p, arg in zip(self.method.params, self.args)}
 
@@ -229,7 +228,9 @@ class DBusMethodCall:
             self.__check_args_length(args, method)
             return args
 
-        assert isinstance(args, dict), "args may only be tuple, list or dict"
+        if not isinstance(args, dict):
+            raise ValueError(f"args may only be tuple, list or dict. Got: {type(args)}")
+
         return self.__dict_args_as_tuple(args, method)
 
     def __check_args_length(self, args: Tuple[Any, ...], method: DBusMethod) -> None:

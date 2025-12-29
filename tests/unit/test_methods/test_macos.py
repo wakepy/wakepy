@@ -8,7 +8,7 @@ from wakepy.methods import macos
 class DummyMacCaffeinate(macos._MacCaffeinate):
     """Test class for _MacCaffeinate to allow instantiation."""
 
-    command = "ls"  # some linux command for testing
+    command = ["ls"]  # some linux command for testing
     name = "DummyMacCaffeinate"
     mode_name = ModeName.KEEP_RUNNING
     supported_platforms = (PlatformType.ANY,)
