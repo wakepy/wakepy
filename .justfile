@@ -5,14 +5,12 @@ default:
 # static checking of code, linting, formatting checks, etc.
 check:
   uv run isort src/wakepy tests/ --check --diff
-  uv run black src/wakepy tests/  --check
   uv run ruff check --no-fix src/wakepy tests/
   uv run mypy src/wakepy tests/
 
-# Format code using isort, black, and ruff.
+# Format code using isort and ruff.
 format:
   uv run isort src/wakepy tests/
-  uv run black src/wakepy tests/
   uv run ruff check --fix src/wakepy tests/
 
 # Build and serve the documentation with live-reload.
