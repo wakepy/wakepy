@@ -76,7 +76,7 @@ Have an idea for improvement? Create an [issue](https://github.com/wakepy/wakepy
 2. Install all dependencies (run in the root folder):
 
 ```bash
-uv sync --all-groups
+uv sync
 ```
 
 3. Verify everything works:
@@ -188,7 +188,7 @@ uv run --python python3.8 pytest
 To switch back:
 
 ```bash
-uv sync --all-groups
+uv sync
 ```
 
 You can see the list of available python versions with `uv python list`. The list is tied to the installed uv version.
