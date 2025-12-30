@@ -1,4 +1,4 @@
-Run fast tests for PR (fewer OSes, fewer python versions)
+# Run fast tests for PR (fewer OSes, fewer python versions)
 name: Fast Tests 🚀
 
 on:
