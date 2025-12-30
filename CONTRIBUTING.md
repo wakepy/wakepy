@@ -174,7 +174,14 @@ just test
    just test
    ```
 
-3\. **GitHub Actions (PR checks)**: pytest + mypy on multiple python versions and operating systems. Code check (formatting, linting) on single python version. Verifies documentation build.
+3\. **Test with few different OS + python versions** ([Fast Tests 🚀](https://github.com/wakepy/wakepy/actions/workflows/fast-tests.yml) in GitHub): 
+* Starts automatically in GitHub Actions every time a PR is updated. Can also be started manually.
+* Runs tests and check test coverage (against built wheel), run formatting and static typing checks (against source tree)
+* This test is relatively fast. Contains oldest supported python on Linux, newest stable release on Linux, Windows and macOS.
+
+4\. **Rigorous tests with multiple different OS + python versions** ([Full Tests 🔬](https://github.com/wakepy/wakepy/actions/workflows/full-tests.yml) in GitHub): 
+* Starts automatically in GitHub Actions every time after a PR is merged into main, and just before a release is published. Can also be started manually.
+* Same as "Fast Tests 🚀" but with more OS + Python version combinations.
 
 ### Running Tests Against Specific Python Version Locally
 
