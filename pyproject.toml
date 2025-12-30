@@ -256,7 +256,7 @@ select = [
     "ERA", # eradicate (commented out code)
     "E", # pycodestyle
     "F", # Pyflakes
-	"I", # import sorting
+    "I", # import sorting
     # S: flake8-bandit. Listings are in two places: (Tests and Blacklists)
     # 1) https://bandit.readthedocs.io/en/latest/plugins/index.html#complete-test-plugin-listing
     # 2) https://bandit.readthedocs.io/en/latest/blacklists/index.html
