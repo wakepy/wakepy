@@ -16,6 +16,7 @@ adapter instance.
 from __future__ import annotations
 
 import gc
+import logging
 import typing
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Type, Union
 
@@ -27,6 +28,8 @@ DBusAdapterSeq = typing.Union[List["DBusAdapter"], Tuple["DBusAdapter", ...]]
 DBusAdapterTypeSeq = typing.Union[
     List[Type["DBusAdapter"]], Tuple[Type["DBusAdapter"], ...]
 ]
+
+logger = logging.getLogger(__name__)
 
 
 class DBusAddress(NamedTuple):
@@ -359,6 +362,9 @@ def get_dbus_adapter(
             adapter = adapter_cls()
             return adapter
         except Exception:
+            logger.debug(
+                "DBusAdapter %s could not be initialized, trying next one.", adapter_cls
+            )
             continue
     return None
 

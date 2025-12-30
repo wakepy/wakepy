@@ -54,7 +54,7 @@ def private_bus():
 
     _start_cmd = "dbus-daemon --session --print-address"
 
-    p = subprocess.Popen( # noqa: S603
+    p = subprocess.Popen(  # noqa: S603
         _start_cmd.split(),
         stdout=subprocess.PIPE,
         shell=False,
