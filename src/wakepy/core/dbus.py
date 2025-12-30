@@ -16,6 +16,7 @@ adapter instance.
 from __future__ import annotations
 
 import gc
+import logging
 import typing
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Type, Union
 
@@ -27,6 +28,8 @@ DBusAdapterSeq = typing.Union[List["DBusAdapter"], Tuple["DBusAdapter", ...]]
 DBusAdapterTypeSeq = typing.Union[
     List[Type["DBusAdapter"]], Tuple[Type["DBusAdapter"], ...]
 ]
+
+logger = logging.getLogger(__name__)
 
 
 class DBusAddress(NamedTuple):
@@ -214,7 +217,6 @@ class DBusMethodCall:
         (self.method) does not have params defined, returns None."""
         if self.method.params is None:
             return None
-        assert isinstance(self.method.params, tuple)
 
         return {p: arg for p, arg in zip(self.method.params, self.args)}
 
@@ -229,7 +231,9 @@ class DBusMethodCall:
             self.__check_args_length(args, method)
             return args
 
-        assert isinstance(args, dict), "args may only be tuple, list or dict"
+        if not isinstance(args, dict):
+            raise ValueError(f"args may only be tuple, list or dict. Got: {type(args)}")
+
         return self.__dict_args_as_tuple(args, method)
 
     def __check_args_length(self, args: Tuple[Any, ...], method: DBusMethod) -> None:
@@ -358,6 +362,9 @@ def get_dbus_adapter(
             adapter = adapter_cls()
             return adapter
         except Exception:
+            logger.debug(
+                "DBusAdapter %s could not be initialized, trying next one.", adapter_cls
+            )
             continue
     return None
 

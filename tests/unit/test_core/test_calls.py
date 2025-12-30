@@ -54,6 +54,15 @@ def test_dbusmethod_args_list(dbus_method: DBusMethod):
     assert call.args == (1, "2", 3)
 
 
+def test_dbusmethod_args_invalid_type(dbus_method: DBusMethod):
+    args = 123  # Invalid type: not a tuple, list, or dict
+    with pytest.raises(
+        ValueError,
+        match=re.escape("args may only be tuple, list or dict. Got: <class 'int'>"),
+    ):
+        DBusMethodCall(dbus_method, args=args)  # type: ignore[arg-type]
+
+
 def test_dbusmethod_args_dict_method_without_params(
     method_without_params: DBusMethod,
 ):

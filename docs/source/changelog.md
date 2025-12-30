@@ -36,6 +36,7 @@
 - The `ActivationResult.mode_name` is now always a string (instead of being a ModeName) ([#462](https://github.com/wakepy/wakepy/pull/462))
 
 ### 👷 Maintenance
+- Add more ruff checks ([#524](https://github.com/wakepy/wakepy/pull/524))
 - Switch from black to ruff ([#523](https://github.com/wakepy/wakepy/pull/523))
 - Add AGENTS.md for AI coding assistants ([#508](https://github.com/wakepy/wakepy/pull/508))
 - Replace invoke (tasks.py) with just (.justfile) ([#509](https://github.com/wakepy/wakepy/pull/509))

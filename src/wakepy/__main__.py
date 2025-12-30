@@ -122,9 +122,9 @@ def _get_logging_level(verbosity: int) -> int:
         return logging.DEBUG
     elif verbosity == 1:  # Corresponds to -v
         return logging.INFO
-    else:
-        assert verbosity == 0
+    elif verbosity == 0:
         return logging.WARNING
+    raise ValueError("Verbosity level cannot be negative.")
 
 
 def handle_activation_error(result: ActivationResult) -> None:
@@ -172,7 +172,8 @@ def _get_mode_name(args: Namespace) -> ModeName:
         # The default action, if nothing is selected, is "keep running"
         mode = ModeName.KEEP_RUNNING
     else:
-        assert keep_presenting
+        # We know keep_presenting is True, so it's safe to assert it
+        assert keep_presenting  # noqa: S101
         mode = ModeName.KEEP_PRESENTING
 
     return mode
