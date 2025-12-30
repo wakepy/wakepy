@@ -130,7 +130,7 @@ class TestActivateMethod:
         assert res.failure_stage is None
         assert res.failure_reason == ""
         # We get a Heartbeat instance on success, as the used Method does has a
-        # heartbeat()
+        # heartbeat() # noqa: ERA001
         assert isinstance(heartbeat, Heartbeat)
 
 
