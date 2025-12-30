@@ -46,6 +46,21 @@ test *args="":
     echo "Tests passed. Running static checks..."
     just check
 
+# Run tests with coverage, show CLI report (for AI agents - no browser)
+test-cli *args="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    echo "Running tests with coverage..."
+    if ! env -u DBUS_SESSION_BUS_ADDRESS uv run python -m pytest -W error {{ args }} --cov-branch --cov ./src --cov-fail-under=100; then
+        echo "Tests failed. Generating coverage report in CLI..."
+        uv run coverage report -m
+        exit 1
+    fi
+
+    echo "Tests passed. Running static checks..."
+    just check
+
 # Build the package (sdist and wheel)
 build:
     uv build

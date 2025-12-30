@@ -35,5 +35,6 @@ REQUIREMENTS:
 - Test specific functions first, not full suite
 
 ALWAYS:
-- If changing a file, in the end, format file and run tests (or other command to VERIFY the outcome)
+- If changing a file, in the end, format file and run tests (or other command to VERIFY the outcome). Does not apply to .md files.
 - Code should be easily READABLE
+- Use "just test-cli ARGUMENTS" instead of "python -m pytest ARGUMENTS" or "just test ARGUMENTS" or "pytest ARGUMENTS" for running tests
