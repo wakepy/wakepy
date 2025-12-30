@@ -66,13 +66,16 @@ jobs:
         python-version: >-
           ${{
             inputs.test-mode == 'fast' &&
-            fromJSON('["3.7", "3.15"]') ||
+            fromJSON('["3.7", "3.14"]') ||
             fromJSON('["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t", "3.15", "3.15t", "pypy3.8", "pypy3.11"]')
           }}
         include: >-
           ${{
-            inputs.test-mode == 'fast' &&
-            fromJSON('[]') ||
+            env.TEST_MODE == 'fast' &&
+            fromJSON('[
+              {"python-version": "3.14", "os": "macos-latest"},
+              {"python-version": "3.14", "os": "windows-latest"},
+            ]') ||
             fromJSON('[
               {"python-version": "3.7", "os": "macos-15-intel"},
               {"python-version": "3.15", "os": "macos-latest"},
