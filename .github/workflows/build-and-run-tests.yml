@@ -3,10 +3,21 @@ name: Build and test wakepy 🏗️🧪
 on:
   # Allows for manually starting tests
   workflow_dispatch:
+    inputs:
+      test-mode:
+        description: 'Test mode to run (determines which python versions and OSes to test)'
+        required: true
+        type: choice
+        options:
+          - fast
+          - full
   # Make this a reusable workflow
   workflow_call:
-  # Triggers when pull request is created and when pushing to PR
-  pull_request:
+    inputs:
+      test-mode:
+        description: "Test mode: 'fast' or 'full'"
+        required: true
+        type: string
 
 
 env:
@@ -52,30 +63,26 @@ jobs:
         os: [ubuntu-latest]
         # To check available versions, see: uv python list --all-arches --all-platforms
         # To check available runners, see: https://github.com/actions/runner-images
-        # All supported python versions on linux
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t", "3.15", "3.15t", "pypy3.8", "pypy3.11"]
-        include:
-          # Oldest supported python on MacOS runners
-          - python-version: "3.7"
-            os: macos-15-intel # CPython 3.7 is only available for x86_64
-          # Newest supported python on MacOS
-          - python-version: "3.15"
-            os: macos-latest
-          # Newest supported python on MacOS, free-threaded
-          - python-version: "3.15t"
-            os: macos-latest
-          # Oldest supported python on Windows
-          - python-version: "3.7"
-            os: windows-latest
-          # Newest supported python on Windows
-          - python-version: "3.15"
-            os: windows-latest
-          # Newest supported python on Windows, free-threaded
-          - python-version: "3.15t"
-            os: windows-latest
-          # PyPy on Windows
-          - python-version: "pypy3.11"
-            os: windows-latest
+        python-version: >-
+          ${{
+            inputs.test-mode == 'fast' &&
+            fromJSON('["3.7", "3.15"]') ||
+            fromJSON('["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t", "3.15", "3.15t", "pypy3.8", "pypy3.11"]')
+          }}
+        include: >-
+          ${{
+            inputs.test-mode == 'fast' &&
+            fromJSON('[]') ||
+            fromJSON('[
+              {"python-version": "3.7", "os": "macos-15-intel"},
+              {"python-version": "3.15", "os": "macos-latest"},
+              {"python-version": "3.15t", "os": "macos-latest"},
+              {"python-version": "3.7", "os": "windows-latest"},
+              {"python-version": "3.15", "os": "windows-latest"},
+              {"python-version": "3.15t", "os": "windows-latest"},
+              {"python-version": "pypy3.11", "os": "windows-latest"}
+            ]')
+          }}
       fail-fast: false
 
     steps:
