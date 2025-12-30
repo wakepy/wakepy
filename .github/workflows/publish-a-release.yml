@@ -77,9 +77,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: >-
-          VERSION="${{github.ref_name}}" &&
+          VERSION="${GITHUB_REF_NAME}" &&
           gh release create
-          '${{ github.ref_name }}'
+          '${GITHUB_REF_NAME}'
           --repo '${{ github.repository }}'
           --title "wakepy ${VERSION:1}"
           --notes ""
@@ -92,7 +92,7 @@ jobs:
         # sigstore-produced signatures and certificates.
         run: >-
           gh release upload
-          '${{ github.ref_name }}' dist/**
+          '${GITHUB_REF_NAME}' dist/**
           --repo '${{ github.repository }}'
 
 # Disable all permissions by default; set specific job-level permissions as needed
