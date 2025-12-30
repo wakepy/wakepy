@@ -10,10 +10,13 @@ name: Publish a wakepy release 📦
 jobs:
 
   build-and-test:
-    if: startsWith(github.ref, 'refs/tags/v')
+    # if: startsWith(github.ref, 'refs/tags/v')
     uses: ./.github/workflows/build-and-run-tests.yml
     with:
       test-mode: full
+    permissions:
+      contents: read
+      security-events: write
 
   sign-artifacts:
     name: Sign artifacts ✍️🔒
@@ -63,6 +66,8 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-release
+    permissions:
+        contents: write
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -89,3 +94,6 @@ jobs:
           gh release upload
           '${{ github.ref_name }}' dist/**
           --repo '${{ github.repository }}'
+
+# Disable all permissions by default; set specific job-level permissions as needed
+permissions: {}
