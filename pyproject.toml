@@ -116,7 +116,6 @@ docs = [
 
 check = [
     {include-group = "mypy"},
-    "isort==5.13.2",
     "ruff==0.6.5",
 ]
 
@@ -229,9 +228,6 @@ no-cover-if-py-lt-38 = "sys_version_info < (3, 8)"
 no-cover-if-py-gte-310 = "sys_version_info >= (3, 10)"
 no-cover-if-py-lt-310 = "sys_version_info < (3, 10)"
 
-[tool.isort]
-profile = "black"
-
 [tool.ruff]
 # Same as Black.
 line-length = 88
@@ -260,6 +256,7 @@ select = [
     "ERA", # eradicate (commented out code)
     "E", # pycodestyle
     "F", # Pyflakes
+    "I", # import sorting 
     # S: flake8-bandit. Listings are in two places: (Tests and Blacklists)
     # 1) https://bandit.readthedocs.io/en/latest/plugins/index.html#complete-test-plugin-listing
     # 2) https://bandit.readthedocs.io/en/latest/blacklists/index.html
