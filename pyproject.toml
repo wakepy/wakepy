@@ -256,7 +256,8 @@ select = [
     "ERA", # eradicate (commented out code)
     "E", # pycodestyle
     "F", # Pyflakes
-    "I", # import sorting
+    # isort: https://docs.astral.sh/ruff/rules/#isort-i
+    "I",
     # S: flake8-bandit. Listings are in two places: (Tests and Blacklists)
     # 1) https://bandit.readthedocs.io/en/latest/plugins/index.html#complete-test-plugin-listing
     # 2) https://bandit.readthedocs.io/en/latest/blacklists/index.html
