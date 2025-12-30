@@ -3,10 +3,21 @@ name: Build and test wakepy 🏗️🧪
 on:
   # Allows for manually starting tests
   workflow_dispatch:
+    inputs:
+      test-mode:
+        description: 'Test mode to run (determines which python versions and OSes to test)'
+        required: true
+        type: choice
+        options:
+          - fast
+          - full
   # Make this a reusable workflow
   workflow_call:
-  # Triggers when pull request is created and when pushing to PR
-  pull_request:
+    inputs:
+      test-mode:
+        description: "Test mode: 'fast' or 'full'"
+        required: true
+        type: string
 
 
 env:
@@ -52,30 +63,29 @@ jobs:
         os: [ubuntu-latest]
         # To check available versions, see: uv python list --all-arches --all-platforms
         # To check available runners, see: https://github.com/actions/runner-images
-        # All supported python versions on linux
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t", "3.15", "3.15t", "pypy3.8", "pypy3.11"]
-        include:
-          # Oldest supported python on MacOS runners
-          - python-version: "3.7"
-            os: macos-15-intel # CPython 3.7 is only available for x86_64
-          # Newest supported python on MacOS
-          - python-version: "3.15"
-            os: macos-latest
-          # Newest supported python on MacOS, free-threaded
-          - python-version: "3.15t"
-            os: macos-latest
-          # Oldest supported python on Windows
-          - python-version: "3.7"
-            os: windows-latest
-          # Newest supported python on Windows
-          - python-version: "3.15"
-            os: windows-latest
-          # Newest supported python on Windows, free-threaded
-          - python-version: "3.15t"
-            os: windows-latest
-          # PyPy on Windows
-          - python-version: "pypy3.11"
-            os: windows-latest
+        python-version: >-
+          ${{
+            inputs.test-mode == 'fast' &&
+            fromJSON('["3.7", "3.14"]') ||
+            fromJSON('["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t", "3.15", "3.15t", "pypy3.8", "pypy3.11"]')
+          }}
+        include: >-
+          ${{
+            inputs.test-mode == 'fast' &&
+            fromJSON('[
+              {"python-version": "3.14", "os": "macos-latest"},
+              {"python-version": "3.14", "os": "windows-latest"},
+            ]') ||
+            fromJSON('[
+              {"python-version": "3.7", "os": "macos-15-intel"},
+              {"python-version": "3.15", "os": "macos-latest"},
+              {"python-version": "3.15t", "os": "macos-latest"},
+              {"python-version": "3.7", "os": "windows-latest"},
+              {"python-version": "3.15", "os": "windows-latest"},
+              {"python-version": "3.15t", "os": "windows-latest"},
+              {"python-version": "pypy3.11", "os": "windows-latest"}
+            ]')
+          }}
       fail-fast: false
 
     steps:
@@ -83,67 +93,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 #v7.1.6
+      - name: Run tests for Python ${{ matrix.python-version }}
+        uses: ./.github/actions/run-tests
         with:
-          version: "0.9.18"
           python-version: ${{ matrix.python-version }}
-          enable-cache: true
-
-      - name: Install legacy python version
-        if: matrix.python-version == '3.7'
-        # Python 3.7 was dropped in uv 0.7.x
-        # See: https://github.com/astral-sh/uv/blob/main/changelogs/0.7.x.md
-        # Hacky workaround from https://github.com/astral-sh/uv/pull/13022#issuecomment-2848649176
-        #
-        # NOTE: This will emit some [tool.uv.dependency-groups] warnings. That's expected and ok.
-        run: |
-          uvx uv@0.6.17 python list --all-arches --all-platforms
-          uvx uv@0.6.17 python install 3.7
-        env:
-          # Needs to be any valid version to make uvx work. That version of python must
-          # be available on the used uv version (installed above)
-          UV_PYTHON: ${{ env.PYTHON_VERSION }}
-
-      - name: Show python version and GIL status
-        run: |
-          uv run --no-project python --version --version
-          uv run --no-project python -c "import sys; is_enabled = sys._is_gil_enabled() if hasattr(sys, '_is_gil_enabled') else '?'; print('sys._is_gil_enabled:', is_enabled)"
-          uv run --no-project python -c "import sysconfig; print('Py_GIL_DISABLED:', sysconfig.get_config_var('Py_GIL_DISABLED'))"
-
-      - name: Download built wheel
-        uses: actions/download-artifact@v4
-        with:
-          name: wakepy-python-packages
-          path: ./dist/
-
-      - name: Install wakepy from wheel
-        shell: bash # needs bash shell to expand glob
-        run: |
-          uv venv
-          uv pip list
-          uv pip install ./dist/wakepy-*.whl
-          uv pip list
-
-      - name: Install test dependencies
-        run: |
-          uv pip install --group test
-          uv pip list
-
-      - name: Run tests
-        # "python -m xxx" used instead of direct "xxx" to avoid "Needs to be any valid version to make uvx work" with CPython 3.7 on Windows.
-        run: |
-          uv run --no-project python -m pytest -W error --cov-branch --cov wakepy --cov-fail-under=100
-
-      - name: Show uncovered lines
-        if: success() || failure()
-        run: uv run --no-project python -m coverage report --show-missing --skip-covered
-
-      - name: Run mypy on src only
-        run: |
-          uv pip install --group mypy
-          uv run --no-project python --version --version
-          uv run --no-project python -m mypy src/wakepy/
+          uv-version: "0.9.18"
+          uv-python-version: ${{ env.PYTHON_VERSION }}
 
   check-code:
     # Reasons this is a separate job

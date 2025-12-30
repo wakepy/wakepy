@@ -1,0 +1,27 @@
+# Run fast tests for PR (fewer OSes, fewer python versions)
+name: Fast Tests 🚀
+
+on:
+  pull_request:
+
+jobs:
+  tests:
+    uses: ./.github/workflows/build-and-run-tests.yml
+    with:
+      test-mode: fast
+
+# See: https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
+permissions:
+    actions: write
+    checks: none
+    contents: read
+    deployments: none
+    id-token: none
+    issues: none
+    discussions: none
+    packages: none
+    pages: none
+    pull-requests: none
+    repository-projects: none
+    security-events: write
+    statuses: none
