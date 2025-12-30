@@ -159,7 +159,6 @@ def _get_activation_error_text(result: ActivationResult) -> str:
 
 
 def _get_mode_name(args: Namespace) -> ModeName:
-
     # For the duration of deprecation, allow also the old flags
     keep_running = args.keep_running or args.k
     keep_presenting = args.keep_presenting or args.presentation
@@ -180,7 +179,6 @@ def _get_mode_name(args: Namespace) -> ModeName:
 
 
 def _get_deprecations(args: Namespace) -> str:
-
     deprecations: list[str] = []
 
     if args.k:

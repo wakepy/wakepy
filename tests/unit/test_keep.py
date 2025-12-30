@@ -73,7 +73,6 @@ class MethodB(MethodForTests):
 
 
 def test_decorator_syntax_thread_safety():
-
     exit_event = threading.Event()
 
     @keep.running(methods=["MethodForThreadSafety"])
@@ -102,7 +101,6 @@ def test_decorator_syntax_thread_safety():
 
 
 def test_global_modes():
-
     # Setup
     exit_event = threading.Event()
     ready_events = [threading.Event() for _ in range(3)]
@@ -190,7 +188,6 @@ class TestGetCurrentMode:
         assert m_list[0] is m_list[-1], "The first and last modes should be the same."
 
     def test_mode_access_in_subfunction(self):
-
         # Setup
         m_list = []
 
@@ -230,7 +227,6 @@ class TestGetCurrentMode:
 
 
 def test_decorator_syntax_without_parenthesis(monkeypatch):
-
     # Since we can't control which method is used, let's just make it use the
     # WAKEPY_FAKE_SUCCESS method, which is always successful.
     monkeypatch.setenv("WAKEPY_FAKE_SUCCESS", "1")

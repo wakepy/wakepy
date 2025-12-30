@@ -740,7 +740,6 @@ class Mode:
     def _thread_check(self) -> None:
         current_thread_id = threading.get_ident()
         if self._thread_id != current_thread_id:
-
             warning_text = (
                 f"Using the Mode {self.name} with id ({id(self)}) in thread "
                 f"{current_thread_id} but it was created in thread {self._thread_id}. "

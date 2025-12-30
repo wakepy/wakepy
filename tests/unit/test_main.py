@@ -202,10 +202,8 @@ def somemode():
 
 
 class TestGetWakepyCliInfo:
-
     @patch("wakepy.__version__", "0.10.0")
     def test_get_wakepy_cli_info(self, somemode: Mode):
-
         deprecations = "This thing is deprecated"
 
         with somemode as m:

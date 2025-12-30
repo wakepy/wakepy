@@ -172,7 +172,6 @@ def test_methodoutcome(assert_strenum_values):
 
 class TestCheckSupportedPlatforms:
     def test_wrong_type_of_supported_platforms(self):
-
         with pytest.raises(
             ValueError,
             match="The supported_platforms of someclass must be a tuple of PlatformType!",  # noqa: E501
@@ -191,14 +190,12 @@ class TestCheckSupportedPlatforms:
 
 
 class TestMethodInfo:
-
     class SomeMethod(TestMethod):
         name = "SomeMethod"
         mode_name = "SomeMode"
         supported_platforms = (PlatformType.WINDOWS,)
 
     def test_method_info(self):
-
         method_info = MethodInfo._from_method(self.SomeMethod())
 
         assert method_info.name == "SomeMethod"

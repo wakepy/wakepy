@@ -10,9 +10,7 @@ def method0() -> Method:
 
 
 class TestHeartBeat:
-
     def test_heartbeat(self, method0):
-
         hb = Heartbeat(method0)
         hb.start()
         hb.stop()

@@ -247,7 +247,6 @@ class TestActivationResult:
         mr_success_result: MethodActivationResult,
         mr_unused_result: MethodActivationResult,
     ):
-
         # Possible to filter with fail_stage
         assert ar.query(fail_stages=("REQUIREMENTS",)) == [
             mr_requirements_fail,
@@ -260,7 +259,6 @@ class TestActivationResult:
         ar: ActivationResult,
         mr_requirements_fail: MethodActivationResult,
     ):
-
         # or with both
         assert ar.query(success=(False,), fail_stages=("REQUIREMENTS",)) == [
             mr_requirements_fail,
@@ -503,7 +501,6 @@ class TestMethodActivationResult:
         c_different_failure_stage: MethodActivationResult,
         c_different_failure_reason: MethodActivationResult,
     ):
-
         c_list = [
             c_different_method_name,
             c_different_success,

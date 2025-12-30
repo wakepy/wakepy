@@ -267,7 +267,6 @@ class ActivationResult:
         return False
 
     def _get_real_success(self) -> bool:
-
         for res in self._method_results:
             if res.success and res.method_name != WAKEPY_FAKE_SUCCESS:
                 return True

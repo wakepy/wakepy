@@ -193,7 +193,6 @@ class FreedesktopPowerManagementInhibit(FreedesktopInhibitorWithCookieMethod):
     """
 
     def caniuse(self) -> bool | None | str:
-
         current_de = _get_current_desktop_environment()
         logger.debug("Detected DE: %s", current_de)
 

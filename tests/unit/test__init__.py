@@ -31,6 +31,5 @@ def test_successful_attribute_access():
 
 
 def test_failing_import():
-
     with pytest.raises(AttributeError):
         wakepy.something_that_does_not_exist

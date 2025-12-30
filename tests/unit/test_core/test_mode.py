@@ -119,7 +119,6 @@ def mode1_with_dbus(
 
 
 class TestModeContextManager:
-
     @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
     def test_mode_contextmanager_protocol(
         self,
@@ -130,7 +129,6 @@ class TestModeContextManager:
 
         # Test that the context manager protocol works
         with mode0 as m:
-
             # The __enter__ returns the Mode
             assert m is mode0
             # We have activated the Mode
@@ -325,9 +323,7 @@ class TestHandleActivationFail:
 
 @pytest.mark.usefixtures("provide_methods_a_f")
 class TestSelectMethods:
-
     def test_filter_with_blacklist(self):
-
         (MethodB, MethodD, MethodE) = get_methods(["B", "D", "E"])
         methods = [MethodB, MethodD, MethodE]
         assert select_methods(methods, omit=["B"]) == [MethodD, MethodE]
@@ -347,7 +343,6 @@ class TestSelectMethods:
         assert select_methods(methods, use_only=["B", "E"]) == [MethodB, MethodE]
 
     def test_whitelist_extras_causes_exception(self):
-
         (MethodB, MethodD, MethodE) = get_methods(["B", "D", "E"])
         methods = [MethodB, MethodD, MethodE]
 
@@ -361,7 +356,6 @@ class TestSelectMethods:
             select_methods(methods, use_only=["foo", "bar"])
 
     def test_cannot_provide_omit_and_use_only(self):
-
         (MethodB, MethodD, MethodE) = get_methods(["B", "D", "E"])
         methods = [MethodB, MethodD, MethodE]
         # Cannot provide both: omit and use_only
@@ -393,7 +387,6 @@ TRUTHY_TEST_VALUES = ("1", "yes", "True", "anystring")
 
 
 class TestAddFakeSuccessIfRequired:
-
     @pytest.mark.parametrize("val", FALSY_TEST_VALUES)
     def test_falsy_values(self, val, methods_abc: List[Type[Method]]):
         assert add_fake_success_if_required(methods_abc, val) == methods_abc
@@ -412,7 +405,6 @@ class TestAddFakeSuccessIfRequired:
 
 
 class TestShouldFakeSuccess:
-
     @pytest.mark.parametrize("val", FALSY_TEST_VALUES)
     def test_falsy_values(self, val):
         assert should_fake_success(val) is False
@@ -437,7 +429,6 @@ class TestActivateOneOfMethods:
         assert heartbeat is None
 
     def test_activate_function_success(self):
-
         # Setup
         methodcls_fail = get_test_method_class(enter_mode=Exception("error"))
         methodcls_success = get_test_method_class(enter_mode=None)
@@ -462,7 +453,6 @@ class TestActivateOneOfMethods:
         assert heartbeat is None
 
     def test_activate_function_success_with_heartbeat(self):
-
         # Setup
         methodcls_success_with_hb = get_test_method_class(
             enter_mode=None, heartbeat=None

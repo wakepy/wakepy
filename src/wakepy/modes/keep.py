@@ -264,7 +264,6 @@ def _get_keepawake(
     func: Callable[P, R] | None,
     params: _ModeParams,
 ) -> Mode | Callable[P, R]:
-
     if func is not None and callable(func):
         # Used as @keep.xxx; decorator without parameters
         return Mode(params)(func)

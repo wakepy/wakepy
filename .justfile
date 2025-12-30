@@ -12,6 +12,7 @@ check:
 format:
   uv run isort src/wakepy tests/
   uv run ruff check --fix src/wakepy tests/
+  uv run ruff format src/wakepy tests/
 
 # Build and serve the documentation with live-reload.
 docs:
