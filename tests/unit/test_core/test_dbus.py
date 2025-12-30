@@ -65,7 +65,6 @@ def unsupported_dbus_adapter():
 
 @pytest.fixture(scope="session")
 def supported_dbus_adapter():
-
     class DBusAdapterSupported(DBusAdapter):
         """This one does not raise Exception on __init__ so it's supported"""
 

@@ -24,7 +24,6 @@ if typing.TYPE_CHECKING:
 
 @pytest.fixture
 def set_current_platform_to_linux(monkeypatch):
-
     monkeypatch.setattr(
         "wakepy.core.prioritization.CURRENT_PLATFORM", IdentifiedPlatformType.LINUX
     )
@@ -32,7 +31,6 @@ def set_current_platform_to_linux(monkeypatch):
 
 @pytest.fixture
 def set_current_platform_to_windows(monkeypatch):
-
     monkeypatch.setattr(
         "wakepy.core.prioritization.CURRENT_PLATFORM",
         IdentifiedPlatformType.WINDOWS,
@@ -41,7 +39,6 @@ def set_current_platform_to_windows(monkeypatch):
 
 @pytest.mark.usefixtures("provide_methods_different_platforms")
 class TestOrderMethodsByPriority:
-
     @pytest.mark.usefixtures("set_current_platform_to_linux")
     def test_one_method_after_everything_else(self):
         LinuxA, LinuxB, LinuxC, MultiPlatformA = get_methods(
@@ -172,7 +169,6 @@ class TestOrderMethodsByPriority:
 
 @pytest.mark.usefixtures("provide_methods_a_f")
 class TestSortMethodsToPriorityGroups:
-
     def test_two_names_and_asterisk(self):
         # Case: Select some methods as more important, with '*'
         methods = get_methods(["A", "B", "C", "D", "E", "F"])
@@ -283,7 +279,6 @@ class TestSortMethodsToPriorityGroups:
 
 @pytest.mark.usefixtures("provide_methods_a_f")
 class TestCheckMethodsPriority:
-
     @staticmethod
     @pytest.fixture
     def methods() -> List[Type[Method]]:
@@ -372,7 +367,6 @@ class TestCheckMethodsPriority:
 
 @pytest.mark.usefixtures("provide_methods_different_platforms")
 class TestOrderSetOfMethodsByPriority:
-
     @pytest.mark.usefixtures("set_current_platform_to_linux")
     def test_on_linux(self):
         WindowsA, WindowsB, WindowsC, LinuxA, LinuxB, LinuxC, MultiPlatformA = (

@@ -378,7 +378,6 @@ class TestCanIUseFails:
 
 
 class TestDeactivateMethod:
-
     def test_success_no_heartbeat(self):
         method = get_test_method_class(enter_mode=None, exit_mode=None)()
         deactivate_method(method)
@@ -420,7 +419,6 @@ class TestDeactivateMethod:
             deactivate_method(method)
 
     def test_fail_deactivation_heartbeat_not_stopping(self, heartbeat2_bad):
-
         method = get_test_method_class(enter_mode=None, exit_mode=None)()
         with pytest.raises(
             RuntimeError,

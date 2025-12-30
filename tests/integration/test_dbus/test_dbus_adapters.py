@@ -55,7 +55,6 @@ def test_pytestmark_regex_okay():
 
 @pytest.mark.usefixtures("dbus_calculator_service")
 class TestJeepneyCalculatorService:
-
     def test_numberadd(self, numberadd_method):
         adapter = JeepneyDBusAdapter()
         call = DBusMethodCall(numberadd_method, (2, 3))
@@ -143,7 +142,6 @@ class TestJeepneyCalculatorService:
 
 @pytest.mark.usefixtures("dbus_string_operation_service")
 class TestJeepneyStringOperationService:
-
     def test_jeepney_dbus_adapter_string_shorten(self, string_shorten_method):
         # The service shortens a string to a given number of characters and
         # tells how many characters were dropped out.
@@ -199,7 +197,6 @@ class TestFailuresOnConnectionCreation:
 
 
 class TestJeepneyDbusAdapter:
-
     def test_close_connections(self, private_bus: str):
         adapter = JeepneyDBusAdapter()
         con = adapter._get_connection(private_bus)

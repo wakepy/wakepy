@@ -7,7 +7,6 @@ TEST_MODE = "test-mode"
 
 @lru_cache(maxsize=None)
 def get_test_method(name: str, mode_name: str = TEST_MODE) -> Method:
-
     class TestMethod(Method): ...
 
     TestMethod.mode_name = mode_name

@@ -34,14 +34,12 @@ def raise_attribute_error(_):
 
 
 class TestWindowsSetThreadExecutionState:
-
     @pytest.mark.parametrize(
         "method_cls_under_test",
         [WindowsKeepPresenting, WindowsKeepRunning],
     )
     @patch_SetThreadExecutionState_working
     def test_happy_path(self, set_thread_execution_state, method_cls_under_test):
-
         method = method_cls_under_test()
 
         # 1) Test entering the mode
@@ -101,7 +99,6 @@ class TestWindowsSetThreadExecutionState:
         [WindowsKeepPresenting, WindowsKeepRunning],
     )
     def test_exit_mode_with_bad_return_value_from_thread(self, method_cls_under_test):
-
         # Setup
         method = method_cls_under_test()
         with patch_SetThreadExecutionState_working:

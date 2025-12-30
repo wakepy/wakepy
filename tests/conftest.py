@@ -48,7 +48,6 @@ def do_assert():
 
 @pytest.fixture
 def assert_strenum_values():
-
     def _assert_strenum_values(strenum_cls: typing.Type[StrEnum], values: typing.Any):
         """Note: `values` is a typing.Literal. Could not find a type annotation
         for that"""

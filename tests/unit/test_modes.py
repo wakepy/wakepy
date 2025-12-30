@@ -180,7 +180,6 @@ class TestOnFail:
 
 
 class TestWithBadMethodName:
-
     def test_with_bad_method_name(self):
         with pytest.raises(
             UnrecognizedMethodNames,

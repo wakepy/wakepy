@@ -18,7 +18,6 @@ P = IdentifiedPlatformType
 
 
 class TestGetCurrentPlatform:
-
     @patch("platform.system", lambda: "Windows")
     def test_windows(self):
         assert get_current_platform() == PlatformType.WINDOWS
@@ -45,7 +44,6 @@ class TestPlatformSupported:
     """tests for get_platform_supported"""
 
     def test_windows(self):
-
         # On Windows, anything that supports Windows is supported.
         assert get_platform_supported(P.WINDOWS, (PlatformType.WINDOWS,)) is True
         assert (
@@ -78,7 +76,6 @@ class TestPlatformSupported:
         assert get_platform_supported(P.UNKNOWN, (PlatformType.ANY,)) is True
 
     def test_freebsd(self):
-
         assert get_platform_supported(P.FREEBSD, (PlatformType.WINDOWS,)) is False
         assert get_platform_supported(P.FREEBSD, (PlatformType.FREEBSD,)) is True
         # FreeBSD is BSD
@@ -87,7 +84,6 @@ class TestPlatformSupported:
         assert get_platform_supported(P.FREEBSD, (PlatformType.UNIX_LIKE_FOSS,)) is True
 
     def test_linux(self):
-
         assert get_platform_supported(P.LINUX, (PlatformType.WINDOWS,)) is False
         assert get_platform_supported(P.LINUX, (PlatformType.LINUX,)) is True
         # Linux is unix like
@@ -125,9 +121,7 @@ def test_get_platform_debug_info():
     - platform.release\(\): .*
     - platform.machine\(\): .*
     - sysconfig.get_platform\(\): .*
-    """.strip(
-            "\n"
-        )
+    """.strip("\n")
     )
     # re.DOTALL makes . to match also the newlines.
     assert re.match(expected_out, debug_info, re.DOTALL)
@@ -146,7 +140,6 @@ BAR=456
 
 
 def get_path_class_mock(os_release_exists: bool, lsb_release_exists: bool):
-
     def get_path_mock(filepath: str):
         pathmock = Mock()
         if filepath == "/etc/os-release":
