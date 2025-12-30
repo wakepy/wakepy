@@ -174,8 +174,10 @@ jobs:
         run: uv sync --locked --group check
       - name: Isort check
         run: uv run isort src/wakepy tests/ --check --diff
-      - name: Ruff check
+      - name: Ruff linter check
         run: uv run ruff check --no-fix src/wakepy tests/
+      - name: Ruff format check
+        run: uv run ruff format --check src/wakepy tests/
       - name: Mypy check
         run: uv run mypy src/wakepy tests/
 
