@@ -255,6 +255,7 @@ exclude = [
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 select = [
+    "ERA", # eradicate (commented out code)
     "E", # pycodestyle
     "F", # Pyflakes
     # S: flake8-bandit. Listings are in two places: (Tests and Blacklists)

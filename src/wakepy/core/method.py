@@ -118,7 +118,7 @@ class Method(ABC):
     be subclassed)."""
 
     # waits for https://github.com/wakepy/wakepy/issues/256
-    # method_kwargs: Dict[str, object]
+    # method_kwargs: Dict[str, object] # noqa: ERA001
     """The method arguments. This is created from two parts
 
     1) The common_method_kwargs (if any)
@@ -136,7 +136,7 @@ class Method(ABC):
         self.dbus_adapter = cast("DBusAdapter | None", kwargs.pop("dbus_adapter", None))
 
         # waits for https://github.com/wakepy/wakepy/issues/256
-        # self.method_kwargs = kwargs
+        # self.method_kwargs = kwargs # noqa: ERA001
         _check_supported_platforms(self.supported_platforms, self.__class__.__name__)
 
     def __init_subclass__(cls, **kwargs: object) -> None:
