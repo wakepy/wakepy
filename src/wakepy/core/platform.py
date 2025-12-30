@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import platform
 import sys
@@ -14,6 +15,9 @@ if typing.TYPE_CHECKING:
     from typing import Callable, Dict, Tuple
 
     PlatformFunc = Callable[[IdentifiedPlatformType], bool]
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_current_platform() -> IdentifiedPlatformType:
@@ -54,6 +58,7 @@ def get_platform_debug_info_dict() -> Dict[str, str]:
         info.update(os_release_info)
     except Exception:
         # This should never happen, but better to be safe.
+        logger.error("Error in creating platform debug info", exc_info=True)
         warnings.warn("Error in creating platform debug info")
 
     return info

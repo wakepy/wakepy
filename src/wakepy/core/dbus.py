@@ -361,10 +361,11 @@ def get_dbus_adapter(
         try:
             adapter = adapter_cls()
             return adapter
-        except Exception:
-            logger.debug(
-                "DBusAdapter %s could not be initialized, trying next one.", adapter_cls
-            )
+        except Exception:  # noqa: BLE001
+            # Skipping BLE001 as we don't care about the type of exception
+            # and we also support any DBusAdapter subclass, which may raise
+            # arbitrary exceptions.
+            logger.debug("Could not initialize DBusAdapter: %s", adapter_cls.__name__)
             continue
     return None
 
