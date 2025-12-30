@@ -71,7 +71,7 @@ jobs:
           }}
         include: >-
           ${{
-            env.TEST_MODE == 'fast' &&
+            inputs.test-mode == 'fast' &&
             fromJSON('[
               {"python-version": "3.14", "os": "macos-latest"},
               {"python-version": "3.14", "os": "windows-latest"},
