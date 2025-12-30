@@ -149,7 +149,7 @@ jobs:
     # Reasons this is a separate job
     # (1) This runs fast. Different from the other steps, this does not require
     #     the build step. It gives instant feedback if code has minor problems.
-    # (2) This runs isort + ruff + mypy. For most of there it is enough to run
+    # (2) This runs ruff + mypy. For most of there it is enough to run
     #     it once with one version of python and one OS.
     # (3) This runs more comprehensive mypy check as it checks also the tests
     #     whereas the mypy check in test jobs only runs mypy on the /src
@@ -172,8 +172,6 @@ jobs:
 
       - name: Install the project
         run: uv sync --locked --group check
-      - name: Isort check
-        run: uv run isort src/wakepy tests/ --check --diff
       - name: Ruff linter check
         run: uv run ruff check --no-fix src/wakepy tests/
       - name: Ruff format check
