@@ -1,0 +1,84 @@
+name: Test Python versions
+description: Run tests for a specific Python version and OS combination
+
+inputs:
+  python-version:
+    description: 'Python version to test (e.g., "3.7", "3.13", "pypy3.11")'
+    required: true
+  uv-version:
+    description: 'Version of uv to use'
+    required: false
+    default: '0.9.18'
+  uv-python-version:
+    description: 'Python version for UV_PYTHON environment variable when installing legacy Python versions. Must be available in the uv version specified above.'
+    required: false
+    default: '3.14'
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 #v7.1.6
+      with:
+        version: ${{ inputs.uv-version }}
+        python-version: ${{ inputs.python-version }}
+        enable-cache: true
+
+    - name: Install legacy python version
+      if: inputs.python-version == '3.7'
+      shell: bash
+      # Python 3.7 was dropped in uv 0.7.x
+      # See: https://github.com/astral-sh/uv/blob/main/changelogs/0.7.x.md
+      # Hacky workaround from https://github.com/astral-sh/uv/pull/13022#issuecomment-2848649176
+      #
+      # NOTE: This will emit some [tool.uv.dependency-groups] warnings. That's expected and ok.
+      run: |
+        uvx uv@0.6.17 python list --all-arches --all-platforms
+        uvx uv@0.6.17 python install 3.7
+      env:
+        UV_PYTHON: ${{ inputs.uv-python-version }}
+
+    - name: Show python version and GIL status
+      shell: bash
+      run: |
+        uv run --no-project python --version --version
+        uv run --no-project python -c "import sys; is_enabled = sys._is_gil_enabled() if hasattr(sys, '_is_gil_enabled') else '?'; print('sys._is_gil_enabled:', is_enabled)"
+        uv run --no-project python -c "import sysconfig; print('Py_GIL_DISABLED:', sysconfig.get_config_var('Py_GIL_DISABLED'))"
+
+    - name: Download built wheel
+      uses: actions/download-artifact@v4
+      with:
+        name: wakepy-python-packages
+        path: ./dist/
+
+    - name: Install wakepy from wheel
+      shell: bash # needs bash shell to expand glob
+      run: |
+        uv venv
+        uv pip list
+        uv pip install ./dist/wakepy-*.whl
+        uv pip list
+
+    - name: Install test dependencies
+      shell: bash
+      run: |
+        uv pip install --group test
+        uv pip list
+
+    - name: Run tests
+      shell: bash
+      # "python -m xxx" used instead of direct "xxx" to avoid "Needs to be any valid version to make uvx work" with CPython 3.7 on Windows.
+      run: |
+        uv run --no-project python -m pytest -W error --cov-branch --cov wakepy --cov-fail-under=100
+
+    - name: Show uncovered lines
+      if: success() || failure()
+      shell: bash
+      run: uv run --no-project python -m coverage report --show-missing --skip-covered
+
+    - name: Run mypy on src only
+      shell: bash
+      run: |
+        uv pip install --group mypy
+        uv run --no-project python --version --version
+        uv run --no-project python -m mypy src/wakepy/
