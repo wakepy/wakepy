@@ -147,7 +147,7 @@ just
 **Available commands**:
 
 - **`just test`** - Run tests with coverage (pass any pytest arguments, e.g. `just test --pdb`, `just test -k test_name`)
-- **`just format`** - Format code using isort and ruff
+- **`just format`** - Format code using ruff
 - **`just check`** - Static checking of code, linting, formatting checks, etc.
 - **`just docs`** - Build and serve the documentation with live-reload
 - **`just build`** - Build the package (sdist and wheel)
@@ -197,7 +197,7 @@ You can see the list of available python versions with `uv python list`. The lis
 ## Code Standards
 
 - **Type hints**: All code must be fully typed (mypy strict mode)
-- **Code style**: Follow the project's formatting (enforced by isort and ruff)
+- **Code style**: Follow the project's formatting (enforced by ruff)
 - **Structure**: Top-level functions before subfunctions
 - **Readability**: Code should be easily readable and well-documented
 - **Tests**: When writing tests, use pytest with classes, and use fixtures when applicable. Try to avoid I/O in tests.
