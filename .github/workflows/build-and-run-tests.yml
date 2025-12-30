@@ -53,13 +53,28 @@ jobs:
         # To check available versions, see: uv python list --all-arches --all-platforms
         # To check available runners, see: https://github.com/actions/runner-images
         # All supported python versions on linux
-        python-version: ["3.7", "3.14", "pypy3.11"]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t", "3.15", "3.15t", "pypy3.8", "pypy3.11"]
         include:
-          # A version on macOS
-          - python-version: "3.14"
+          # Oldest supported python on MacOS runners
+          - python-version: "3.7"
+            os: macos-15-intel # CPython 3.7 is only available for x86_64
+          # Newest supported python on MacOS
+          - python-version: "3.15"
             os: macos-latest
-          # A version on Windows
-          - python-version: "3.14"
+          # Newest supported python on MacOS, free-threaded
+          - python-version: "3.15t"
+            os: macos-latest
+          # Oldest supported python on Windows
+          - python-version: "3.7"
+            os: windows-latest
+          # Newest supported python on Windows
+          - python-version: "3.15"
+            os: windows-latest
+          # Newest supported python on Windows, free-threaded
+          - python-version: "3.15t"
+            os: windows-latest
+          # PyPy on Windows
+          - python-version: "pypy3.11"
             os: windows-latest
       fail-fast: false
 
