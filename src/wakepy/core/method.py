@@ -439,7 +439,10 @@ def deactivate_method(method: Method, heartbeat: Optional[Heartbeat] = None) -> 
                     method.mode_name,
                     method.name,
                 )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
+            # Skipping BLE001 as the Method.exit_mode() call might literally
+            # cause any type of Exception (Method can also be subclassed by
+            # users)
             raise RuntimeError(errortxt + "Original error: " + str(e))
 
     if heartbeat_stopped is not True:
@@ -469,7 +472,9 @@ def caniuse_fails(method: Method) -> tuple[bool, str]:
 
     try:
         canuse = method.caniuse()
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
+        # Skipping BLE001 as the Method.caniuse() call might literally cause
+        # any type of Exception (Method can also be subclassed by users)
         return True, str(exc)
 
     fail = False if (canuse is True or canuse is None) else True
@@ -605,7 +610,9 @@ def _try_method_call(method: Method, mthdname: str) -> Tuple[MethodOutcome, str]
             )
         outcome = MethodOutcome.SUCCESS
         err_message = ""
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
+        # Skipping BLE001 as the Method call might literally cause any type
+        # of Exception (Method can also be subclassed by users)
         err_message = repr(exc)
         outcome = MethodOutcome.FAILURE
     return outcome, err_message

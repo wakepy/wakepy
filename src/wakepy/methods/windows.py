@@ -148,7 +148,9 @@ def _inhibit_until_released(
     try:
         prev_flags = _call_set_thread_execution_state(inhibit_flags.value)
         queue.put(prev_flags)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
+        # Skipping BLE001 because this is running inside a thread, and the
+        # exceptions are handled in the main thread.
         queue.put(exc)
 
     release_event.wait(release_event_timeout)
@@ -156,7 +158,7 @@ def _inhibit_until_released(
     try:
         prev_flags = _call_set_thread_execution_state(Flags.RELEASE.value)
         queue.put(prev_flags)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         queue.put(exc)
 
 

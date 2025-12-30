@@ -255,6 +255,8 @@ exclude = [
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 select = [
+    # BLE: blind-except: https://docs.astral.sh/ruff/rules/blind-except/
+    "BLE", 
     "ERA", # eradicate (commented out code)
     "E", # pycodestyle
     "F", # Pyflakes
@@ -281,6 +283,7 @@ unfixable = []
 [tool.ruff.lint.per-file-ignores]
 "tests/**.py" = [
     "S101", # flake8-bandit should not check for asserts in test files
+    "BLE",
 ]
 
 [tool.ruff.lint.pycodestyle]
