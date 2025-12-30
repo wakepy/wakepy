@@ -37,6 +37,7 @@
 
 ### 👷 Maintenance
 - Add more ruff checks ([#524](https://github.com/wakepy/wakepy/pull/524), [#525](https://github.com/wakepy/wakepy/pull/525), [#526](https://github.com/wakepy/wakepy/pull/526))
+- Switch from isort to ruff (Thanks to [@honerop](https://github.com/honerop) for [#531](https://github.com/wakepy/wakepy/issues/531))
 - Switch from black to ruff ([#523](https://github.com/wakepy/wakepy/pull/523))
 - Add AGENTS.md for AI coding assistants ([#508](https://github.com/wakepy/wakepy/pull/508))
 - Replace invoke (tasks.py) with just (.justfile) ([#509](https://github.com/wakepy/wakepy/pull/509))
