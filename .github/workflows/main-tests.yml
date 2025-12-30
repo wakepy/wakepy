@@ -25,5 +25,5 @@ permissions:
     pages: none
     pull-requests: none
     repository-projects: none
-    security-events: read
+    security-events: write
     statuses: none
