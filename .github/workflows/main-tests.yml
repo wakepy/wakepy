@@ -1,4 +1,5 @@
-name: Full Test suite 🔬
+# Run full tests (many OSes, many python versions)
+name: Full Tests 🔬
 
 on:
   push:
@@ -6,8 +7,7 @@ on:
       - main
 
 jobs:
-  call-tests:
-    name: Run full tests (many OSes, many python versions)
+  tests:
     uses: ./.github/workflows/build-and-run-tests.yml
     with:
       test-mode: full

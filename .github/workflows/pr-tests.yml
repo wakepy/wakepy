@@ -1,11 +1,11 @@
+Run fast tests for PR (fewer OSes, fewer python versions)
 name: Fast Tests 🚀
 
 on:
   pull_request:
 
 jobs:
-  call-tests:
-    name: Run fast tests for PR (fewer OSes, fewer python versions)
+  tests:
     uses: ./.github/workflows/build-and-run-tests.yml
     with:
       test-mode: fast
