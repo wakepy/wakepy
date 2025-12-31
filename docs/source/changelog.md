@@ -36,6 +36,7 @@
 - The `ActivationResult.mode_name` is now always a string (instead of being a ModeName) ([#462](https://github.com/wakepy/wakepy/pull/462))
 
 ### 👷 Maintenance
+- Add basic spellchecking using [codespell](https://github.com/codespell-project/codespell) ([#539](https://github.com/wakepy/wakepy/pull/539))
 - Add more ruff checks ([#524](https://github.com/wakepy/wakepy/pull/524), [#525](https://github.com/wakepy/wakepy/pull/525), [#526](https://github.com/wakepy/wakepy/pull/526))
 - Switch from isort to ruff (Thanks to [@honerop](https://github.com/honerop) for [#531](https://github.com/wakepy/wakepy/issues/531))
 - Switch from black to ruff ([#523](https://github.com/wakepy/wakepy/pull/523))
