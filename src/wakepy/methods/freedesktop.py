@@ -127,7 +127,7 @@ class FreedesktopPowerManagementInhibit(FreedesktopInhibitorWithCookieMethod):
     """Method using org.freedesktop.PowerManagement D-Bus API
 
     According to [1] and [2] this might be obsolete. The spec itself can be
-    read in the internet arhives[3]. Part of the spec (v0.2.0) copied here for
+    read in the internet archives[3]. Part of the spec (v0.2.0) copied here for
     convenience:
 
     DBUS Interface:     org.freedesktop.PowerManagement.Inhibit

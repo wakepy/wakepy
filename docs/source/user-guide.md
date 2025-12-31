@@ -75,7 +75,7 @@ def long_running_function():
     otherfunc()
 
 def otherfunc():
-    # Get's access to the Mode instance (of the @keep.running mode)
+    # Gets access to the Mode instance (of the @keep.running mode)
     m = current_mode()
 
 ```

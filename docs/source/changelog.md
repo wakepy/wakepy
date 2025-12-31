@@ -176,7 +176,7 @@
 - Black: Update from 23.3.0 to 24.2.0 and reformat ([#217](https://github.com/wakepy/wakepy/pull/217))
 - Isort: Update from 5.12.0 to 5.13.2 ([#218](https://github.com/wakepy/wakepy/pull/218))
 - Mypy: Update from 1.3.0 to 1.9.0 ([#219](https://github.com/wakepy/wakepy/pull/219)), stricter settings; `disallow_untyped_defs = true` ([#242](https://github.com/wakepy/wakepy/pull/242)), `disallow_any_unimported = true` and `warn_unused_ignores = true` ([#243](https://github.com/wakepy/wakepy/pull/243))
-- Make wakepy statically typed: Add py.typed ([PEP 561](https://peps.python.org/pep-0561/)) to advertize that wakepy is a fully typed package ([#232](https://github.com/wakepy/wakepy/pull/232)), add mypy checks on 3.7-3.12 ([#265](https://github.com/wakepy/wakepy/pull/265))
+- Make wakepy statically typed: Add py.typed ([PEP 561](https://peps.python.org/pep-0561/)) to advertise that wakepy is a fully typed package ([#232](https://github.com/wakepy/wakepy/pull/232)), add mypy checks on 3.7-3.12 ([#265](https://github.com/wakepy/wakepy/pull/265))
 - Other tox improvements ([#233](https://github.com/wakepy/wakepy/pull/233))
 - Convert from flat layout to src layout ([#234](https://github.com/wakepy/wakepy/pull/234))
 - Cleanup .gitignore ([#237](https://github.com/wakepy/wakepy/pull/237))

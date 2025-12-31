@@ -29,7 +29,7 @@ def gc_collect_after_dbus_integration_tests():
     yield
     # A garbage collection has high change of triggering a ResourceWarning
     # about an unclosed socket. Note that the warning can occur also before
-    # this as garbage colletion is triggered also automatically. The garbage
+    # this as garbage collection is triggered also automatically. The garbage
     # collection must be triggered here manually as the warnings are
     # ResourceWarning is only filtered away in the dbus integration tests.
     # See also: comments for pytestmark in tests/integration/test_dbus_adapters.py # noqa: W505, E501
@@ -72,7 +72,7 @@ def private_bus():
 
     logger.info("Terminating private bus")
     p.terminate()  # send SIGTERM. Turns dbus-daemon into a zombie.
-    p.wait()  # cleaup the zombie
+    p.wait()  # cleanup the zombie
     # This is required for closing the subprocess.PIPE. Otherwise, will get
     # something like.
     # ResourceWarning: unclosed file <_io.BufferedReader name=11>

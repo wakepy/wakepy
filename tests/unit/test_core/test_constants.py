@@ -17,7 +17,7 @@ def test_bustype(assert_strenum_values):
 
 def test_platform_types_in_sync():
     """Test that each IdentifiedPlatformType is also in PlatformType: anything
-    that can be detected can also be selected by the Method sublasses in
+    that can be detected can also be selected by the Method subclasses in
     supported_platforms."""
 
     identified = {member.value for member in IdentifiedPlatformType}

@@ -171,7 +171,7 @@ class TestActivationResult:
         mr_unused_result: MethodActivationResult,
         ar: ActivationResult,
     ):
-        # By default, the list_methods drops out failures occuring in the
+        # By default, the list_methods drops out failures occurring in the
         # platform stage
         assert mr_platform_support_fail not in ar.list_methods()
 
@@ -391,7 +391,7 @@ class TestMethodActivationResult:
                 "successfulMethod",
                 "some-mode",
                 "",
-                # Succesful methods do not print empty message
+                # Successful methods do not print empty message
                 "(SUCCESS, successfulMethod)",
             ),
             (

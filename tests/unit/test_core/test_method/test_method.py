@@ -30,7 +30,7 @@ if typing.TYPE_CHECKING:
 
 def test_overridden_methods_autodiscovery():
     """The enter_mode, heartbeat and exit_mode methods by default do nothing
-    (on the Method base class). In subclasses, these are usually overriden.
+    (on the Method base class). In subclasses, these are usually overridden.
     Check that detecting the overridden methods works correctly
     """
 

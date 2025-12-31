@@ -84,7 +84,7 @@ class WindowsSetThreadExecutionState(Method, ABC):
         self._check_thread_response()
         if not self._queue_from_thread.empty():  # pragma: no cover
             warnings.warn(
-                "The queue from the inhibitor thread contained more than one respose! "
+                "The queue from the inhibitor thread contained more than one response! "
                 "This most likely means that the thread exited before being released "
                 "due to a small timeout value. This should never happen outside tests, "
                 "and if this occurs in tests, it means that the _release_event_timeout "

@@ -1,4 +1,4 @@
-"""This module constains registry of wakepy.Methods. All the subclasses of
+"""This module contains registry of wakepy.Methods. All the subclasses of
 wakepy.Method are automatically added to this registry. The registry can be
 accessed with the functions listed below.
 

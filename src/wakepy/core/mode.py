@@ -319,7 +319,7 @@ def global_modes() -> List[Mode]:
 
 
 def modecount() -> int:
-    """The global mode count accross all threads and contexts, for the current
+    """The global mode count across all threads and contexts, for the current
     python process
 
     Returns
@@ -383,9 +383,9 @@ class Mode:
     """
 
     method: MethodInfo | None
-    """The :class:`MethodInfo` representing the currenly used (active) or
+    """The :class:`MethodInfo` representing the currently used (active) or
     previously used (already deactivated) Method. ``None`` if the Mode has not
-    ever been succesfully activated. See also :attr:`active_method`.
+    ever been successfully activated. See also :attr:`active_method`.
 
     .. versionadded:: 1.0.0
 
@@ -393,7 +393,7 @@ class Mode:
         deprecated :attr:`used_method` attribute. """
 
     active_method: MethodInfo | None
-    """The :class:`MethodInfo` representing the currenly used (active) Method.
+    """The :class:`MethodInfo` representing the currently used (active) Method.
     ``None`` if the Mode is not active. See also :attr:`used_method`.
 
     .. versionchanged:: 1.0.0

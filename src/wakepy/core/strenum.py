@@ -91,7 +91,7 @@ class StrEnum(str, Enum, metaclass=StrEnumMeta):
     directly as strings, without the need for the typical member.value type
     of accessing pattern.
 
-    2) All enumeration members can have automatical name:
+    2) All enumeration members can have automatic name:
 
     >>> from enum import auto
     >>>

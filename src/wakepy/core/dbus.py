@@ -186,7 +186,7 @@ class DBusMethod(NamedTuple):
 
 class DBusMethodCall:
     """Represents a DBus method call with its arguments. Has basic validation
-    for the number of arguments (compare args agains the DBusMethod.params, if
+    for the number of arguments (compare args against the DBusMethod.params, if
     the DBusMethod.params are defined).
 
     Note: Does not check for validity of args against the input parameter
