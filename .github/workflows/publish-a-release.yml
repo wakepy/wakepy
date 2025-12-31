@@ -25,11 +25,11 @@ jobs:
     permissions:
       id-token: write  # Required for OIDC. See: https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#adding-permissions-settings
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: wakepy-python-packages
           path: ./dist/
-      - uses: sigstore/gh-action-sigstore-python@f514d46b907ebcd5bedc05145c03b69c1edd8b46 #v3.0.0
+      - uses: sigstore/gh-action-sigstore-python@a5caf349bc536fbef3668a10ed7f5cd309a4b53d #v3.2.0
         with:
           inputs: >-
             ./dist/*.tar.gz
@@ -51,12 +51,12 @@ jobs:
     permissions:
       id-token: write  # mandatory for trusted publishing
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: wakepy-python-packages
           path: ./dist/
       - name: Publish distribution 📦 to PyPI
-        uses: pypa/gh-action-pypi-publish@81e9d935c883d0b210363ab89cf05f3894778450 #v1.8.14
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e #v1.13.0
         with:
           print-hash: true
 
@@ -69,7 +69,7 @@ jobs:
     permissions:
         contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: signed-wakepy-python-packages
           path: ./dist/
