@@ -69,6 +69,7 @@ dev = [
     "sphinx-autobuild==2024.4.16",
     "IPython",
     "zizmor>=1.16.3",
+    "codespell>=2.4.1",
 ]
 docs = [
     # Requirements for building the documentation.
@@ -288,3 +289,6 @@ unfixable = []
 # limits docstring and comments to 79 characters.
 max-doc-length = 79
 
+[tool.codespell]
+skip = "./docs/build,./htmlcov,./dist,./.venv,./venv,*.egg-info*/**"
+ignore-words-list = "MethodA,MethodB,MethodC,MethodD,MethodE"
