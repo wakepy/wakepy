@@ -148,7 +148,7 @@ just
 
 - **`just test`** - Run tests with coverage (pass any pytest arguments, e.g. `just test --pdb`, `just test -k test_name`)
 - **`just format`** - Format code using ruff
-- **`just check`** - Static checking of code, linting, formatting checks, etc.
+- **`just check`** - Static checking of code, linting, formatting checks, spell checking, etc.
 - **`just docs`** - Build and serve the documentation with live-reload
 - **`just build`** - Build the package (sdist and wheel)
 

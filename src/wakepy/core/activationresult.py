@@ -125,9 +125,9 @@ class ActivationResult:
         Parameters
         ----------
         ignore_platform_fails: bool
-            If True, ignores plaform support check fail. This is the default as
-            usually one is not interested in methods which are meant for other
-            platforms. If False, includes also platform fails. Default:
+            If True, ignores platform support check fail. This is the default
+            as usually one is not interested in methods which are meant for
+            other platforms. If False, includes also platform fails. Default:
             ``True``.
         ignore_unused: bool
             If True, ignores all unused / remaining methods. Default:
@@ -169,7 +169,7 @@ class ActivationResult:
             Controls what methods to include in the output. Options are:
             True (success), False (failure) and None (method not used). If
             `success = (True, False)`, returns only methods which did succeed
-            or failer (do not return unused methods).
+            or fail (do not return unused methods).
         fail_stages:
             The fail stages to include in the output. The options are
             "PLATFORM_SUPPORT", "REQUIREMENTS" and "ACTIVATION".

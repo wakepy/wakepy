@@ -56,7 +56,7 @@ Can I lock my computer after entered `keep.running` mode?
 : Yes, and you probably should, if you're not near your computer. The program will
 continue execution regardless of the lock.
 
-What about automatical lockscreen / screensaver in `keep.running` mode??
+What about automatic lockscreen / screensaver in `keep.running` mode??
 : The system may still automatically log out user, enable lockscreen or turn off the
 display. Automatic lock screen is not guaranteed, but it is  not prevented in any way. Most systems are configured to automatically lock the session after a timeout. One exception is Windows which will lock the screen only either when (1) returning from suspend (which is now inhibited) or (2) when returning from Screen Saver, *if ScreenSaverIsSecure is set or enforced by a Group Policy (GPO)*.  See: [wakepy/#169](https://github.com/wakepy/wakepy/issues/169)
 
@@ -109,7 +109,7 @@ What happens id the process holding the lock dies?
 
 
 Does wakepy prevent manually putting system to sleep?
-: Only the  automatical, idle timer timeout based sleep / suspend is prevented; Wakepy will not prevent user manually entering sleep from a menu, by closing a laptop lid or by pressing a power button, for example.
+: Only the  automatic, idle timer timeout based sleep / suspend is prevented; Wakepy will not prevent user manually entering sleep from a menu, by closing a laptop lid or by pressing a power button, for example.
 
 
 How to use wakepy in tests / CI

@@ -133,6 +133,8 @@ jobs:
         run: uv run ruff format --check src/wakepy tests/
       - name: Mypy check
         run: uv run mypy src/wakepy tests/
+      - name: Codespell check (spelling mistakes)
+        run: uv run codespell
 
   test-build-docs:
     name: Test building docs

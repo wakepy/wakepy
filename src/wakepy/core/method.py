@@ -200,7 +200,7 @@ class Method(ABC):
         Raises
         ------
         Exception
-            If entering the mode was not succesful.
+            If entering the mode was not successful.
         """
 
         # Notes for subclassing
@@ -211,7 +211,7 @@ class Method(ABC):
         # Errors
         # -------
         # If the mode enter was not successful, raise an Exception of any type.
-        # This is catched by the mode activation process and handled.
+        # This is caught by the mode activation process and handled.
         #
         # Note: The .enter_mode() should always leave anything in a clean in
         # case of errors; When subclassing, make sure that in case of any
@@ -232,7 +232,7 @@ class Method(ABC):
         Raises
         ------
         Exception
-            If exiting the mode was not succesful.
+            If exiting the mode was not successful.
         """
 
         # Notes for subclassing
@@ -467,7 +467,7 @@ def caniuse_fails(method: Method) -> tuple[bool, str]:
 
         If Method.caniuse() return False, or a string, the requirements check
         fails, and this function returns (True, message), where message is
-        either the string returned by .caniuse() or emptry string.
+        either the string returned by .caniuse() or empty string.
     """
 
     try:
@@ -511,7 +511,7 @@ def try_enter_and_heartbeat(method: Method) -> Tuple[bool, str, Optional[dt.date
 
     M: Missing implementation
     F: Failed attempt
-    S: Succesful attempt
+    S: Successful attempt
 
     There are total of 7 different outcomes (3*3 possibilities, minus two from
     not checking heartbeat if enter_mode fails), marked as

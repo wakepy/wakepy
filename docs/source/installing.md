@@ -22,7 +22,7 @@ pipx install wakepy
 
 ## GitHub releases
 
-You may also install a release (.whl or .tar.gz) by downloading it from the [GitHub releases](https://github.com/wakepy/wakepy/releases) and installing with the tool of your choise (e.g. pip / pipx / uv). For example:
+You may also install a release (.whl or .tar.gz) by downloading it from the [GitHub releases](https://github.com/wakepy/wakepy/releases) and installing with the tool of your choice (e.g. pip / pipx / uv). For example:
 
 ```
 pip install wakepy-0.9.1-py3-none-any.whl

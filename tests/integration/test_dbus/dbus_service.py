@@ -134,7 +134,7 @@ class DBusService:
         try:
             connection.send_message(rep)
         except Exception as e:
-            logger.info("Error occured:" + str(e))
+            logger.info("Error occurred:" + str(e))
             connection.send_message(self._get_error_message(msg, ".Error.OtherError"))
 
     def _get_error_message(self, msg, method=".Error.NoMethod"):

@@ -12,7 +12,7 @@ function shouldDisableScrollSpy() {
 }
 
 /**
- * Function to diable the Bootstrap Scroll Spy.
+ * Function to disable the Bootstrap Scroll Spy.
  */
 function disableScrollSpy() {
     var scrollSpyBody = document.querySelector('body[data-bs-spy="scroll"][data-bs-target=".bd-toc-nav"]');
@@ -23,7 +23,7 @@ function disableScrollSpy() {
 }
 
 /**
- * Make TOC <li> elemenents active;
+ * Make TOC <li> elements active;
  * Add CSS class "active" to all the <nav.bd-toc-nav> > <ul> > <li> elements.
  */
 function makeTocLiElementsActive() {

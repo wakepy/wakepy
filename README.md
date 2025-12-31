@@ -103,7 +103,7 @@ Here's some reasons why you might want to consider using wakepy:
   <dt>💪 You want to have more control ⚙️</dt>
   <dd>It is possible to whitelist or blacklist the used wakepy Methods. It is also possible to prioritize them and define a on-fail action in case activating a wakepy mode fails.</dd>
   <dt>✂️ You want to keep the amount of dependencies low 📦</dt>
-  <dd>If you're running wakepy on Linux,  <a href="https://jeepney.readthedocs.io/">jeepney</A> (a dependecy free package) is required for D-Bus based methods. On Python 3.9 and earlier,  <a href="https://pypi.org/project/typing-extensions/">typing-extensions</a> is needed for typing. Otherwise: wakepy has no python dependencies.</dd>
+  <dd>If you're running wakepy on Linux,  <a href="https://jeepney.readthedocs.io/">jeepney</A> (a dependency free package) is required for D-Bus based methods. On Python 3.9 and earlier,  <a href="https://pypi.org/project/typing-extensions/">typing-extensions</a> is needed for typing. Otherwise: wakepy has no python dependencies.</dd>
   <dt>⚖️ Package needs to have a permissive licence ✔️</dt>
   <dd>Wakepy is licenced under permissive <a href="https://github.com/wakepy/wakepy/blob/main/LICENSE.txt">MIT License</a>.</dd>
 </dl>

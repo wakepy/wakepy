@@ -7,7 +7,7 @@
    viewBox="0 0 152.96708 161.49443"
    version="1.1"
    id="svg1"
-   inkscape:version="1.3.2 (091e20ef0f, 2023-11-25)"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
    sodipodi:docname="mode-state-diagram.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -24,14 +24,15 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="1.6478921"
-     inkscape:cx="247.89244"
-     inkscape:cy="460.5884"
-     inkscape:window-width="1600"
-     inkscape:window-height="836"
+     inkscape:cx="207.53786"
+     inkscape:cy="324.35376"
+     inkscape:window-width="1920"
+     inkscape:window-height="1048"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="layer1"
+     showgrid="false" />
   <defs
      id="defs1">
     <marker
@@ -156,7 +157,7 @@
    id="tspan9">or mode._deactivate()</tspan></tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:3.01591px;line-height:normal;font-family:FreeSans,Arial;-inkscape-font-specification:'FreeSans,Arial, Normal';text-align:center;text-decoration-color:#000000;text-anchor:middle;fill:#2f2f2f;fill-opacity:0.579625;stroke-width:0.35;stroke-dashoffset:0.415748"
+       style="font-size:3.01591px;line-height:normal;font-family:FreeSans, Arial;-inkscape-font-specification:'FreeSans,Arial, Normal';text-align:center;text-decoration-color:#000000;text-anchor:middle;fill:#2f2f2f;fill-opacity:0.579625;stroke-width:0.35;stroke-dashoffset:0.415748"
        x="99.698326"
        y="89.451141"
        id="text1-9-7-1-9-1-12-2-52-7-5"><tspan
@@ -164,7 +165,7 @@
          id="tspan1-2-5-4-8-2-8-7-90-5-3"
          style="font-weight:bold;fill:#2f2f2f;fill-opacity:0.579625;stroke:none;stroke-width:0.35;stroke-opacity:1"
          x="99.698326"
-         y="89.451141">activation succees</tspan></text>
+         y="89.451141">activation success</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:3.01591px;line-height:normal;font-family:FreeSans,Arial;-inkscape-font-specification:'FreeSans,Arial, Normal';text-align:center;text-decoration-color:#000000;text-anchor:middle;fill:#2f2f2f;fill-opacity:0.579625;stroke-width:0.35;stroke-dashoffset:0.415748"

@@ -143,7 +143,7 @@ class TestTryEnterAndHeartbeat:
 
     M: Missing implementation
     F: Failed attempt (with or without message)
-    S: Succesful attempt
+    S: Successful attempt
 
     Methods   Expected result
     -------   ---------------------------------------------------------
