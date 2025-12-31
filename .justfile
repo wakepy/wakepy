@@ -7,6 +7,7 @@ check:
   uv run ruff check --no-fix src/wakepy tests/
   uv run ruff format --check src/wakepy tests/
   uv run mypy src/wakepy tests/
+  uv run codespell
 
 # Format code using ruff.
 format:
