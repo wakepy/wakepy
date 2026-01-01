@@ -3,16 +3,16 @@ default:
   @just --list
 
 # static checking of code, linting, formatting checks, spell checking etc.
-check:
-  uv run ruff check --no-fix src/wakepy tests/
-  uv run ruff format --check src/wakepy tests/
-  uv run mypy src/wakepy tests/
+check *args="src/wakepy tests/":
+  uv run ruff format --check {{ args }}
+  uv run mypy {{ args }}
+  uv run ruff check --no-fix {{ args }}
   uv run codespell
 
 # Format code using ruff.
-format:
-  uv run ruff check --fix src/wakepy tests/
-  uv run ruff format src/wakepy tests/
+format *args="src/wakepy tests/":
+  uv run ruff check --fix {{ args }}
+  uv run ruff format {{ args }}
 
 # Build and serve the documentation with live-reload.
 docs:
