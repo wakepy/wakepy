@@ -13,7 +13,7 @@ In most cases, it is recommended to use `WAKEPY_FAKE_SUCCESS` in unit tests and 
 
 ```{admonition} Testing with real D-Bus on Unix
 :class: note
-If you need to test real wakepy operations on Unix systems that rely on D-Bus based methods like [`org.gnome.SessionManager`](#org-gnome-sessionmanager) or [`org.freedesktop.ScreenSaver`](#org-freedesktop-screensaver) (e.g. GNOME and KDE), you'll need the `DBUS_SESSION_BUS_ADDRESS` environment variable set. See [Tests using real D-Bus methods](#tests-without-using-faked-success) for details.
+If you need to test real wakepy operations on Unix systems that rely on D-Bus based methods like [`org.gnome.SessionManager`](#org-gnome-sessionmanager) or [`org.freedesktop.ScreenSaver`](#org-freedesktop-screensaver) (e.g. GNOME and KDE), you'll need the `DBUS_SESSION_BUS_ADDRESS` environment variable set. See [Tests using real D-Bus methods](#tests-using-real-d-bus-methods) for details.
 ```
 
 (truthy-and-falsy-values)=
