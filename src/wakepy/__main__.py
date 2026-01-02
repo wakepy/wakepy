@@ -16,6 +16,7 @@ import itertools
 import logging
 import platform
 import sys
+import textwrap
 import time
 import typing
 from dataclasses import dataclass
@@ -277,12 +278,10 @@ class CLIRenderer:
         method_name = data.method_name[: self.theme.method_name_max_length]
         version = data.wakepy_version[: self.theme.version_string_width]
 
-        # Calculate spacing for alignment
         header_bars = "━" * (self.theme.mode_name_max_length - len(mode_name))
         method_spacing = " " * (self.theme.method_name_max_length - len(method_name))
         version_string = f"{version: <{self.theme.version_string_width}}"
 
-        # Determine presentation mode symbol
         presentation_symbol = (
             self.theme.success_symbol
             if data.is_keep_presenting_mode
@@ -320,19 +319,6 @@ class CLIRenderer:
         return f"\n\n{text}\n"
 
     def render_fake_success_warning(self, data: SessionData) -> str:
-        """Render fake success warning if applicable.
-
-        Parameters
-        ----------
-        data : SessionData
-            The session data to check for fake success
-
-        Returns
-        -------
-        str
-            Formatted warning or empty string
-
-        """
         if not data.is_fake_success:
             return ""
 
@@ -344,19 +330,6 @@ class CLIRenderer:
         return f"\n{text}\n"
 
     def wrap_text(self, text: str) -> str:
-        """Wrap text to fit within theme's text width.
-
-        Parameters
-        ----------
-        text : str
-            Text to wrap
-
-        Returns
-        -------
-        str
-            Wrapped text with newlines
-
-        """
         return "\n".join(
             wrap(
                 text,
@@ -367,21 +340,6 @@ class CLIRenderer:
         )
 
     def render_activation_error(self, result: ActivationResult) -> str:
-        """Generate error text for activation failures.
-
-        Parameters
-        ----------
-        result : ActivationResult
-            The activation result containing error information
-
-        Returns
-        -------
-        str
-            Formatted error text with platform information and instructions
-
-        """
-        import textwrap
-
         from wakepy import __version__
 
         error_text = f"""
