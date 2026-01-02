@@ -343,7 +343,7 @@ class CLIRenderer:
         - Additional details: [FILL OR REMOVE THIS LINE]
 
         Thank you!
-        """  # noqa 501
+        """  # noqa: 501
 
         return self.render_error_message(error_text)
 
