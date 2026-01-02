@@ -342,9 +342,7 @@ class Method(ABC):
                 )
 
 
-def activate_method(
-    method: Method, force_failure: bool = False
-) -> Tuple[MethodActivationResult, Heartbeat | None]:
+def activate_method(method: Method) -> Tuple[MethodActivationResult, Heartbeat | None]:
     """Activates a mode defined by a single Method.
 
     Parameters
