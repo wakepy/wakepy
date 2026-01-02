@@ -254,11 +254,8 @@ class CLIRenderer:
         """
         for symbol in itertools.cycle(self.theme.spinner_symbols):  # pragma: no branch
             yield (
-                "\r "
-                + " "
-                + symbol
-                + " " * self.theme.spinner_line_width
-                + r"[Press Ctrl+C to exit] "
+                f"\r {symbol}{' ' * self.theme.spinner_line_width}"
+                "[Press Ctrl+C to exit] "
             )
 
     def render_main_info(self, data: SessionData) -> str:
