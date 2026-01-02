@@ -410,9 +410,7 @@ class TestCLIRenderer:
             deprecations="",
             is_fake_success=False,
         )
-        theme = replace(
-            DisplayTheme.create(ascii_mode=False),
-        )
+        theme = DisplayTheme.create(ascii_mode=False)
         renderer = CLIRenderer(theme)
 
         formatted = renderer.render_info_banner(session_data)
