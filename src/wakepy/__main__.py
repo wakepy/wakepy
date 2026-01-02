@@ -153,15 +153,7 @@ class SessionData:
     is_fake_success: bool = False  # noqa: FBT003
 
     @property
-    def is_keep_presenting_mode(self) -> bool:
-        """Check if this session is using presentation mode.
-
-        Returns
-        -------
-        bool
-            True if mode is KEEP_PRESENTING, False otherwise
-
-        """
+    def is_presentation_mode(self) -> bool:
         return self.mode_name == ModeName.KEEP_PRESENTING
 
     @classmethod
@@ -282,7 +274,7 @@ class CLIRenderer:
 
         presentation_symbol = (
             self.theme.success_symbol
-            if data.is_keep_presenting_mode
+            if data.is_presentation_mode
             else self.theme.failure_symbol
         )
 

@@ -248,7 +248,7 @@ class TestSessionData:
         assert session_data.wakepy_version == "0.10.0"
         assert session_data.mode_name == "testmode"
         assert session_data.method_name == "WakepyFakeSuccess"
-        assert session_data.is_keep_presenting_mode is False
+        assert session_data.is_presentation_mode is False
         assert session_data.deprecations == ""
         # WakepyFakeSuccess has real_success=False, so is_fake_success=True
         assert session_data.is_fake_success is True
@@ -272,7 +272,7 @@ class TestSessionData:
             mode_name=mode_name,
             method_name="test_method",
         )
-        assert session_data.is_keep_presenting_mode is expected
+        assert session_data.is_presentation_mode is expected
 
 
 class TestCLIRenderer:
