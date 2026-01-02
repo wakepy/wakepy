@@ -12,7 +12,6 @@ from wakepy.core.method import (
     DBusCallError,
     MethodOutcome,
     MethodOutcomeValue,
-    _check_supported_platforms,
     has_enter,
     has_exit,
     has_heartbeat,
@@ -172,21 +171,30 @@ def test_methodoutcome(assert_strenum_values):
 
 class TestCheckSupportedPlatforms:
     def test_wrong_type_of_supported_platforms(self):
+        class BadMethod(TestMethod):
+            supported_platforms = "x"  # type: ignore
+
         with pytest.raises(
             ValueError,
-            match="The supported_platforms of someclass must be a tuple of PlatformType!",  # noqa: E501
+            match="The supported_platforms of BadMethod must be a tuple of PlatformType!",  # noqa: E501
         ):
-            _check_supported_platforms("x", "someclass")  # type: ignore
+            BadMethod()
 
     def test_wrong_type_of_a_single_platform(self):
-        supported_platforms = (PlatformType.UNIX_LIKE_FOSS, "foo", PlatformType.WINDOWS)
+        class BadMethod(TestMethod):
+            supported_platforms = (
+                PlatformType.UNIX_LIKE_FOSS,
+                "foo",  # type: ignore
+                PlatformType.WINDOWS,
+            )
+
         with pytest.raises(
             ValueError,
             match=re.escape(
-                "The supported_platforms of someclass must be a tuple of PlatformType! One item (foo) is of type \"<class 'str'>\""  # noqa: E501
+                "The supported_platforms of BadMethod must be a tuple of PlatformType! One item (foo) is of type \"<class 'str'>\""  # noqa: E501
             ),
         ):
-            _check_supported_platforms(supported_platforms, "someclass")  # type: ignore
+            BadMethod()
 
 
 class TestMethodInfo:

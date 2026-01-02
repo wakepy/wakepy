@@ -7,13 +7,13 @@ import pytest
 
 from tests.helpers import get_method_info
 from wakepy.core import ActivationResult, MethodActivationResult
-from wakepy.core.constants import StageName
+from wakepy.core.constants import WAKEPY_FAKE_SUCCESS_METHOD, StageName
 from wakepy.core.registry import get_method
 
 if typing.TYPE_CHECKING:
     from typing import List
 
-fake_success_cls = get_method("WAKEPY_FAKE_SUCCESS")
+fake_success_cls = get_method(WAKEPY_FAKE_SUCCESS_METHOD)
 
 
 @pytest.fixture

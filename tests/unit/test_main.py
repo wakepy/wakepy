@@ -214,7 +214,7 @@ class TestGetWakepyCliInfo:
         assert "v.0.10.0" in info
         assert "[✔] Programs keep running" in info
         assert "[ ] Display kept on, screenlock disabled" in info
-        assert "Method: WAKEPY_FAKE_SUCCESS" in info
+        assert "Method: WakepyFakeSuccess" in info
         assert deprecations not in info
 
         with somemode as m:
