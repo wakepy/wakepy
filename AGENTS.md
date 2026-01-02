@@ -30,11 +30,13 @@ REQUIREMENTS:
 - Python 3.7+
 - mypy strict mode (fully typed)
 - 100% test coverage
-- pytest with classes/fixtures
+- pytest with classes
 - Top-level functions before subfunctions
 - Test specific functions first, not full suite
 
 ALWAYS:
 - If changing a file, in the end, format file and run tests (or other command to VERIFY the outcome). Does not apply to .md files.
 - Code should be easily READABLE
+- Prefer writing code that is easily TESTABLE (not requiring patching)
+- Prefer using FIXTURES in tests where possible
 - Use "just test-cli ARGUMENTS" instead of "python -m pytest ARGUMENTS" or "just test ARGUMENTS" or "pytest ARGUMENTS" for running tests
