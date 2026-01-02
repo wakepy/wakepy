@@ -12,7 +12,6 @@ Mode:
 from __future__ import annotations
 
 import logging
-import os
 import threading
 import typing
 import warnings
@@ -20,7 +19,7 @@ from contextvars import ContextVar
 from dataclasses import dataclass, field
 from functools import wraps
 
-from wakepy.core.constants import FALSY_ENV_VAR_VALUES, WAKEPY_FAKE_SUCCESS
+from wakepy.core.constants import WAKEPY_FAKE_SUCCESS_METHOD
 
 from .activationresult import ActivationResult, MethodActivationResult
 from .dbus import DBusAdapter, get_dbus_adapter
@@ -28,6 +27,7 @@ from .heartbeat import Heartbeat
 from .method import Method, MethodInfo, activate_method, deactivate_method
 from .prioritization import order_methods_by_priority
 from .registry import get_method, get_methods_for_mode
+from .utils import is_env_var_truthy
 
 if typing.TYPE_CHECKING:
     import sys
@@ -591,7 +591,8 @@ class Mode:
         and the priority is determined with the mode.methods_priority.
 
         The activation may be faked as to be successful by using the
-        WAKEPY_FAKE_SUCCESS environment variable.
+        WAKEPY_FAKE_SUCCESS environment variable, or forced to fail by using
+        the WAKEPY_FORCE_FAILURE environment variable.
         """
         if self._has_entered_context:
             raise ContextAlreadyEnteredError(
@@ -601,11 +602,25 @@ class Mode:
             )
         self._thread_check()
 
-        method_classes = add_fake_success_if_required(
-            self._selected_method_classes, os.environ.get(WAKEPY_FAKE_SUCCESS)
-        )
+        # Check for WAKEPY_FAKE_SUCCESS environment variable
+        # Note: If both WAKEPY_FAKE_SUCCESS and WAKEPY_FORCE_FAILURE are set,
+        # WAKEPY_FORCE_FAILURE takes precedence.
+        wakepy_fake_success = is_env_var_truthy("WAKEPY_FAKE_SUCCESS")
+
+        if wakepy_fake_success:
+            self._selected_method_classes.insert(
+                0, get_method(WAKEPY_FAKE_SUCCESS_METHOD)
+            )
+            if is_env_var_truthy("WAKEPY_FORCE_FAILURE"):
+                logger.warning(
+                    "Both WAKEPY_FAKE_SUCCESS and WAKEPY_FORCE_FAILURE are set. "
+                    "WAKEPY_FORCE_FAILURE takes precedence, so the activation will "
+                    "be forced to fail. To remove this log message, unset "
+                    "WAKEPY_FAKE_SUCCESS or set it to a falsy value."
+                )
+
         method_classes_ordered = order_methods_by_priority(
-            method_classes, self.methods_priority
+            self._selected_method_classes, self.methods_priority
         )
 
         logger.info(
@@ -649,7 +664,8 @@ class Mode:
 
     @staticmethod
     def _activate_one_of_methods(
-        method_classes: list[Type[Method]], **method_kwargs: object
+        method_classes: list[Type[Method]],
+        **method_kwargs: object,
     ) -> Tuple[List[MethodActivationResult], Optional[Method], Optional[Heartbeat]]:
         """Activates mode using the first Method in `method_classes` which
         succeeds. The methods are tried in the order given in `method_classes`
@@ -844,68 +860,6 @@ def select_methods(
         raise ValueError("Invalid `omit` and/or `use_only`!")
 
     return selected_methods
-
-
-def add_fake_success_if_required(
-    method_classes: List[Type[Method]], wakepy_fake_success: str | None
-) -> List[Type[Method]]:
-    """Adds the WAKEPY_FAKE_SUCCESS method to the list of method classes, if
-    the WAKEPY_FAKE_SUCCESS environment variable has been set into a non-falsy
-    value. See also: `should_fake_success`.
-
-    Parameters
-    ----------
-    method_classes:
-        The list of method classes
-    wakepy_fake_success:
-        Value read from WAKEPY_FAKE_SUCCESS environment variable; either None
-        or a string. For example: '0', '1', 'True', or 'False'. None has same
-        behavior as falsy values ('0', 'no', 'false', 'f', 'n', '').
-    """
-    if not should_fake_success(wakepy_fake_success):
-        return method_classes
-
-    return [get_method(WAKEPY_FAKE_SUCCESS)] + method_classes
-
-
-def should_fake_success(wakepy_fake_success: str | None) -> bool:
-    """Function which says if fake success should be enabled
-
-    Parameters
-    ----------
-    wakepy_fake_success:
-        Value read from WAKEPY_FAKE_SUCCESS environment variable; either None
-        or a string. For example: '0', '1', 'True', or 'False'. None has same
-        behavior as falsy values ('0', 'no', 'false', 'f', 'n', '').
-
-    Returns
-    -------
-    fake_success_enabled:
-        True, if fake success is enabled, False otherwise.
-
-    Motivation
-    ----------
-    When running on CI system, wakepy might fail to acquire an inhibitor
-    lock just because there is no Desktop Environment running. In these
-    cases, it might be useful to just tell with an environment variable
-    that wakepy should fake the successful inhibition anyway. Faking the
-    success is done after every other method is tried (and failed).
-    """
-
-    if wakepy_fake_success is None:
-        logger.debug("'%s' not set.", WAKEPY_FAKE_SUCCESS)
-        return False
-
-    if wakepy_fake_success.lower() in FALSY_ENV_VAR_VALUES:
-        logger.info(
-            "'%s' set to a falsy value: %s.", WAKEPY_FAKE_SUCCESS, wakepy_fake_success
-        )
-        return False
-
-    logger.info(
-        "'%s' set to a truthy value: %s.", WAKEPY_FAKE_SUCCESS, wakepy_fake_success
-    )
-    return True
 
 
 def handle_activation_fail(on_fail: OnFail, result: ActivationResult) -> None:

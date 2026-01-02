@@ -148,6 +148,7 @@
 - If Mode activation fails, raise {class}`ActivationError <wakepy.ActivationError>` by default. Previously there was no "on fail" action, but users needed to check the `result.success` to make sure the activation was successful.
 - The org.freedesktop.ScreenSaver based method is not used on keep.running mode. Systems supporting org.freedesktop.ScreenSaver which are not running Gnome will have no keep.running method until it gets implemented. By default wakepy will raise a wakepy.ActivationError if keep.running is used on such system. Either use keep.preseting mode, or wait or provide a PR.
 - The [WAKEPY_FAKE_SUCCESS](#WAKEPY_FAKE_SUCCESS) check is done *before* trying any wakepy Methods (previously, it was used when all the tried methods have failed)
+- Add [WAKEPY_FORCE_FAILURE](#WAKEPY_FORCE_FAILURE) environment variable which can be used to force activation failure (for testing/development) ([#542](https://github.com/wakepy/wakepy/pull/542))
 
 ### 🐞 Bug fixes
 - The org.freedesktop.ScreenSaver based method is only used in keep.presenting mode. Previously, it was used on keep.running mode on Linux. ([#46](https://github.com/wakepy/wakepy/issues/46), [#136](https://github.com/wakepy/wakepy/issues/136))

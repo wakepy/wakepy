@@ -16,11 +16,15 @@ from dataclasses import dataclass
 from typing import Type, cast
 
 from .activationresult import MethodActivationResult
-from .constants import PlatformType, StageName
+from .constants import (
+    PlatformType,
+    StageName,
+)
 from .heartbeat import Heartbeat
 from .platform import CURRENT_PLATFORM, get_platform_supported
 from .registry import register_method
 from .strenum import StrEnum, auto
+from .utils import is_env_var_truthy
 
 if sys.version_info < (3, 8):  # pragma: no-cover-if-py-gte-38
     from typing_extensions import Literal
@@ -137,7 +141,7 @@ class Method(ABC):
 
         # waits for https://github.com/wakepy/wakepy/issues/256
         # self.method_kwargs = kwargs # noqa: ERA001
-        _check_supported_platforms(self.supported_platforms, self.__class__.__name__)
+        self._check_supported_platforms()
 
     def __init_subclass__(cls, **kwargs: object) -> None:
         register_method(cls)
@@ -315,25 +319,38 @@ class Method(ABC):
         """
         return cls.name == unnamed
 
+    def _check_supported_platforms(self) -> None:
+        """Check that supported_platforms is a tuple of PlatformType.
 
-def _check_supported_platforms(
-    supported_platforms: Tuple[PlatformType, ...], classname: str
-) -> None:
-    err_supported_platforms = (
-        f"The supported_platforms of {classname} must be a tuple of PlatformType!"
-    )
+        Raises
+        ------
+        ValueError
+            If supported_platforms is not a tuple or contains non-PlatformType
+            items.
+        """
+        err_supported_platforms = (
+            f"The supported_platforms of {self.__class__.__name__} must be "
+            "a tuple of PlatformType!"
+        )
 
-    if not isinstance(supported_platforms, tuple):
-        raise ValueError(err_supported_platforms)
-    for p in supported_platforms:
-        if not isinstance(p, PlatformType):
-            raise ValueError(
-                err_supported_platforms + f' One item ({p}) is of type "{type(p)}"'
-            )
+        if not isinstance(self.supported_platforms, tuple):
+            raise ValueError(err_supported_platforms)
+        for p in self.supported_platforms:
+            if not isinstance(p, PlatformType):
+                raise ValueError(
+                    err_supported_platforms + f' One item ({p}) is of type "{type(p)}"'
+                )
 
 
-def activate_method(method: Method) -> Tuple[MethodActivationResult, Heartbeat | None]:
+def activate_method(
+    method: Method, force_failure: bool = False
+) -> Tuple[MethodActivationResult, Heartbeat | None]:
     """Activates a mode defined by a single Method.
+
+    Parameters
+    ----------
+    method:
+        The wakepy Method to activate
 
     Returns
     -------
@@ -342,7 +359,15 @@ def activate_method(method: Method) -> Tuple[MethodActivationResult, Heartbeat |
     heartbeat:
         If the `method` has method.heartbeat() implemented, and activation
         succeeds, this is a Heartbeat object. Otherwise, this is None.
+
+
+    Notes
+    -----
+    Setting WAKEPY_FORCE_FAILURE environment variable to a truthy value can be
+    used to force failure of the method activation. This is useful for testing
+    purposes.
     """
+
     if method.is_unnamed():
         raise ValueError("Methods without a name may not be used to activate modes!")
 
@@ -352,6 +377,23 @@ def activate_method(method: Method) -> Tuple[MethodActivationResult, Heartbeat |
     logger.debug(
         'Entering "%s" mode implemented with %s', method.mode_name, method.name
     )
+
+    force_failure = is_env_var_truthy("WAKEPY_FORCE_FAILURE")
+    if force_failure:
+        logger.debug(
+            (
+                'Forcing failure of wakepy Method "%s" (mode: "%s") due to '
+                "WAKEPY_FORCE_FAILURE environment variable"
+            ),
+            method.mode_name,
+            method.name,
+        )
+        result.failure_stage = StageName.NONE
+        result.failure_reason = (
+            "Forced failure due to WAKEPY_FORCE_FAILURE environment variable"
+        )
+        return result, None
+
     if get_platform_supported(CURRENT_PLATFORM, method.supported_platforms) is False:
         logger.debug(
             'Failed entering "%s" mode with "%s" at platform check stage',

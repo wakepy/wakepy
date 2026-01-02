@@ -6,7 +6,7 @@ import typing
 import pytest
 
 from wakepy.core import IdentifiedPlatformType
-from wakepy.core.constants import WAKEPY_FAKE_SUCCESS
+from wakepy.core.constants import WAKEPY_FAKE_SUCCESS_METHOD
 from wakepy.core.prioritization import (
     _check_methods_priority,
     _order_set_of_methods_by_priority,
@@ -135,7 +135,7 @@ class TestOrderMethodsByPriority:
     @pytest.mark.usefixtures("set_current_platform_to_linux")
     def test_fake_success_prioritized_first_asterisk(self):
         WindowsA, LinuxA, LinuxB, WakepyFakeSuccess = get_methods(
-            ["WinA", "LinuxA", "LinuxB", WAKEPY_FAKE_SUCCESS]
+            ["WinA", "LinuxA", "LinuxB", WAKEPY_FAKE_SUCCESS_METHOD]
         )
         # If WAKEPY_FAKE_SUCCESS is used, it is *always* prioritized the
         # highest
@@ -152,7 +152,7 @@ class TestOrderMethodsByPriority:
     @pytest.mark.usefixtures("set_current_platform_to_linux")
     def test_fake_success_prioritized_first_set_before_asterisk(self):
         WindowsA, LinuxA, LinuxB, WakepyFakeSuccess = get_methods(
-            ["WinA", "LinuxA", "LinuxB", WAKEPY_FAKE_SUCCESS]
+            ["WinA", "LinuxA", "LinuxB", WAKEPY_FAKE_SUCCESS_METHOD]
         )
         # If WAKEPY_FAKE_SUCCESS is used, it is *always* prioritized the
         # highest

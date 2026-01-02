@@ -18,7 +18,7 @@ import warnings
 from dataclasses import InitVar, dataclass, field
 from typing import List, Sequence
 
-from .constants import WAKEPY_FAKE_SUCCESS, StageName, StageNameValue
+from .constants import WAKEPY_FAKE_SUCCESS_METHOD, StageName, StageNameValue
 
 if typing.TYPE_CHECKING:
     from typing import Optional
@@ -268,7 +268,7 @@ class ActivationResult:
 
     def _get_real_success(self) -> bool:
         for res in self._method_results:
-            if res.success and res.method_name != WAKEPY_FAKE_SUCCESS:
+            if res.success and res.method_name != WAKEPY_FAKE_SUCCESS_METHOD:
                 return True
         return False
 
