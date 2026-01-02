@@ -518,7 +518,7 @@ def get_mode_name(args: Namespace) -> ModeName:
     Returns
     -------
     ModeName
-        The selected mode (KEEP_RUNNING or KEEP_PRESENTING)
+        The name of the selected mode
 
     Raises
     ------
