@@ -133,7 +133,7 @@ class SessionData:
 
     Parameters
     ----------
-    version : str
+    wakepy_version : str
         Wakepy version string
     mode_name : str
         Name of the wakepy Mode
