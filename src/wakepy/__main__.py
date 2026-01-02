@@ -150,7 +150,7 @@ class SessionData:
     mode_name: str
     method_name: str
     deprecations: str = ""
-    is_fake_success: bool = False  # noqa: FBT003
+    is_fake_success: bool = False
 
     @property
     def is_presentation_mode(self) -> bool:
