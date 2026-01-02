@@ -181,14 +181,12 @@ class SessionData:
             Session data ready for rendering
 
         """
-        from wakepy import __version__
-
         mode_name = mode.name or "(unknown mode)"
         method_name = mode.active_method.name if mode.active_method else "(no method)"
         is_fake_success = not mode.result.real_success
 
         return cls(
-            wakepy_version=__version__,
+            wakepy_version=get_wakepy_version(),
             mode_name=mode_name,
             method_name=method_name,
             deprecations=deprecations,
@@ -340,15 +338,13 @@ class CLIRenderer:
         )
 
     def render_activation_error(self, result: ActivationResult) -> str:
-        from wakepy import __version__
-
         error_text = f"""
         Wakepy could not activate the "{result.mode_name}" mode. This might occur because of a bug or because your current platform is not yet supported or your system is missing required software.
 
         Check if there is already a related issue in the issue tracker at {self.GITHUB_ISSUES_URL} and if not, please create a new one.
 
         Include the following:
-        - wakepy version: {__version__}
+        - wakepy version: {get_wakepy_version()}
         - Mode: {result.mode_name}
         - Python version: {sys.version}
         {textwrap.indent(get_platform_debug_info().strip(), ' '*4).strip()}
@@ -644,6 +640,13 @@ def get_should_use_ascii_only(
         # https://github.com/wakepy/wakepy/issues/274#issuecomment-2363293422
         return True
     return False
+
+
+def get_wakepy_version() -> str:
+    # Must be imported here to avoid circular imports
+    from wakepy import __version__
+
+    return __version__
 
 
 def main() -> None:
