@@ -561,7 +561,7 @@ def get_deprecations(args: Namespace) -> str:
     if args.presentation:
         deprecations.append(
             "Using --presentation is deprecated in wakepy 0.10.0, and will be removed "
-            "in a future release. Use -p/--keepf-presenting, instead. ",
+            "in a future release. Use -p/--keep-presenting, instead. ",
         )
     return "\n".join(deprecations) if deprecations else ""
 
