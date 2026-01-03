@@ -435,4 +435,5 @@ def test_stagename(assert_strenum_values):
     assert StageName.PLATFORM_SUPPORT == "PLATFORM_SUPPORT"
     assert StageName.ACTIVATION == "ACTIVATION"
     assert StageName.REQUIREMENTS == "REQUIREMENTS"
+    assert StageName.WAKEPY_FORCE_FAILURE == "WAKEPY_FORCE_FAILURE"
     assert_strenum_values(StageName, StageNameValue)
