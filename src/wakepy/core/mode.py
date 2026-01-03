@@ -866,7 +866,7 @@ def handle_activation_fail(on_fail: OnFail, result: ActivationResult) -> None:
     if on_fail == "pass":
         return
     elif on_fail == "warn":
-        warnings.warn(result.get_failure_text(), ActivationWarning, stacklevel=5)
+        warnings.warn(result.get_failure_text(), ActivationWarning, stacklevel=4)
         return
     elif on_fail == "error":
         raise ActivationError(result.get_failure_text())
