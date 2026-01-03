@@ -496,7 +496,7 @@ class TestWakepyForceFailure:
             assert m.result.success is False
             assert m.active is False
 
-        self._assert_wakepy_force_failure(m.result)
+        self._assert_wakepy_force_failure(m.result, len(methods_abc))
 
     def test_both_env_vars_force_failure_wins(
         self,
@@ -522,16 +522,16 @@ class TestWakepyForceFailure:
             assert m.active is False  # WAKEPY_FORCE_FAILURE causes failure
             assert m.result.success is False
 
-        self._assert_wakepy_force_failure(m.result)
+        self._assert_wakepy_force_failure(m.result, len(methods_abc)))
 
     @staticmethod
-    def _assert_wakepy_force_failure(result: ActivationResult):
+    def _assert_wakepy_force_failure(result: ActivationResult, n_methods: int):
         """Helper function to assert that only WAKEPY_FORCE_FAILURE caused
         failure"""
 
         failed = result.query()
 
-        assert len(failed) > 0, "There should be at least one failed method"
+        assert len(failed) == n_methods, f"Expecting {n_methods} failed methods"
 
         for res in failed:
             assert (
