@@ -13,12 +13,25 @@ MethodActivationResult
 
 from __future__ import annotations
 
+import textwrap
 import typing
 import warnings
 from dataclasses import InitVar, dataclass, field
-from typing import List, Sequence
+from typing import List, Sequence, TypedDict
 
 from .constants import WAKEPY_FAKE_SUCCESS_METHOD, StageName, StageNameValue
+
+FailureTextStyle = typing.Literal["block", "inline"]
+
+
+class MethodFailureData(TypedDict):
+    """Data structure containing information about a failed method attempt."""
+
+    index: int
+    method_name: str
+    failure_stage: str
+    failure_reason: str
+
 
 if typing.TYPE_CHECKING:
     from typing import Optional
@@ -111,6 +124,7 @@ class ActivationResult:
 
     def list_methods(
         self,
+        *,
         ignore_platform_fails: bool = True,
         ignore_unused: bool = False,
     ) -> list[MethodActivationResult]:
@@ -195,20 +209,78 @@ class ActivationResult:
 
         return out
 
-    def get_failure_text(self, newlines: bool = True) -> str:
+    def _get_method_failure_data(self) -> list[MethodFailureData]:
+        """Extract method failure data from the activation results.
+
+        Returns a list of dictionaries containing structured failure
+        information for each method that was tried.
+        """
+        failure_data: list[MethodFailureData] = []
+        for i, res in enumerate(self.query(), start=1):
+            stage = str(res.failure_stage) if res.failure_stage else "N/A"
+            failure_data.append(
+                {
+                    "index": i,
+                    "method_name": res.method_name,
+                    "failure_stage": stage,
+                    "failure_reason": res.failure_reason or "-",
+                }
+            )
+        return failure_data
+
+    def _format_failure_data_block(self, failure_data: list[MethodFailureData]) -> str:
+        """Format method failure data in 'block' style with newlines and
+        indentation.
+        """
+        if not failure_data:
+            return ""
+
+        lines = []
+        for item in failure_data:
+            # Format index right-aligned in 3 chars, dot, space, method name
+            first_line = f"{item['index']:>3}. {item['method_name']}"
+
+            # Wrap the reason text: 5 spaces indent, max 74 chars (79 - 5)
+            reason_text = f"Reason: {item['failure_reason']}"
+            wrapped_reason = textwrap.fill(
+                reason_text,
+                width=79,
+                initial_indent="     ",
+                subsequent_indent="     ",
+            )
+            lines.append(f"{first_line}\n{wrapped_reason}")
+
+        return "\n\n".join(lines)
+
+    def _format_failure_data_inline(self, failure_data: list[MethodFailureData]) -> str:
+        """Format method failure data in 'inline' style as a single line."""
+        if not failure_data:
+            return ""
+
+        items = []
+        for item in failure_data:
+            items.append(
+                f"(#{item['index']}, {item['method_name']}, "
+                f"{item['failure_stage']}, {item['failure_reason']})"
+            )
+
+        return ", ".join(items)
+
+    def get_failure_text(self, style: FailureTextStyle = "block") -> str:
         """Gets information about a failure as text. In case the mode
         activation was successful, returns an empty string.
 
         This is only intended for interactive use. Users should not rely
         on the exact text format returned by this function as it may change
         without a notice. For programmatic use cases, it is advisable to use
-        :meth:`query`, instead.
+        :meth:`query`, or :meth:`list_methods` instead.
 
         Parameters
         ----------
-        newlines: bool
-            If True, adds newlines in the text (useful for printing for user),
-            if False, returns a single line string (useful for logging).
+        style: FailureTextStyle
+            The style of the failure text. "block" adds newlines in the text
+            and makes it easier to read, while "inline" returns a single line
+            string (useful for logging). Default: "block".
 
 
         Examples
@@ -233,39 +305,33 @@ class ActivationResult:
 
         if self.success:
             return ""
+
         mode_name = self.mode_name or "[unnamed mode]"
+        failure_data = self._get_method_failure_data()
 
-        if newlines:
-            first_sep = "\n\n"
-            sep = "\n"
-        else:
-            first_sep = sep = " "
-
-        debug_info_lst = []
-        for i, res in enumerate(self.query(), start=1):
-            debug_info_lst.append(
-                (
-                    f"(#{i}, {res.method_name}, {res.failure_stage or 'N/A'}, "
-                    f"{res.failure_reason or '-'})"
-                )
-            )
-
-        if debug_info_lst:
-            debug_info = f",{sep}".join(debug_info_lst)
-            tried_methods_text = (
-                f"Tried Methods (in the order of attempt):{sep}{debug_info}."
-                f"{sep}The format of each item in the list is (index, method_name, "
-                "failure_stage, failure_reason)."
-            )
-        else:
+        if not failure_data:
             tried_methods_text = "Did not try any methods!"
+            first_sep = "\n\n" if style == "block" else " "
+            msg = f'Could not activate wakepy Mode "{mode_name}"!'
+            return f"{msg}{first_sep}{tried_methods_text}"
 
-        err_text = (
-            f'Could not activate wakepy Mode "{mode_name}"!{first_sep}'
-            + tried_methods_text
-        )
-
-        return err_text
+        if style == "block":
+            formatted_methods = self._format_failure_data_block(failure_data)
+            tried_methods_text = (
+                f"Tried Methods (in the order of attempt):\n\n" f"{formatted_methods}"
+            )
+            msg = f'Could not activate wakepy Mode "{mode_name}"!'
+            return f"{msg}\n\n{tried_methods_text}"
+        else:
+            formatted_methods = self._format_failure_data_inline(failure_data)
+            tried_methods_text = (
+                f"Tried Methods (in the order of attempt): "
+                f"{formatted_methods}. "
+                "The format of each item in the list is (index, "
+                "method_name, failure_stage, failure_reason)."
+            )
+            msg = f'Could not activate wakepy Mode "{mode_name}"!'
+            return f"{msg} {tried_methods_text}"
 
     def _get_success(self) -> bool:
         for res in self._method_results:

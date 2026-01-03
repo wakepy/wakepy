@@ -60,6 +60,10 @@ class TestActivateMethod:
         assert res.failure_stage == StageName.PLATFORM_SUPPORT
         assert res.success is False
         assert heartbeat is None
+        assert (
+            res.failure_reason
+            == "Current platform (WINDOWS) is not in supported platforms: LINUX"
+        )
 
     def test_with_unknown_platform_support_any(self):
         SupportedMethod = get_test_method_class(
