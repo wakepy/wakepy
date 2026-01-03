@@ -142,11 +142,12 @@ class ActivationResult:
 
         fail_stages = [
             StageName.WAKEPY_FORCE_FAILURE,
+            StageName.PLATFORM_SUPPORT,
             StageName.REQUIREMENTS,
             StageName.ACTIVATION,
         ]
-        if not ignore_platform_fails:
-            fail_stages.insert(1, StageName.PLATFORM_SUPPORT)
+        if ignore_platform_fails:
+            fail_stages.remove(StageName.PLATFORM_SUPPORT)
 
         return self.query(success=success_values, fail_stages=fail_stages)
 
