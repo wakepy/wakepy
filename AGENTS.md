@@ -40,3 +40,4 @@ ALWAYS:
 - Prefer writing code that is easily TESTABLE (not requiring patching)
 - Prefer using FIXTURES in tests where possible
 - Use "just test-cli ARGUMENTS" instead of "python -m pytest ARGUMENTS" or "just test ARGUMENTS" or "pytest ARGUMENTS" for running tests
+- Put imports to top of the file also in tests (if possible)
