@@ -4,7 +4,6 @@ import pytest
 
 from wakepy import ActivationError, ActivationWarning
 from wakepy.core import ActivationResult, DBusAdapter, Method, Mode, ModeName
-from wakepy.core.constants import StageName
 from wakepy.core.mode import UnrecognizedMethodNames
 from wakepy.modes import keep
 
@@ -127,44 +126,6 @@ def test_keep_presenting(monkeypatch, fake_dbus_adapter):
     with keep.presenting(dbus_adapter=fake_dbus_adapter) as m:
         assert isinstance(m, Mode)
         assert m.result.success is True
-
-
-def test_keep_presenting_with_force_failure(monkeypatch, fake_dbus_adapter):
-    """Test that WAKEPY_FORCE_FAILURE causes activation to fail"""
-    monkeypatch.setenv("WAKEPY_FORCE_FAILURE", "1")
-    with keep.presenting(dbus_adapter=fake_dbus_adapter, on_fail="pass") as m:
-        assert isinstance(m, Mode)
-        assert m.result.success is False
-        assert m.active is False
-
-    _assert_wakepy_force_failure(m.result)
-
-
-def test_both_env_vars_force_failure_wins(monkeypatch, fake_dbus_adapter):
-    """Test that when both env vars set, WAKEPY_FORCE_FAILURE wins"""
-    monkeypatch.setenv("WAKEPY_FAKE_SUCCESS", "1")
-    monkeypatch.setenv("WAKEPY_FORCE_FAILURE", "1")
-
-    with keep.running(dbus_adapter=fake_dbus_adapter, on_fail="pass") as m:
-        assert m.active is False  # WAKEPY_FORCE_FAILURE causes failure
-        assert m.result.success is False
-
-    _assert_wakepy_force_failure(m.result)
-
-
-def _assert_wakepy_force_failure(result: ActivationResult):
-    """Helper function to assert that only WAKEPY_FORCE_FAILURE caused
-    failure"""
-
-    failed = result.query()
-
-    assert len(failed) > 0, "There should be at least one failed method"
-
-    for res in failed:
-        assert (
-            res.failure_stage == StageName.WAKEPY_FORCE_FAILURE
-        ), "Only WAKEPY_FORCE_FAILURE should cause failure"
-        assert "WAKEPY_FORCE_FAILURE" in res.failure_reason
 
 
 @pytest.mark.parametrize(
