@@ -302,12 +302,54 @@ class TestActivationResult:
             [mr_platform_support_fail, mr_requirements_fail], mode_name="SomeMode"
         )
         assert ar.get_failure_text() == (
-            'Could not activate wakepy Mode "SomeMode"!\n\nTried Methods (in the order '
-            "of attempt):\n(#1, fail-platform, PLATFORM_SUPPORT, Platform XYZ not "
-            "supported!),\n(#2, fail-requirements, REQUIREMENTS, Missing requirement: "
-            "Some SW v.1.2.3).\nThe format of each item in the list is (index, "
-            "method_name, failure_stage, failure_reason)."
+            'Could not activate wakepy Mode "SomeMode"!\n\n'
+            "Tried Methods (in the order of attempt):\n\n"
+            "  1. fail-platform\n"
+            "     Reason: Platform XYZ not supported!\n\n"
+            "  2. fail-requirements\n"
+            "     Reason: Missing requirement: Some SW v.1.2.3"
         )
+
+    def test_get_failure_text_failure_inline(
+        self,
+        mr_platform_support_fail: MethodActivationResult,
+        mr_requirements_fail: MethodActivationResult,
+    ):
+        ar = ActivationResult(
+            [mr_platform_support_fail, mr_requirements_fail], mode_name="SomeMode"
+        )
+        expected = (
+            'Could not activate wakepy Mode "SomeMode"! '
+            "Tried Methods (in the order of attempt): "
+            "(#1, fail-platform, PLATFORM_SUPPORT, Platform XYZ not supported!), "
+            "(#2, fail-requirements, REQUIREMENTS, "
+            "Missing requirement: Some SW v.1.2.3). "
+            "The format of each item in the list is (index, method_name, "
+            "failure_stage, failure_reason)."
+        )
+        assert ar.get_failure_text(style="inline") == expected
+
+    def test_get_failure_text_no_methods_tried_block(self):
+        ar = ActivationResult([], mode_name="TestMode")
+        expected = (
+            'Could not activate wakepy Mode "TestMode"!\n\n' "Did not try any methods!"
+        )
+        assert ar.get_failure_text(style="block") == expected
+
+    def test_get_failure_text_no_methods_tried_inline(self):
+        ar = ActivationResult([], mode_name="TestMode")
+        expected = (
+            'Could not activate wakepy Mode "TestMode"! ' "Did not try any methods!"
+        )
+        assert ar.get_failure_text(style="inline") == expected
+
+    def test_format_failure_data_block_empty(self):
+        ar = ActivationResult([], mode_name="TestMode")
+        assert ar._format_failure_data_block([]) == ""
+
+    def test_format_failure_data_inline_empty(self):
+        ar = ActivationResult([], mode_name="TestMode")
+        assert ar._format_failure_data_inline([]) == ""
 
     def test_active_method(
         self, method_activation_results1: List[MethodActivationResult]

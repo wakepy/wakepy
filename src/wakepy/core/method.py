@@ -37,7 +37,8 @@ if typing.TYPE_CHECKING:
 
     from wakepy.core import DBusAdapter, DBusMethodCall
 
-    from .constants import ModeName, PlatformType
+    from .constants import IdentifiedPlatformType, ModeName
+
 
 MethodCls = Type["Method"]
 
@@ -399,6 +400,9 @@ def activate_method(method: Method) -> Tuple[MethodActivationResult, Heartbeat |
             method.name,
         )
         result.failure_stage = StageName.PLATFORM_SUPPORT
+        result.failure_reason = _get_platform_unsupported_message(
+            CURRENT_PLATFORM, method.supported_platforms
+        )
         return result, None
 
     requirements_fail, err_message = caniuse_fails(method)
@@ -440,6 +444,17 @@ def activate_method(method: Method) -> Tuple[MethodActivationResult, Heartbeat |
     heartbeat.start()
 
     return result, heartbeat
+
+
+def _get_platform_unsupported_message(
+    platform: IdentifiedPlatformType, supported_platforms: Tuple[PlatformType, ...]
+) -> str:
+    platform_name = str(platform)
+    supported_names = ", ".join(str(p) for p in supported_platforms)
+    return (
+        f"Current platform ({platform_name}) is not in supported platforms: "
+        f"{supported_names}"
+    )
 
 
 def deactivate_method(method: Method, heartbeat: Optional[Heartbeat] = None) -> None:
