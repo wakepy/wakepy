@@ -386,7 +386,7 @@ def activate_method(method: Method) -> Tuple[MethodActivationResult, Heartbeat |
             method.mode_name,
             method.name,
         )
-        result.failure_stage = StageName.NONE
+        result.failure_stage = StageName.WAKEPY_FORCE_FAILURE
         result.failure_reason = (
             "Forced failure due to WAKEPY_FORCE_FAILURE environment variable"
         )

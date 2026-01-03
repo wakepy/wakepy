@@ -109,12 +109,15 @@ class StageName(StrEnum):
     NONE = auto()  # No stage at all.
 
     # The stages in the activation process in order
+    WAKEPY_FORCE_FAILURE = auto()
     PLATFORM_SUPPORT = auto()
     REQUIREMENTS = auto()
     ACTIVATION = auto()
 
 
-StageNameValue = Literal["NONE", "PLATFORM_SUPPORT", "REQUIREMENTS", "ACTIVATION"]
+StageNameValue = Literal[
+    "NONE", "WAKEPY_FORCE_FAILURE", "PLATFORM_SUPPORT", "REQUIREMENTS", "ACTIVATION"
+]
 
 # Type annotations
 T = TypeVar("T")

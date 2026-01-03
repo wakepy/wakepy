@@ -467,3 +467,77 @@ def test_use_mode_in_separate_thread(mode0: Mode):
 
     # Cleanup
     t.join()
+
+
+class TestWakepyForceFailure:
+    """Test WAKEPY_FORCE_FAILURE environment variable"""
+
+    def test_force_failure_causes_activation_to_fail(
+        self,
+        monkeypatch,
+        methods_abc: List[Type[Method]],
+        testmode_cls: Type[Mode],
+        dbus_adapter_cls: Type[DBusAdapter],
+    ):
+        """Test that WAKEPY_FORCE_FAILURE causes activation to fail"""
+        monkeypatch.setenv("WAKEPY_FORCE_FAILURE", "1")
+
+        params = _ModeParams(
+            name="TestMode",
+            method_classes=methods_abc,
+            dbus_adapter=dbus_adapter_cls,
+            methods_priority=["*"],
+            on_fail="pass",
+        )
+        mode = testmode_cls(params)
+
+        with mode as m:
+            assert isinstance(m, Mode)
+            assert m.result.success is False
+            assert m.active is False
+
+        self._assert_wakepy_force_failure(m.result, len(methods_abc))
+
+    def test_both_env_vars_force_failure_wins(
+        self,
+        monkeypatch,
+        methods_abc: List[Type[Method]],
+        testmode_cls: Type[Mode],
+        dbus_adapter_cls: Type[DBusAdapter],
+    ):
+        """Test that when both env vars set, WAKEPY_FORCE_FAILURE wins"""
+        monkeypatch.setenv("WAKEPY_FAKE_SUCCESS", "1")
+        monkeypatch.setenv("WAKEPY_FORCE_FAILURE", "1")
+
+        params = _ModeParams(
+            name="TestMode",
+            method_classes=methods_abc,
+            dbus_adapter=dbus_adapter_cls,
+            methods_priority=["*"],
+            on_fail="pass",
+        )
+        mode = testmode_cls(params)
+
+        with mode as m:
+            assert m.active is False  # WAKEPY_FORCE_FAILURE causes failure
+            assert m.result.success is False
+
+        self._assert_wakepy_force_failure(
+            m.result,
+            len(methods_abc) + 1,  # +1 for the WakepyFakeSuccess
+        )
+
+    @staticmethod
+    def _assert_wakepy_force_failure(result: ActivationResult, n_methods: int):
+        """Helper function to assert that only WAKEPY_FORCE_FAILURE caused
+        failure"""
+
+        failed = result.query()
+
+        assert len(failed) == n_methods, f"Expecting {n_methods} failed methods"
+
+        for res in failed:
+            assert (
+                res.failure_stage == StageName.WAKEPY_FORCE_FAILURE
+            ), "Only WAKEPY_FORCE_FAILURE should cause failure"
+            assert "WAKEPY_FORCE_FAILURE" in res.failure_reason
