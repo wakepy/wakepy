@@ -522,7 +522,7 @@ class TestWakepyForceFailure:
             assert m.active is False  # WAKEPY_FORCE_FAILURE causes failure
             assert m.result.success is False
 
-        self._assert_wakepy_force_failure(m.result, len(methods_abc)))
+        self._assert_wakepy_force_failure(m.result, len(methods_abc))
 
     @staticmethod
     def _assert_wakepy_force_failure(result: ActivationResult, n_methods: int):
