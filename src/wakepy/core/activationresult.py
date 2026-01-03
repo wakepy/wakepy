@@ -140,9 +140,13 @@ class ActivationResult:
 
         success_values = (True, False) if ignore_unused else (True, False, None)
 
-        fail_stages = [StageName.REQUIREMENTS, StageName.ACTIVATION]
+        fail_stages = [
+            StageName.WAKEPY_FORCE_FAILURE,
+            StageName.REQUIREMENTS,
+            StageName.ACTIVATION,
+        ]
         if not ignore_platform_fails:
-            fail_stages.insert(0, StageName.PLATFORM_SUPPORT)
+            fail_stages.insert(1, StageName.PLATFORM_SUPPORT)
 
         return self.query(success=success_values, fail_stages=fail_stages)
 
@@ -150,6 +154,7 @@ class ActivationResult:
         self,
         success: Sequence[bool | None] = (True, False, None),
         fail_stages: Sequence[StageName | StageNameValue] = (
+            StageName.WAKEPY_FORCE_FAILURE,
             StageName.PLATFORM_SUPPORT,
             StageName.REQUIREMENTS,
             StageName.ACTIVATION,
@@ -172,7 +177,8 @@ class ActivationResult:
             or fail (do not return unused methods).
         fail_stages:
             The fail stages to include in the output. The options are
-            "PLATFORM_SUPPORT", "REQUIREMENTS" and "ACTIVATION".
+            "WAKEPY_FORCE_FAILURE", "PLATFORM_SUPPORT", "REQUIREMENTS" and
+            "ACTIVATION".
 
         See Also
         --------
