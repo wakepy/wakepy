@@ -285,7 +285,7 @@ class ActivationResult:
 
         if style == "block":
             formatted = self._format_methods_block(method_results)
-            tried = "Tried Methods (in the order of attempt):\n\n" f"{formatted}"
+            tried = f"Tried Methods (in the order of attempt):\n\n{formatted}"
             return f"{msg}\n\n{tried}"
         else:
             formatted = self._format_methods_inline(method_results)
