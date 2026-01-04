@@ -136,6 +136,10 @@ class ActivationResult:
         the methods are in the priority order; the highest priority methods
         (those which are/were tried first) are listed first.
 
+        .. versionchanged:: 1.0.0.
+
+            The parameters are now keyword-only (See: https://github.com/wakepy/wakepy/issues/527)
+
         Parameters
         ----------
         ignore_platform_fails: bool
@@ -148,9 +152,11 @@ class ActivationResult:
             If True, ignores all unused / remaining methods. Default:
             ``False``.
 
+
         See Also
         --------
         query
+
         """
 
         success_values = (True, False) if ignore_unused else (True, False, None)
@@ -214,10 +220,10 @@ class ActivationResult:
         """Gets information about a failure as text. In case the mode
         activation was successful, returns an empty string.
 
-        This is only intended for interactive use. Users should not rely
-        on the exact text format returned by this function as it may change
-        without a notice. For programmatic use cases, it is advisable to use
-        :meth:`query`, or :meth:`list_methods` instead.
+        This is only intended for interactive use or for logging purposes.
+        Users should not rely on the exact text format returned by this
+        function as it may change without a notice. For programmatic use cases,
+        it is advisable to use :meth:`query`, or :meth:`list_methods` instead.
 
         Parameters
         ----------
