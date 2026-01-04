@@ -281,23 +281,21 @@ class ActivationResult:
             msg = f'Could not activate wakepy Mode "{mode_name}"!'
             return f"{msg}{sep}{tried_methods_text}"
 
+        msg = f'Could not activate wakepy Mode "{mode_name}"!'
+
         if style == "block":
-            formatted_methods = self._format_methods_block(method_results)
-            tried_methods_text = (
-                f"Tried Methods (in the order of attempt):\n\n" f"{formatted_methods}"
-            )
-            msg = f'Could not activate wakepy Mode "{mode_name}"!'
-            return f"{msg}\n\n{tried_methods_text}"
+            formatted = self._format_methods_block(method_results)
+            tried = "Tried Methods (in the order of attempt):\n\n" f"{formatted}"
+            return f"{msg}\n\n{tried}"
         else:
-            formatted_methods = self._format_methods_inline(method_results)
-            tried_methods_text = (
-                f"Tried Methods (in the order of attempt): "
-                f"{formatted_methods}. "
-                "The format of each item in the list is (index, "
-                "method_name, failure_stage, failure_reason)."
+            formatted = self._format_methods_inline(method_results)
+            tried = (
+                "Tried Methods (in the order of attempt): "
+                f"{formatted}. "
+                "The format of each item in the list is "
+                "(index, method_name, failure_stage, failure_reason)."
             )
-            msg = f'Could not activate wakepy Mode "{mode_name}"!'
-            return f"{msg} {tried_methods_text}"
+            return f"{msg} {tried}"
 
     def _format_methods_block(
         self, method_results: list[MethodActivationResult]
