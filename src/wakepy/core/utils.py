@@ -33,12 +33,12 @@ def is_env_var_truthy(env_var_name: str) -> bool:
     env_var_value = os.environ.get(env_var_name)
 
     if env_var_value is None:
-        logger.debug("'%s' not set.", env_var_name)
+        logger.debug("'%s' is not set.", env_var_name)
         return False
 
     if env_var_value.lower() in FALSY_ENV_VAR_VALUES:
-        logger.debug("'%s' set to a falsy value: %s.", env_var_name, env_var_value)
+        logger.debug("'%s' has a falsy value: %s.", env_var_name, env_var_value)
         return False
 
-    logger.debug("'%s' set to a truthy value: %s.", env_var_name, env_var_value)
+    logger.debug("'%s' has a truthy value: %s.", env_var_name, env_var_value)
     return True
