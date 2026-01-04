@@ -11,7 +11,7 @@
 - Make [Mode.active_method](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.Mode.active_method) a [MethodInfo](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.MethodInfo) instance (was a string) ([#459](https://github.com/wakepy/wakepy/pull/459))
 
 ### 🌱 Minor Enhancements
-- Better error messages: When selected Method is not part of the selected Mode ([#427](https://github.com/wakepy/wakepy/pull/427)) and when a D-Bus -based method fails ([#438](https://github.com/wakepy/wakepy/pull/438))
+- Better error messages: When selected Method is not part of the selected Mode ([#427](https://github.com/wakepy/wakepy/pull/427)) and when a D-Bus -based method fails ([#438](https://github.com/wakepy/wakepy/pull/438)). Also more human-readable output from [`ActivationResult.get_failure_text()`](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.ActivationResult.get_failure_text) ([#547](https://github.com/wakepy/wakepy/pull/547)).
 - Enhance Mode Activation Observability. Add logging (DEBUG and INFO level) for different parts in the Mode activation process. Show which methods are to be tried, and log any success and failure of activating a Mode. Improved the `ActivationResult.get_failure_text()` output. Added `NoMethodsWarning` which is issued if trying to activate a Mode with an empty list of methods. ([#411](https://github.com/wakepy/wakepy/pull/411)) 
 - Add logging to every Method activation and deactivation step ([#469](https://github.com/wakepy/wakepy/pull/469))
 - Improve logging: org.gnome.Sessionmanager and freedesktop methods ([#474](https://github.com/wakepy/wakepy/pull/474))
@@ -34,6 +34,7 @@
 - Make the `Mode._from_name()` and `Mode._method_classes` private; Not part of the public API anymore ([#458](https://github.com/wakepy/wakepy/pull/458))
 - The `Mode.active_method`, `Mode.used_method`, are now instances of the new ModeInfo (previously strings) ([#460](https://github.com/wakepy/wakepy/pull/460))
 - The `ActivationResult.mode_name` is now always a string (instead of being a ModeName) ([#462](https://github.com/wakepy/wakepy/pull/462))
+- The `ActivationResult.list_methods()` arguments are now keyword only ([#547](https://github.com/wakepy/wakepy/pull/547))
 
 ### 👷 Maintenance
 - Add basic spellchecking using [codespell](https://github.com/codespell-project/codespell) ([#539](https://github.com/wakepy/wakepy/pull/539))

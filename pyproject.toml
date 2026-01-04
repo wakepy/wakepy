@@ -11,7 +11,7 @@ dependencies = [
     # systems should be listed here (as they might use Gnome, XFCE, etc.)
     # Full list of the environment markers at https://peps.python.org/pep-0508/
     "jeepney >= 0.7.1;platform_system=='Linux' or platform_system=='FreeBSD' or platform_system=='OpenBSD' or platform_system=='NetBSD' or platform_system=='DragonFly' or platform_system=='SunOS' or platform_system=='AIX' or platform_system=='Minix'",
-    # typing.Literal was introduced in Python 3.8
+    # typing.Literal and typing.TypedDict were introduced in Python 3.8
     # typing.ParamsSpec was introduced in Python 3.10. This is needed for
     #   making typing of functions decorated with @keep.running work.
     'typing-extensions; python_version < "3.10.0"',
@@ -253,11 +253,22 @@ exclude = [
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 select = [
     # BLE: blind-except: https://docs.astral.sh/ruff/rules/blind-except/
-    "BLE", 
-    "ERA", # eradicate (commented out code)
-    "E", # pycodestyle
-    "F", # Pyflakes
-    # isort: https://docs.astral.sh/ruff/rules/#isort-i
+    "BLE",
+    # E: pycodestyle
+    "E",
+    # ERA: eradicate (commented out code)
+    "ERA",
+    # F: Pyflakes
+    "F",
+    # Disallow TODO (these should be either fixed before merging, or
+    # alternatively, use a LATER tag. In addition, disallow XXX, FIXME and HACK
+    "FIX001",
+    "FIX002",
+    "FIX003",
+    "FIX004",
+    # FBT: flake8-boolean-trap
+    "FBT",
+    # I: isort: https://docs.astral.sh/ruff/rules/#isort-i
     "I",
     # S: flake8-bandit. Listings are in two places: (Tests and Blacklists)
     # 1) https://bandit.readthedocs.io/en/latest/plugins/index.html#complete-test-plugin-listing
@@ -267,13 +278,8 @@ select = [
     "W505",
     # W291: trailing-whitespace. Ref: https://docs.astral.sh/ruff/rules/trailing-whitespace/
     "W291",
-    # Disallow TODO (these should be either fixed before merging, or
-    # alternatively, use a LATER tag. In addition, disallow XXX, FIXME and HACK
-    "FIX001",
-    "FIX002",
-    "FIX003",
-    "FIX004",
 ]
+
 ignore = []
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
@@ -283,6 +289,7 @@ unfixable = []
 "tests/**.py" = [
     "S101", # flake8-bandit should not check for asserts in test files
     "BLE",
+    "FBT",
 ]
 
 [tool.ruff.lint.pycodestyle]
