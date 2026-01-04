@@ -258,6 +258,12 @@ class ActivationResult:
         >>> print(m.result.get_failure_text('inline'))
         Could not activate wakepy Mode "keep.running"! Tried Methods (in the order of attempt): (#1, org.freedesktop.PowerManagement, ACTIVATION, DBusCallError("DBus call of method 'Inhibit' on interface 'org.freedesktop.PowerManagement.Inhibit' with args ('wakepy', 'wakelock active') failed with message: [org.freedesktop.DBus.Error.ServiceUnknown] ('The name org.freedesktop.PowerManagement was not provided by any .service files',)")), (#2, org.gnome.SessionManager, ACTIVATION, RuntimeError('Intentional failure here (for demo purposes)')), (#3, caffeinate, PLATFORM_SUPPORT, Current platform (LINUX) is not in supported platforms: MACOS), (#4, SetThreadExecutionState, PLATFORM_SUPPORT, Current platform (LINUX) is not in supported platforms: WINDOWS). The format of each item in the list is (index, method_name, failure_stage, failure_reason).
 
+        .. versionchanged:: 1.0.0.
+
+            The ``style`` parameter was added in wakepy 1.0.0, and the default
+            style was changed to "block".
+
+
         See Also
         --------
         list_methods, query
