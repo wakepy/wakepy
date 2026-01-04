@@ -13,12 +13,22 @@ MethodActivationResult
 
 from __future__ import annotations
 
+import sys
+import textwrap
 import typing
 import warnings
 from dataclasses import InitVar, dataclass, field
 from typing import List, Sequence
 
 from .constants import WAKEPY_FAKE_SUCCESS_METHOD, StageName, StageNameValue
+
+if sys.version_info < (3, 8):  # pragma: no-cover-if-py-gte-38
+    from typing_extensions import Literal
+else:  # pragma: no-cover-if-py-lt-38
+    from typing import Literal
+
+FailureTextStyle = Literal["block", "inline"]
+
 
 if typing.TYPE_CHECKING:
     from typing import Optional
@@ -111,14 +121,18 @@ class ActivationResult:
 
     def list_methods(
         self,
+        *,
         ignore_platform_fails: bool = True,
         ignore_unused: bool = False,
     ) -> list[MethodActivationResult]:
-        """Get a list of the methods present in the activation process, and
-        their activation results. This is the higher-level interface. If you
-        want more control, use :meth:`~ActivationResult.query`. The
-        returned methods are in the order as given in when initializing
-        ActivationResult. If you did not create the ActivationReult manually,
+        """Get a list of methods involved in the activation process together
+        with their activation results.
+
+        This is the higher-level interface. For more finer-grained control, use
+        :meth:`~ActivationResult.query`.
+
+        The returned methods are in the order as given in when initializing
+        ActivationResult. If you did not create the ActivationResult manually,
         the methods are in the priority order; the highest priority methods
         (those which are/were tried first) are listed first.
 
@@ -129,6 +143,7 @@ class ActivationResult:
             as usually one is not interested in methods which are meant for
             other platforms. If False, includes also platform fails. Default:
             ``True``.
+
         ignore_unused: bool
             If True, ignores all unused / remaining methods. Default:
             ``False``.
@@ -195,20 +210,21 @@ class ActivationResult:
 
         return out
 
-    def get_failure_text(self, newlines: bool = True) -> str:
+    def get_failure_text(self, style: FailureTextStyle = "block") -> str:
         """Gets information about a failure as text. In case the mode
         activation was successful, returns an empty string.
 
         This is only intended for interactive use. Users should not rely
         on the exact text format returned by this function as it may change
         without a notice. For programmatic use cases, it is advisable to use
-        :meth:`query`, instead.
+        :meth:`query`, or :meth:`list_methods` instead.
 
         Parameters
         ----------
-        newlines: bool
-            If True, adds newlines in the text (useful for printing for user),
-            if False, returns a single line string (useful for logging).
+        style: "block" | "inline"
+            The style of the failure text. "block" adds newlines in the text
+            and makes it easier to read, while "inline" returns a single line
+            string (useful for logging). Default: "block".
 
 
         Examples
@@ -218,13 +234,29 @@ class ActivationResult:
         >>>     # do stuff
         >>>
         >>> print(m.result.get_failure_text())
-        Could not activate wakepy Mode "keep.presenting"!
+        Could not activate wakepy Mode "keep.running"!
         <BLANKLINE>
         Tried Methods (in the order of attempt):
-        (#1, org.gnome.SessionManager, ACTIVATION, RuntimeError('Intentional failure here')),
-        (#2, caffeinate, PLATFORM_SUPPORT, -),
-        (#3, SetThreadExecutionState, PLATFORM_SUPPORT, -).
-        The format of each item in the list is (index, method_name, failure_stage, failure_reason).
+        <BLANKLINE>
+        1. org.freedesktop.PowerManagement
+            Reason: DBusCallError("DBus call of method 'Inhibit' on interface
+            'org.freedesktop.PowerManagement.Inhibit' with args ('wakepy', 'wakelock
+            active') failed with message: [org.freedesktop.DBus.Error.ServiceUnknown]
+            ('The name org.freedesktop.PowerManagement was not provided by any
+            .service files',)")
+        <BLANKLINE>
+        2. org.gnome.SessionManager
+            Reason: RuntimeError('Intentional failure here (for demo purposes)')
+        <BLANKLINE>
+        3. caffeinate
+            Reason: Current platform (LINUX) is not in supported platforms: MACOS
+        <BLANKLINE>
+        4. SetThreadExecutionState
+            Reason: Current platform (LINUX) is not in supported platforms: WINDOWS
+
+        >>> # Inline style
+        >>> print(m.result.get_failure_text('inline'))
+        Could not activate wakepy Mode "keep.running"! Tried Methods (in the order of attempt): (#1, org.freedesktop.PowerManagement, ACTIVATION, DBusCallError("DBus call of method 'Inhibit' on interface 'org.freedesktop.PowerManagement.Inhibit' with args ('wakepy', 'wakelock active') failed with message: [org.freedesktop.DBus.Error.ServiceUnknown] ('The name org.freedesktop.PowerManagement was not provided by any .service files',)")), (#2, org.gnome.SessionManager, ACTIVATION, RuntimeError('Intentional failure here (for demo purposes)')), (#3, caffeinate, PLATFORM_SUPPORT, Current platform (LINUX) is not in supported platforms: MACOS), (#4, SetThreadExecutionState, PLATFORM_SUPPORT, Current platform (LINUX) is not in supported platforms: WINDOWS). The format of each item in the list is (index, method_name, failure_stage, failure_reason).
 
         See Also
         --------
@@ -233,39 +265,78 @@ class ActivationResult:
 
         if self.success:
             return ""
+
         mode_name = self.mode_name or "[unnamed mode]"
+        method_results = self.query()
 
-        if newlines:
-            first_sep = "\n\n"
-            sep = "\n"
-        else:
-            first_sep = sep = " "
-
-        debug_info_lst = []
-        for i, res in enumerate(self.query(), start=1):
-            debug_info_lst.append(
-                (
-                    f"(#{i}, {res.method_name}, {res.failure_stage or 'N/A'}, "
-                    f"{res.failure_reason or '-'})"
-                )
-            )
-
-        if debug_info_lst:
-            debug_info = f",{sep}".join(debug_info_lst)
-            tried_methods_text = (
-                f"Tried Methods (in the order of attempt):{sep}{debug_info}."
-                f"{sep}The format of each item in the list is (index, method_name, "
-                "failure_stage, failure_reason)."
-            )
-        else:
+        if not method_results:
             tried_methods_text = "Did not try any methods!"
+            sep = "\n\n" if style == "block" else " "
+            msg = f'Could not activate wakepy Mode "{mode_name}"!'
+            return f"{msg}{sep}{tried_methods_text}"
 
-        err_text = (
-            f'Could not activate wakepy Mode "{mode_name}"!{first_sep}'
-            + tried_methods_text
-        )
+        if style == "block":
+            formatted_methods = self._format_methods_block(method_results)
+            tried_methods_text = (
+                f"Tried Methods (in the order of attempt):\n\n" f"{formatted_methods}"
+            )
+            msg = f'Could not activate wakepy Mode "{mode_name}"!'
+            return f"{msg}\n\n{tried_methods_text}"
+        else:
+            formatted_methods = self._format_methods_inline(method_results)
+            tried_methods_text = (
+                f"Tried Methods (in the order of attempt): "
+                f"{formatted_methods}. "
+                "The format of each item in the list is (index, "
+                "method_name, failure_stage, failure_reason)."
+            )
+            msg = f'Could not activate wakepy Mode "{mode_name}"!'
+            return f"{msg} {tried_methods_text}"
 
-        return err_text
+    def _format_methods_block(
+        self, method_results: list[MethodActivationResult]
+    ) -> str:
+        """Format method activation results in 'block' style with newlines and
+        indentation.
+        """
+        if not method_results:
+            return ""
+
+        n_indent = 5
+        lines = []
+        for i, res in enumerate(method_results, start=1):
+            first_line = f"{i:>{n_indent-2}}. {res.method_name}"
+
+            failure_reason = res.failure_reason or "-"
+            reason_text = f"Reason: {failure_reason}"
+            wrapped_reason = textwrap.fill(
+                reason_text,
+                width=79,
+                initial_indent=" " * n_indent,
+                subsequent_indent=" " * n_indent,
+            )
+            lines.append(f"{first_line}\n{wrapped_reason}")
+
+        return "\n\n".join(lines)
+
+    def _format_methods_inline(
+        self, method_results: list[MethodActivationResult]
+    ) -> str:
+        """Format method activation results in 'inline' style as a single
+        line.
+        """
+        if not method_results:
+            return ""
+
+        items = []
+        for i, res in enumerate(method_results, start=1):
+            failure_stage = str(res.failure_stage) if res.failure_stage else "N/A"
+            failure_reason = res.failure_reason or "-"
+            items.append(
+                f"(#{i}, {res.method_name}, {failure_stage}, {failure_reason})"
+            )
+
+        return ", ".join(items)
 
     def _get_success(self) -> bool:
         for res in self._method_results:

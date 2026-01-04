@@ -653,7 +653,7 @@ class Mode:
             )
         else:
             logger.info(
-                self.result.get_failure_text(newlines=False),
+                self.result.get_failure_text(style="inline"),
             )
 
         if not self.active:
@@ -866,10 +866,12 @@ def handle_activation_fail(on_fail: OnFail, result: ActivationResult) -> None:
     if on_fail == "pass":
         return
     elif on_fail == "warn":
-        warnings.warn(result.get_failure_text(), ActivationWarning, stacklevel=5)
+        warnings.warn(
+            result.get_failure_text(style="block"), ActivationWarning, stacklevel=5
+        )
         return
     elif on_fail == "error":
-        raise ActivationError(result.get_failure_text())
+        raise ActivationError(result.get_failure_text(style="block"))
     elif not callable(on_fail):
         raise ValueError(
             'on_fail must be one of "error", "warn", pass" or a callable which takes '

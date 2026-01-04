@@ -34,6 +34,7 @@
 - Make the `Mode._from_name()` and `Mode._method_classes` private; Not part of the public API anymore ([#458](https://github.com/wakepy/wakepy/pull/458))
 - The `Mode.active_method`, `Mode.used_method`, are now instances of the new ModeInfo (previously strings) ([#460](https://github.com/wakepy/wakepy/pull/460))
 - The `ActivationResult.mode_name` is now always a string (instead of being a ModeName) ([#462](https://github.com/wakepy/wakepy/pull/462))
+- The `ActivationResult.list_methods()` arguments are now keyword only ([#547](https://github.com/wakepy/wakepy/pull/547))
 
 ### 👷 Maintenance
 - Add basic spellchecking using [codespell](https://github.com/codespell-project/codespell) ([#539](https://github.com/wakepy/wakepy/pull/539))
