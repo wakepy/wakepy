@@ -13,7 +13,7 @@ with keep.running():
 
 which is roughly equal to (See: [PEP-343](https://peps.python.org/pep-0343/))
 
-```
+```{code-block} python
 mode = keep.running()
 mode.__enter__()
 try:
