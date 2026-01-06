@@ -7,7 +7,7 @@
    viewBox="0 0 125.75059 264.5693"
    version="1.1"
    id="svg1"
-   inkscape:version="1.3.2 (091e20ef0f, 2023-11-25)"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
    sodipodi:docname="activate-mode-using-method-activity-diagram.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -23,15 +23,16 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="0.58261784"
-     inkscape:cx="277.19714"
-     inkscape:cy="535.51398"
-     inkscape:window-width="1600"
-     inkscape:window-height="836"
+     inkscape:zoom="1.1652357"
+     inkscape:cx="107.27444"
+     inkscape:cy="381.46789"
+     inkscape:window-width="1920"
+     inkscape:window-height="1048"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="layer1"
+     showgrid="false" />
   <defs
      id="defs1">
     <marker
@@ -415,37 +416,42 @@
          y="22.709379"
          id="tspan7">Activate with a Method</tspan></text>
     <rect
-       style="fill:#1870d8;fill-opacity:1;stroke:#6c87e0;stroke-width:0.349999;stroke-dasharray:none;stroke-dashoffset:0.415748;stroke-opacity:1"
+       style="fill:#1870d8;fill-opacity:1;stroke:#6c87e0;stroke-width:0.383626;stroke-dasharray:none;stroke-dashoffset:0.415748;stroke-opacity:1"
        id="rect1-2-6-2-9-9-6-5"
-       width="62.006947"
-       height="16.73753"
-       x="68.701027"
-       y="48.077297"
-       rx="3.9999998"
-       ry="4" />
+       width="74.644218"
+       height="16.703903"
+       x="61.858524"
+       y="48.094109"
+       rx="4.8152165"
+       ry="3.9919636" />
     <text
        xml:space="preserve"
-       style="font-size:5.0321px;line-height:normal;font-family:FreeSans,Arial;-inkscape-font-specification:'FreeSans,Arial, Normal';text-align:center;text-decoration-color:#000000;text-anchor:middle;fill:#2749b8;fill-opacity:0.996078;stroke-width:0.35;stroke-dashoffset:0.415748"
-       x="98.511131"
-       y="58.990902"
+       style="font-size:5.0321px;line-height:normal;font-family:FreeSans, Arial;-inkscape-font-specification:'FreeSans,Arial, Normal';text-align:center;text-decoration-color:#000000;text-anchor:middle;fill:#2749b8;fill-opacity:0.996078;stroke-width:0.35;stroke-dashoffset:0.415748"
+       x="98.62394"
+       y="55.074753"
        id="text1-9-2-2-6-1-4-5"><tspan
          sodipodi:role="line"
          id="tspan1-2-54-4-2-7-1-7"
          style="fill:#ffffff;fill-opacity:0.996078;stroke:none;stroke-width:0.35;stroke-opacity:1"
-         x="98.511131"
-         y="58.990902">Check Platform Support</tspan></text>
+         x="98.62394"
+         y="55.074753">Check</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#ffffff;fill-opacity:0.996078;stroke:none;stroke-width:0.35;stroke-opacity:1"
+         x="98.62394"
+         y="61.36488"
+         id="tspan5084">WAKEPY_FORCE_FAILURE</tspan></text>
     <rect
-       style="fill:#1870d8;fill-opacity:1;stroke:#6c87e0;stroke-width:0.338631;stroke-dasharray:none;stroke-dashoffset:0.415748;stroke-opacity:1"
+       style="fill:#1870d8;fill-opacity:1;stroke:#6c87e0;stroke-width:0.385131;stroke-dasharray:none;stroke-dashoffset:0.415748;stroke-opacity:1"
        id="rect1-2-6-2-9-9-6-5-36"
-       width="50.653584"
-       height="16.748899"
-       x="75.586197"
-       y="86.589317"
-       rx="3.7418091"
-       ry="4.002717" />
+       width="65.702362"
+       height="16.7024"
+       x="65.824127"
+       y="86.612564"
+       rx="4.8534708"
+       ry="3.9916043" />
     <text
        xml:space="preserve"
-       style="font-size:5.0321px;line-height:normal;font-family:FreeSans,Arial;-inkscape-font-specification:'FreeSans,Arial, Normal';text-align:center;text-decoration-color:#000000;text-anchor:middle;fill:#2749b8;fill-opacity:0.996078;stroke-width:0.35;stroke-dashoffset:0.415748"
+       style="font-size:5.0321px;line-height:normal;font-family:FreeSans, Arial;-inkscape-font-specification:'FreeSans,Arial, Normal';text-align:center;text-decoration-color:#000000;text-anchor:middle;fill:#2749b8;fill-opacity:0.996078;stroke-width:0.35;stroke-dashoffset:0.415748"
        x="100.34517"
        y="97.206314"
        id="text1-9-2-2-6-1-4-5-1"><tspan
@@ -453,7 +459,7 @@
          id="tspan1-2-54-4-2-7-1-7-2"
          style="fill:#ffffff;fill-opacity:0.996078;stroke:none;stroke-width:0.35;stroke-opacity:1"
          x="100.34517"
-         y="97.206314">Check Requirements</tspan></text>
+         y="97.206314">Call Method.caniuse()</tspan></text>
     <rect
        style="fill:#1870d8;fill-opacity:1;stroke:#6c87e0;stroke-width:0.338631;stroke-dasharray:none;stroke-dashoffset:0.415748;stroke-opacity:1"
        id="rect1-2-6-2-9-9-6-5-36-5"
@@ -491,7 +497,7 @@
        sodipodi:nodetypes="cc" />
     <text
        xml:space="preserve"
-       style="font-size:3.01591px;line-height:normal;font-family:FreeSans,Arial;-inkscape-font-specification:'FreeSans,Arial, Normal';text-align:center;text-decoration-color:#000000;text-anchor:middle;fill:#2f2f2f;fill-opacity:0.579625;stroke-width:0.35;stroke-dashoffset:0.415748"
+       style="font-size:3.01591px;line-height:normal;font-family:FreeSans, Arial;-inkscape-font-specification:'FreeSans,Arial, Normal';text-align:center;text-decoration-color:#000000;text-anchor:middle;fill:#2f2f2f;fill-opacity:0.579625;stroke-width:0.35;stroke-dashoffset:0.415748"
        x="116.84636"
        y="72.44355"
        id="text1-9-7-1-9-1-12-2-52-7-0-7-9"><tspan
@@ -499,18 +505,18 @@
          style="font-weight:bold;fill:#2f2f2f;fill-opacity:0.579625;stroke:none;stroke-width:0.35;stroke-opacity:1"
          x="116.84636"
          y="72.44355"
-         id="tspan7-6-0-2">[not supported]</tspan></text>
+         id="tspan7-6-0-2">[forced failure]</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:3.01591px;line-height:normal;font-family:FreeSans,Arial;-inkscape-font-specification:'FreeSans,Arial, Normal';text-align:center;text-decoration-color:#000000;text-anchor:middle;fill:#2f2f2f;fill-opacity:0.579625;stroke-width:0.35;stroke-dashoffset:0.415748"
-       x="110.3236"
-       y="82.319389"
+       style="font-size:3.01591px;line-height:normal;font-family:FreeSans, Arial;-inkscape-font-specification:'FreeSans,Arial, Normal';text-align:center;text-decoration-color:#000000;text-anchor:middle;fill:#2f2f2f;fill-opacity:0.579625;stroke-width:0.35;stroke-dashoffset:0.415748"
+       x="114.83032"
+       y="82.013596"
        id="text1-9-7-1-9-1-12-2-52-7-0-7-9-0"><tspan
          sodipodi:role="line"
          style="font-weight:bold;fill:#2f2f2f;fill-opacity:0.579625;stroke:none;stroke-width:0.35;stroke-opacity:1"
-         x="110.3236"
-         y="82.319389"
-         id="tspan7-6-0-2-6">[supported]</tspan></text>
+         x="114.83032"
+         y="82.013596"
+         id="tspan7-6-0-2-6">[no forced failure]</tspan></text>
     <rect
        style="fill:#ffffff;fill-opacity:1;stroke:#88921e;stroke-width:0.424;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        id="rect1-2-6-2-9-9-6-5-4-0-8-7-2-0-0"

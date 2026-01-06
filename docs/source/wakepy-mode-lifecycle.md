@@ -1,7 +1,7 @@
 # Wakepy Mode Lifecycle
 
 ## Introduction to Modes
-**Modes** are what you enter in, stay for a while, and exit from. For example, `keep.running` is a Mode where automatic suspend is inhibited.  Modes are implemented as regular [context manager](https://peps.python.org/pep-0343) classes.  A simple example of using wakepy Modes is
+[**Modes**](#wakepy-modes) are what you enter, stay in for a while, and exit from. For example, `keep.running` is a Mode where automatic suspend is inhibited. Modes can be used in two ways. As **context managers**:
 
 (simple-example-code-block)=
 ```{code-block} python
@@ -11,22 +11,45 @@ with keep.running():
     USER_CODE
 ```
 
-Before we talk about the Mode lifecycle, let's introduce the different states a Mode can have. There are five different states related to any wakepy Mode lifecycle. Out of them, *three* are states of the Mode class:
-- ***Inactive***: The initial state of Modes. Also the state after deactivation.
-- ***Active***: Where USER_CODE is meant to be run in.
-- ***Activation Failed***: Possible state if activation fails.
+which is roughly equal to (See: [PEP-343](https://peps.python.org/pep-0343/))
 
-The two other — *Activation Started* and *Deactivation Started* — are intermediate states in the Mode activation and deactivation processes. The five states are shown in the wakepy.Mode State Diagram in {numref}`state-diagram`.
+```
+mode = keep.running()
+mode.__enter__()
+try:
+    USER_CODE
+finally:
+    mode.__exit__() # cleanup guaranteed even if Exceptions in USER_CODE
+```
 
-:::{figure-md} state-diagram
-![wakepy mode state diagram](./img/mode-state-diagram.svg){width=500px}
+and with the **decorator syntax**:
 
-*The five states related to wakepy Modes*
-:::
+```{code-block} python
+from wakepy import keep
+
+@keep.running
+def long_running_task():
+    USER_CODE
+```
+
+which is roughly equal to
+
+```{code-block} python
+from wakepy import keep
+
+def long_running_task():
+    with keep.running():
+        USER_CODE
+```
+
+
+```{note}
+The rest of this document uses the context manager syntax in the examples because it makes the Mode lifecycle steps more explicit. The decorator syntax is just some syntactic sugar and uses a context manager internally automatically every time the decorated function is called.
+```
 
 ## Overview of the Mode Lifecycle
 
-In order to make it is easier to discuss about what is happening, we use the code from [this code block](simple-example-code-block) and  split the Mode initialization and activation in the [*context expression*](https://peps.python.org/pep-0343/#standard-terminology) into two statements and add comments and line numbers:
+To make it easier to discuss what is happening, we use the code from [this code block](simple-example-code-block) and split the Mode initialization and activation in the [*context expression*](https://peps.python.org/pep-0343/#standard-terminology) into two statements and add comments and line numbers:
 
 ```{code-block} python
 :lineno-start: 1
@@ -37,30 +60,30 @@ mode = keep.running()
 # Inactive
 
 with mode:
-    # Active
+    # Active OR Activation Failed
     USER_CODE
-    # Still Active
+    # Active OR Activation Failed
 
 # Inactive
 ```
-The above comments assume "the happy path" (the mode activation succeeds). Then, we compare the code with the actions in the [Activity Diagram](#mode-activity-diagram).
+We can now compare the code with the actions in the [Activity Diagram](#mode-activity-diagram).
 
 ### Mode Activity Diagram
 
 
-The wakepy.Mode Activity Diagram in {numref}`fig-mode-activity-diagram` shows the *Activities* related to activating, working in and deactivating a mode. The arrows on left side show how these relate to python code. The States from {numref}`state-diagram` are marked between activities in cursive font, in light blue.
+The wakepy.Mode Activity Diagram in {numref}`fig-mode-activity-diagram` shows the *Activities* related to activating, working in and deactivating a mode. The arrows on left side show how these relate to python code. The possible States are marked between activities in cursive font, in light blue.
 
 :::{figure-md} fig-mode-activity-diagram
 ![wakepy mode activity diagram](./img/mode-activity-diagram.svg){width=660px}
 
-*The Activity Diagram related to activating and deactivating wakepy Modes*
+*The Activity Diagram related to activating and deactivating wakepy Modes. Different states are marked as cursive light blue font.*
 :::
 
 
 
 ## Creating a Mode instance
 
-This corresponds to the action "Create Mode" in {numref}`fig-mode-activity-diagram`. When you create an instance of the wakepy Mode class with
+This corresponds to the action "Create Mode" in {numref}`fig-mode-activity-diagram`. When you create an instance of the [wakepy Mode class](#wakepy.Mode) with
 
 
 ```{code-block} python
@@ -75,7 +98,7 @@ mode = keep.running()
 
 ```
 
-the instance will initially be in the *Inactive* state.
+the instance will initially be in the *Inactive* state. When using the decorator syntax, the python interpreter creates a new Mode instance every time it calls the decorated function.
 
 
 ## Activating a Mode
@@ -83,36 +106,48 @@ the instance will initially be in the *Inactive* state.
 In order to set your system into a Mode, you need to activate it ("Activate Mode" in {numref}`fig-mode-activity-diagram`). As Modes are [context managers](https://peps.python.org/pep-0343/) it is possible to simply use:
 
 ```{code-block} python
-:emphasize-lines: 3
+:emphasize-lines: 4
 :lineno-start: 7
 mode = keep.running()
 
-with mode:
-    # Active
+# Inactive
+with mode: # activates
+    # Active OR Activation Failed
     USER_CODE
+    # Active OR Activation Failed
+
+# Inactive
+
 ```
 
-This will put the Mode into *Active* or *Activation Failed* state through the intermediate *Activation Started* state. If the code is set to *Activation Failed* state, the *Action on Fail* occurs (See: {numref}`fig-mode-activity-diagram`). This action may be an exception or a warning.
+This will put the Mode into *Active* or *Activation Failed* state (depending of the outcome of the activation process). Here is the same using the decorator syntax:
 
-(activating-a-mode-note)=
-````{note}
-The above `with mode:...` is roughly equal to
 
 ```{code-block} python
-:emphasize-lines: 1
+:emphasize-lines: 11
+:lineno-start: 1
+mode = keep.running()
 
-mode._activate()
-try:
+@keep.running
+def long_running_task():
+    # Active
     USER_CODE
-finally:
-    mode._deactivate()
+    # Active
+
+
+# Inactive
+long_running_task() # activates and deactivates
+# Inactive
+
 ```
 
-````
+The python process creates a new Mode context manager instance and uses it every time a decorated function is called. If the process enters a *Activation Failed* state, the *Action on Fail* occurs (See: {numref}`fig-mode-activity-diagram`). This action may be an exception, a warning, or a custom action as determined by the [`on_fail`](#wakepy.keep.running) input parameter.
+
 
 The {numref}`fig-activate-mode-activity-diagram` presents an activity diagram from the "Activate Mode" step of {numref}`fig-mode-activity-diagram`. The steps are:
-- ***Prioritize Methods***: In this step, methods are prioritized first with `methods_priority` from the user, if given. Then, the methods are prioritized using platform support information from `Method.supported_platform`.
-- ***Activate with a Method***: Try to activate the Mode using the Method with highest priority. This is explained in more detail in the [next section](#section-activating-with-a-method). Note that only *one* Method is ever used to activate a Mode; the first one which does not fail, in priority order.
+- ***Check WAKEPY_FAKE_SUCCESS***: If the [`WAKEPY_FAKE_SUCCESS`](#WAKEPY_FAKE_SUCCESS) environment variable is set to a truthy value, the `WakepyFakeSuccess` method is inserted at the beginning of the methods list. This special method has `.caniuse()`, `.enter_mode()`, `.heartbeat()` and `.exit_mode()` which always succeed without making any real system calls, which is useful for testing.
+- ***Prioritize Methods***: Methods are prioritized first with `methods_priority` from the user, if given. Then `Method.supported_platform` is compared to the current platform, and unsupported Methods are placed last in the prioritized list.
+- ***Activate with a Method***: Try to activate the Mode using the Method with highest priority. This is explained in more detail in the [next section](#section-activating-with-a-method). Note that only *one* Method is ever used to activate a Mode; the first one which does not fail, in priority order. Unsupported methods (at the end of the list) are not tried at all.
 
 This process happens in the `Mode._activate` method and it returns an `ActivationResult` object, the used `wakepy.Method` instance (if successful)  and a `Heartbeat` instance (if used).
 
@@ -126,14 +161,13 @@ This process happens in the `Mode._activate` method and it returns an `Activatio
 (section-activating-with-a-method)=
 ### Activate with a Method
 
-The {numref}`fig-activate-with-a-method` presents the activity diagram for the "Activate with a Method" action from the {numref}`fig-activate-mode-activity-diagram`. This is what wakepy does with the Method:
+The {numref}`fig-activate-with-a-method` presents the activity diagram for the "Activate with a Method" action from the {numref}`fig-activate-mode-activity-diagram`. This is what wakepy does with each Method, in order:
 
 
-1. Checks platform support against the list in the `Method.supported_plaforms`.
-2. Checks requirements using `Method.caniuse()`. Some Methods could require a certain version of some specific Desktop Environment, a version of a 3rd party software, or some DBus service running. During this step, if some 3rd party SW has known bugs on certain versions, the Method may be dismissed.
-3. Tries to activate the Mode using the `Method.enter_mode()`, if defined
-4. Tries to start the heartbeat using the `Method.heartbeat()`, if defined.
-5. Starts the Heartbeat, if the `Method.heartbeat()` exists. This will run in a separate thread.
+1. **Check WAKEPY_FORCE_FAILURE**: If the [`WAKEPY_FORCE_FAILURE`](#WAKEPY_FORCE_FAILURE) environment variable is set to a truthy value, the activation is forced to fail immediately. This is useful for testing error handling. If both [`WAKEPY_FAKE_SUCCESS`](#WAKEPY_FAKE_SUCCESS) and `WAKEPY_FORCE_FAILURE` are set, `WAKEPY_FORCE_FAILURE` takes precedence.
+2. **Check requirements**: Checks requirements using `Method.caniuse()`. Some Methods could require a certain version of a specific Desktop Environment, a version of 3rd party software, or some D-Bus service running. During this step, if some 3rd party software has known bugs on certain versions, the Method may be dismissed.
+3. **Activate the Mode**: Tries to activate the Mode using `Method.enter_mode()`, if defined.
+4. **Start heartbeat**: Tries to start the heartbeat using `Method.heartbeat()`, if defined. This will run in a separate thread.
 
 ```{admonition} Heartbeat is not yet supported
 :class: note
@@ -141,7 +175,7 @@ The {numref}`fig-activate-with-a-method` presents the activity diagram for the "
 Heartbeat support is not yet fully implemented. Ticket: [wakepy/wakepy#109](https://github.com/wakepy/wakepy/issues/109)
 ```
 
-If the first two steps do not fail, at least one of `Method.enter_mode()` and `Method.caniuse()` is defined and they do not raise Exceptions, the Mode activation is successful. This process happens in the `activate_method` function and it returns an `MethodActivationResult` object, and a `Heartbeat` instance (if used and activation was successful).
+If at least one of `Method.enter_mode()` or `Method.heartbeat()` is defined and they do not raise exceptions, the Mode activation is successful. This process happens in the `activate_method` function and it returns a `MethodActivationResult` object and a `Heartbeat` instance (if used and activation was successful).
 :::{figure-md} fig-activate-with-a-method
 ![activity diagram for the "Activate Mode" action](./img/activate-mode-using-method-activity-diagram.svg){width=430px}
 
@@ -151,7 +185,7 @@ If the first two steps do not fail, at least one of `Method.enter_mode()` and `M
 
 ## Staying in a Mode
 
-This part of the Mode lifecycle is where the user code ("USER_CODE" in {numref}`fig-mode-activity-diagram`) is ran. Sometimes this code could be just simple while loop with sleeps until `KeyboardInterrupt`, and sometimes it is some long-running task. During this activity, the Mode will be in *Active* or *Activation Failed* state ({numref}`state-diagram`). If the used Method has a `heartbeat()` method, it will be called every `Method.heartbeat_period` seconds in a separate heartbeat thread.
+This part of the Mode lifecycle is where the user code ("USER_CODE" in {numref}`fig-mode-activity-diagram`) runs. This could be a simple while loop with sleeps until `KeyboardInterrupt`, or a long-running task. During this activity, the Mode will be in *Active* or *Activation Failed* state (as seen from {numref}`fig-mode-activity-diagram`). If the used Method has a `heartbeat()` method, it will be called every `Method.heartbeat_period` seconds in a separate heartbeat thread.
 
 ## Deactivating a Mode
 
@@ -169,9 +203,9 @@ with mode:
 # Inactive
 ```
 
-This is handled automatically by the context manager. What actually is called is `Mode.__exit__()` which in turn calls `Mode._deactivate()`, which triggers deactivating the used Method. Deactivating a Method means stopping the `Method.heartbeat()` calls (if heartbeat is used) and calling `Method.exit_mode()`.
+This is handled automatically by the context manager. What actually gets called is `Mode.__exit__()`, which in turn calls `Mode._deactivate()`, which triggers deactivating the used Method. Deactivating a Method means stopping the `Method.heartbeat()` calls (if heartbeat is used) and calling `Method.exit_mode()`.
 
 ```{note}
-When using the `with` statement, the context manager takes care of calling `Mode._deactivate()` if the `USER_CODE` raises an Exception.
+When using the `with` statement or the decorator syntax, the context manager takes care of calling `Mode._deactivate()` even if `USER_CODE` raises an exception.
 ```
 
