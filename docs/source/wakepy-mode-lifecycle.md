@@ -165,7 +165,7 @@ The {numref}`fig-activate-with-a-method` presents the activity diagram for the "
 
 
 1. **Check WAKEPY_FORCE_FAILURE**: If the [`WAKEPY_FORCE_FAILURE`](#WAKEPY_FORCE_FAILURE) environment variable is set to a truthy value, the activation is forced to fail immediately. This is useful for testing error handling. If both [`WAKEPY_FAKE_SUCCESS`](#WAKEPY_FAKE_SUCCESS) and `WAKEPY_FORCE_FAILURE` are set, `WAKEPY_FORCE_FAILURE` takes precedence.
-2. **Check requirements**: Checks requirements using `Method.caniuse()`. Some Methods could require a certain version of a specific Desktop Environment, a version of 3rd party software, or some D-Bus service running. During this step, if some 3rd party software has known bugs on certain versions, the Method may be dismissed.
+2. **Check requirements**: Checks requirements using `Method.caniuse()`. Some Methods could require a certain version of a specific Desktop Environment, a version of 3rd-party software, or some D-Bus service running. During this step, if some 3rd-party software has known bugs on certain versions, the Method may be dismissed.
 3. **Activate the Mode**: Tries to activate the Mode using `Method.enter_mode()`, if defined.
 4. **Start heartbeat**: Tries to start the heartbeat using `Method.heartbeat()`, if defined. This will run in a separate thread.
 
