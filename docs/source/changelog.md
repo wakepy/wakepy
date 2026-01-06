@@ -27,6 +27,7 @@
 - Add [CONTRIBUTING.md](https://github.com/wakepy/wakepy/blob/main/CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](https://github.com/wakepy/wakepy/blob/main/CODE_OF_CONDUCT.md) ([#513](https://github.com/wakepy/wakepy/pull/513), [#515](https://github.com/wakepy/wakepy/pull/515))
 - Documentation page for [Post Keepawake behavior](https://wakepy.readthedocs.io/stable/post-keepawake-behavior.html). Documented the behavior on Windows, KDE and GNOME ([#472](https://github.com/wakepy/wakepy/pull/472))
 - Simplify and clarify the documentation of the [Mode](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.Mode) ([#458](https://github.com/wakepy/wakepy/pull/458))
+- Update [Wakepy Mode Lifecycle](https://wakepy.readthedocs.io/stable/wakepy-mode-lifecycle.html) docs ([#555](https://github.com/wakepy/wakepy/pull/555))
 
 ### 🚨 Backwards incompatible changes
 - Deprecate `Mode.used_method`. Use `Mode.method`, instead ([464](https://github.com/wakepy/wakepy/pull/464))
