@@ -58,7 +58,7 @@ continue execution regardless of the lock.
 
 What about automatic lockscreen / screensaver in `keep.running` mode??
 : The system may still automatically log out user, enable lockscreen or turn off the
-display. Automatic lock screen is not guaranteed, but it is  not prevented in any way. Most systems are configured to automatically lock the session after a timeout. One exception is Windows which will lock the screen only either when (1) returning from suspend (which is now inhibited) or (2) when returning from Screen Saver, *if ScreenSaverIsSecure is set or enforced by a Group Policy (GPO)*.  See: [wakepy/#169](https://github.com/wakepy/wakepy/issues/169)
+display. Automatic lock screen is not guaranteed, but it is not prevented in any way. Most systems are configured to automatically lock the session after a timeout. One exception is Windows which will lock the screen only either when (1) returning from suspend (which is now inhibited) or (2) when returning from Screen Saver, *if ScreenSaverIsSecure is set or enforced by a Group Policy (GPO)*.  See: [wakepy/#169](https://github.com/wakepy/wakepy/issues/169)
 
 (keep-presenting-mode)=
 ## keep.presenting
@@ -104,12 +104,12 @@ manually entering screensaver does not deactivate the mode.
 
 ## Wakepy Modes FAQ
 
-What happens id the process holding the lock dies?
+What happens if the process holding the lock dies?
 : The lock is automatically removed. Wakepy always leaves the system to a clean state, and does not do any kind of configuration changes or anything which would need manual reversal if the process is killed abruptly.
 
 
 Does wakepy prevent manually putting system to sleep?
-: Only the  automatic, idle timer timeout based sleep / suspend is prevented; Wakepy will not prevent user manually entering sleep from a menu, by closing a laptop lid or by pressing a power button, for example.
+: Only the automatic, idle timer timeout based sleep / suspend is prevented; Wakepy will not prevent user manually entering sleep from a menu, by closing a laptop lid or by pressing a power button, for example.
 
 
 How to use wakepy in tests / CI

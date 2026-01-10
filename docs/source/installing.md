@@ -28,7 +28,7 @@ You may also install a release (.whl or .tar.gz) by downloading it from the [Git
 pip install wakepy-0.9.1-py3-none-any.whl
 ```
 
-Note that GitHub releases also contain the .sigstore files (e.g. `wakepy-0.9.1-py3-none-any.whl.sigstore`) which you may use to verify that an artifact has came from the [Publish a wakepy release 📦](https://github.com/wakepy/wakepy/blob/main/.github/workflows/publish-a-release.yml) GitHub Action.
+Note that GitHub releases also contain the .sigstore files (e.g. `wakepy-0.9.1-py3-none-any.whl.sigstore`) which you may use to verify that an artifact has come from the [Publish a wakepy release 📦](https://github.com/wakepy/wakepy/blob/main/.github/workflows/publish-a-release.yml) GitHub Action.
 
 ## Source code
 

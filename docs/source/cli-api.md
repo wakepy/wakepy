@@ -35,7 +35,7 @@ options:
 ````{admonition} Command "wakepy" not found?
 :class: note
 
-If you just installed `wakepy`, you might need to restart shell / terminal application to make added to the PATH.
+If you just installed `wakepy`, you might need to restart shell / terminal application to add it to the PATH.
 ````
 
 ```{versionchanged} 0.10.0

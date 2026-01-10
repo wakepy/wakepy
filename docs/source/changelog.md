@@ -34,7 +34,7 @@
 - Deprecate `Mode.activation_result`. Use `Mode.result`, instead ([464](https://github.com/wakepy/wakepy/pull/464))
 - Deprecate `ActivationResult.active_method`. Use `ActivationResult.method`, instead ([464](https://github.com/wakepy/wakepy/pull/464))
 - Make the `Mode._from_name()` and `Mode._method_classes` private; Not part of the public API anymore ([#458](https://github.com/wakepy/wakepy/pull/458))
-- The `Mode.active_method`, `Mode.used_method`, are now instances of the new ModeInfo (previously strings) ([#460](https://github.com/wakepy/wakepy/pull/460))
+- The `Mode.active_method`, `Mode.used_method`, are now instances of the new MethodInfo (previously strings) ([#460](https://github.com/wakepy/wakepy/pull/460))
 - The `ActivationResult.mode_name` is now always a string (instead of being a ModeName) ([#462](https://github.com/wakepy/wakepy/pull/462))
 - The `ActivationResult.list_methods()` arguments are now keyword only ([#547](https://github.com/wakepy/wakepy/pull/547))
 
@@ -122,7 +122,7 @@
 🗓️ 2024-05-31
 
 ### ✨ Features
-- Support keep.running mode in KDE Plasma 5.12.90 and newer through the [org.freedesktop.PowerManagement](#org-freedesktop-powermanagement) method. It may also be used on other DEs which implement this older freedesktop.org D-Bus interface (but not Xcfe). ([#324](https://github.com/wakepy/wakepy/pull/324))
+- Support keep.running mode in KDE Plasma 5.12.90 and newer through the [org.freedesktop.PowerManagement](#org-freedesktop-powermanagement) method. It may also be used on other DEs which implement this older freedesktop.org D-Bus interface (but not Xfce). ([#324](https://github.com/wakepy/wakepy/pull/324))
 - Cooler CLI spinner ([#309](https://github.com/wakepy/wakepy/pull/309), [#323](https://github.com/wakepy/wakepy/pull/323))
 
 ### 📖 Documentation
@@ -223,7 +223,7 @@
 🗓️ 2023-02-27
 
 ### ✨ Features
-- Support for using wakepy without sudo on linux! There are now D-bus solutions (1) using  jeepney and (2) using dbus-python (libdbus). Thanks to [Stehlampe2020](https://github.com/Stehlampe2020) for the dbus-python based solution ([PR #22](https://github.com/np-8/wakepy/pull/22)) and [NicoWeio](https://github.com/NicoWeio) for raising  [Issue #17](https://github.com/np-8/wakepy/issues/17).
+- Support for using wakepy without sudo on linux! There are now D-bus solutions (1) using jeepney and (2) using dbus-python (libdbus). Thanks to [Stehlampe2020](https://github.com/Stehlampe2020) for the dbus-python based solution ([PR #22](https://github.com/np-8/wakepy/pull/22)) and [NicoWeio](https://github.com/NicoWeio) for raising [Issue #17](https://github.com/np-8/wakepy/issues/17).
 - Linux+systemd approach has sudo check. The program won't start without `SUDO_UID` environment variable set.
 
 ## wakepy 0.5.0
