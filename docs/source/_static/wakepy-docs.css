@@ -111,6 +111,13 @@ dl.py > dd > p + ul {
 dl.py > dd > ul {
     margin-bottom: 1.15rem !important;
 }
+/* Add spacing only for API reference parameter descriptions */
+dl.py dl.field-list > dd > dl > dd > p {
+    margin: 0 0 0.75rem !important;
+}
+dl.py dl.field-list > dd > dl > dd > p:last-child {
+    margin-bottom: 0 !important;
+}
 
 /* Custom table class for wakepy docs */
 .wakepy-table {
