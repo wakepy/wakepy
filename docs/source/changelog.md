@@ -28,6 +28,7 @@
 - Documentation page for [Post Keepawake behavior](https://wakepy.readthedocs.io/stable/post-keepawake-behavior.html). Documented the behavior on Windows, KDE and GNOME ([#472](https://github.com/wakepy/wakepy/pull/472))
 - Simplify and clarify the documentation of the [Mode](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.Mode) ([#458](https://github.com/wakepy/wakepy/pull/458))
 - Update [Wakepy Mode Lifecycle](https://wakepy.readthedocs.io/stable/wakepy-mode-lifecycle.html) docs ([#555](https://github.com/wakepy/wakepy/pull/555))
+- Add spacing to paragraphs in the API Reference ([#557](https://github.com/wakepy/wakepy/pull/557))
 
 ### 🚨 Backwards incompatible changes
 - Deprecate `Mode.used_method`. Use `Mode.method`, instead ([464](https://github.com/wakepy/wakepy/pull/464))
