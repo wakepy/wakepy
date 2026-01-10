@@ -218,9 +218,9 @@ class Method(ABC):
         # If the mode enter was not successful, raise an Exception of any type.
         # This is caught by the mode activation process and handled.
         #
-        # Note: The .enter_mode() should always leave anything in a clean in
-        # case of errors; When subclassing, make sure that in case of any
-        # exceptions, everything is cleaned; everything should be left in
+        # Note: The .enter_mode() should always leave everything in a clean
+        # state in case of errors. When subclassing, make sure that in case of
+        # any exceptions, everything is cleaned; everything should be left in
         # a state which does not require .exit_mode() to be called.
         #
         return
@@ -291,7 +291,7 @@ class Method(ABC):
         # subclass, either. Typically one would *not* override this method.
         if self.dbus_adapter is None:
             raise RuntimeError(
-                f'{self.__class__.__name__ } cannot process dbus method call "{call}" '
+                f'{self.__class__.__name__} cannot process dbus method call "{call}" '
                 "as it does not have a DBusAdapter."
             )
         try:
@@ -744,9 +744,10 @@ class MethodInfo:
     """
 
     mode_name: str
-    """The name of the mode the method implements. Examples: "keep.running" for
-    the :func:`keep.presenting <wakepy.keep.presenting>` mode and
-    "keep.presenting" for the :func:`keep.running <wakepy.keep.running>` mode.
+    """The name of the mode the method implements. Examples: "keep.running"
+    for the :func:`keep.running <wakepy.keep.running>` mode and
+    "keep.presenting" for the :func:`keep.presenting <wakepy.keep.presenting>`
+    mode.
     """
 
     supported_platforms: Tuple[PlatformType, ...]
