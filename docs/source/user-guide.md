@@ -230,7 +230,7 @@ with keep.running(omit=['org.gnome.SessionManager', 'SomeOtherMethod']):
 ```{versionadded} 0.8.0
 ```
 
-To control the order of the methods to be tried, you may use the `methods_priority` argument. The argument should be a list of method names or sets of method names. Each item in the list is considered as "equal priority" and wakepy's automatic logic will order the methods within the sets. An asterisk (`*`) may be used to denote "any other methods".
+To control the order of the methods to be tried, you may use the `methods_priority` argument. The argument should be a list of priority groups. Each group is a method name or set of method names. Each item within a priority group is considered as "equal priority" and wakepy's automatic logic will order the methods within the sets. An asterisk (`*`) may be used to denote "any other methods" and can be used once (and only once) within `methods_priority`.
 
 
 ### Example: prioritizing methods

@@ -16,7 +16,7 @@ WAKEPY_FAKE_SUCCESS_METHOD = "WakepyFakeSuccess"
 # This variable should only contain lower-case characters.
 FALSY_ENV_VAR_VALUES = ("0", "no", "false", "n", "f", "")
 """The falsy environment variable values. All other values are considered to be
-truthy. These values are case insensitive; Also "NO", "False" and "FALSE" are
+truthy. These values are case insensitive; also "NO", "False" and "FALSE" are
 falsy.
 """
 

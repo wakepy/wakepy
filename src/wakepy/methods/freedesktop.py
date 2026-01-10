@@ -37,7 +37,7 @@ list of DEs, defined in [2]
 KDE = "KDE"
 """Constant for KDE desktop environment / KDE Plasma"""
 XFCE = "XFCE"
-"""Constant for Xfce desktop environemtn"""
+"""Constant for Xfce desktop environment"""
 
 
 class FreedesktopInhibitorWithCookieMethod(Method):

@@ -36,9 +36,9 @@ class Flags(enum.IntFlag):
 
 class WindowsSetThreadExecutionState(Method, ABC):
     """This is a method which calls the SetThreadExecutionState function from
-    the kernel32.dll. The SetThreadExecutionState informs the system that it is
-    in use preventing the system from entering sleep or turning off the display
-    while the application is running" (depending on the used flags)."""
+    the kernel32.dll. The SetThreadExecutionState informs the system that it
+    is in use, preventing the system from entering sleep or turning off the
+    display while the application is running (depending on the used flags)."""
 
     # The SetThreadExecutionState docs say that it supports Windows XP and
     # above (client) or Windows Server 2003 and above (server)

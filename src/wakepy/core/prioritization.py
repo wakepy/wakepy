@@ -1,5 +1,5 @@
-"""This module functions which may be used in the prioritization of wakepy
-Methods.
+"""This module contains functions which may be used in the prioritization of
+wakepy Methods.
 
 Most important functions
 ------------------------

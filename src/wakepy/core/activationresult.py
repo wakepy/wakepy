@@ -38,8 +38,8 @@ if typing.TYPE_CHECKING:
 
 @dataclass
 class ActivationResult:
-    """Responsible of keeping track on the possibly successful (max 1), failed
-    and unused methods and providing different view on the results of the
+    """Responsible for keeping track of the possibly successful (max 1), failed
+    and unused methods and providing a different view of the results of the
     activation process. The ``ActivationResult`` instances are created in
     activation process of a ``Mode`` like :func:`keep.presenting` and
     :func:`keep.running`, and one would not typically initialize one manually.
@@ -78,7 +78,7 @@ class ActivationResult:
     """
 
     real_success: bool = field(init=False)
-    """Tells is entering into a mode was successful. This may not be faked with
+    """Tells if entering into a mode was successful. This may not be faked with
     the :ref:`WAKEPY_FAKE_SUCCESS` environment variable.
 
     See also: :attr:`success`.

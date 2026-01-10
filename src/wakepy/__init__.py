@@ -12,7 +12,7 @@ try:
     from ._version import __version__ as __version__
     from ._version import version_tuple as version_tuple
 except ImportError:  # pragma: no cover
-    # Likely an editable install. Should ever happen if installed from a
+    # Likely an editable install. Should never happen if installed from a
     # distribution package (sdist or wheel)
     __version__ = "undefined"
     version_tuple = (0, 0, 0, "undefined")
@@ -36,7 +36,7 @@ from .core import modecount as modecount
 from .modes import keep as keep
 
 JeepneyDBusAdapter: Type[DBusAdapter]
-"""This is lazily imported below. The reason for this is that no all systems
+"""This is lazily imported below. The reason for this is that not all systems
 support DBus, but it's nice to be able to import this directly from wakepy
 top level package."""
 

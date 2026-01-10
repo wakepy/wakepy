@@ -88,7 +88,7 @@ Wakepy Core
 
 DBus Adapter
 -------------
-DBus adapters are an advanced concept of wakepy. They would be used in such a case where wants to use other D-Bus python library than the default (which is `jeepney <https://jeepney.readthedocs.io/>`_).
+DBus adapters are an advanced concept of wakepy. They would be used in such a case where one wants to use other D-Bus python library than the default (which is `jeepney <https://jeepney.readthedocs.io/>`_).
 
 .. autoclass:: wakepy.DBusAdapter
     :members:

@@ -85,6 +85,10 @@ def running(
         and may occur only once in the priority order, and cannot be part of a
         set. If asterisk is not part of the `methods_priority`, it will be
         added as the last element automatically.
+
+        See the :ref:`How to control order of Methods
+        <how-to-control-order-of-methods>` section in the documentation for
+        more information.
     on_fail: "error" | "warn" | "pass" | Callable
         Determines what to do in case mode activation fails. Valid options
         are: "error", "warn", "pass" and a callable. If the option is
@@ -203,6 +207,10 @@ def presenting(
         and may occur only once in the priority order, and cannot be part of a
         set. If asterisk is not part of the `methods_priority`, it will be
         added as the last element automatically.
+
+        See the :ref:`How to control order of Methods
+        <how-to-control-order-of-methods>` section in the documentation for
+        more information.
     on_fail: "error" | "warn" | "pass" | Callable
         Determines what to do in case mode activation fails. Valid options
         are: "error", "warn", "pass" and a callable. If the option is

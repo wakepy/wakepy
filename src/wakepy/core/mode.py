@@ -366,8 +366,8 @@ class Mode:
 
     name: str | None
     """The name of the mode. Examples: "keep.running" for the
-    :func:`keep.presenting <wakepy.keep.presenting>` mode and "keep.presenting"
-    for the :func:`keep.running <wakepy.keep.running>` mode.
+    :func:`keep.running <wakepy.keep.running>` mode and "keep.presenting"
+    for the :func:`keep.presenting <wakepy.keep.presenting>` mode.
     """
 
     active: bool
@@ -827,7 +827,7 @@ def select_methods(
     use_only: list, tuple or set of str
         The names of Methods to select from the `methods`; a "whitelist"
         filter. Means "use these and only these Methods". Any Methods in
-        `use_only` but not in `methods` will raise a ValueErrosr. Cannot
+        `use_only` but not in `methods` will raise a ValueError. Cannot
         be used same time with `omit`. Optional.
 
     Returns
