@@ -6,6 +6,7 @@ See the public Python API at: https://wakepy.readthedocs.io/
 
 from .activationresult import ActivationResult as ActivationResult
 from .activationresult import MethodActivationResult as MethodActivationResult
+from .activationresult import ProbingResults as ProbingResults
 from .constants import BusType as BusType
 from .constants import IdentifiedPlatformType as IdentifiedPlatformType
 from .constants import ModeName as ModeName

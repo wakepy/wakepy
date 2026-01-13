@@ -299,18 +299,18 @@ class TestActivationResult:
         mr_requirements_fail: MethodActivationResult,
     ):
         ar = ActivationResult(
-            [mr_platform_support_fail, mr_requirements_fail], mode_name="SomeMode"
+            [mr_requirements_fail, mr_platform_support_fail], mode_name="SomeMode"
         )
         expected_text = """
 Could not activate wakepy Mode "SomeMode"!
 
 Tried Methods (in the order of attempt):
 
-  1. fail-platform
-     Reason: Platform XYZ not supported!
-
-  2. fail-requirements
+  1. fail-requirements
      Reason: Missing requirement: Some SW v.1.2.3
+
+  2. fail-platform
+     Reason: Platform XYZ not supported!
 """.strip("\n")
 
         assert ar.get_failure_text() == expected_text
@@ -323,7 +323,7 @@ Tried Methods (in the order of attempt):
         ar = ActivationResult(
             [mr_platform_support_fail, mr_requirements_fail], mode_name="SomeMode"
         )
-        expected = """Could not activate wakepy Mode "SomeMode"! Tried Methods (in the order of attempt): (#1, fail-platform, PLATFORM_SUPPORT, Platform XYZ not supported!), (#2, fail-requirements, REQUIREMENTS, Missing requirement: Some SW v.1.2.3). The format of each item in the list is (index, method_name, failure_stage, failure_reason)."""  # noqa: E501
+        expected = """Could not activate wakepy Mode "SomeMode"! Tried Methods (in the order of attempt): (#1, fail-platform, Reason: Platform XYZ not supported!), (#2, fail-requirements, Reason: Missing requirement: Some SW v.1.2.3). The format of each item in the list is (index, method_name, failure_reason)."""  # noqa: E501
 
         assert ar.get_failure_text(style="inline") == expected
 
@@ -340,14 +340,6 @@ Tried Methods (in the order of attempt):
             'Could not activate wakepy Mode "TestMode"! ' "Did not try any methods!"
         )
         assert ar.get_failure_text(style="inline") == expected
-
-    def test_format_methods_block_empty(self):
-        ar = ActivationResult([], mode_name="TestMode")
-        assert ar._format_methods_block([]) == ""
-
-    def test_format_methods_inline_empty(self):
-        ar = ActivationResult([], mode_name="TestMode")
-        assert ar._format_methods_inline([]) == ""
 
     def test_active_method(
         self, method_activation_results1: List[MethodActivationResult]
@@ -399,8 +391,102 @@ Tried Methods (in the order of attempt):
     def test__repr__(self, method_activation_results1: List[MethodActivationResult]):
         ar1 = ActivationResult(method_activation_results1, mode_name="foo")
         assert ar1.__repr__().startswith(
-            """ActivationResult(success=True, real_success=True, failure=False, mode_name=\'foo\', method=MethodInfo(name=\'a-successful-method\', mode_name=\'test-mode\'"""  # noqa: E501
+            "ActivationResult(success=True, real_success=True, failure=False, mode_name='foo', method="  # noqa: E501
         )
+
+    def test_get_methods_text(
+        self,
+        mr_platform_support_fail: MethodActivationResult,
+        mr_requirements_fail: MethodActivationResult,
+        mr_success_result: MethodActivationResult,
+        mr_unused_result: MethodActivationResult,
+    ):
+        # Tests also custom widths and truncation
+
+        result = ActivationResult(
+            [
+                mr_requirements_fail,
+                mr_success_result,
+                mr_unused_result,
+                mr_platform_support_fail,
+            ]
+        )
+
+        text = result.get_methods_text(width_index=2, width_name=18, width_status=7)
+
+        expected = """
+ 1. fail-requirements    FAIL   
+ 2. a-successful-me...   SUCCESS
+ 3. some-unused-method   UNUSED 
+ 4. fail-platform        *      
+""".strip("\n")  # noqa: W291
+        assert text == expected
+
+    def test_get_methods_text_detailed(
+        self,
+        mr_platform_support_fail: MethodActivationResult,
+        mr_requirements_fail: MethodActivationResult,
+        mr_success_result: MethodActivationResult,
+        mr_unused_result: MethodActivationResult,
+    ):
+        result = ActivationResult(
+            [
+                mr_requirements_fail,
+                mr_success_result,
+                mr_unused_result,
+                mr_platform_support_fail,
+            ]
+        )
+
+        text = result.get_methods_text_detailed()
+
+        expected = """
+  1. fail-requirements
+     FAIL: Missing requirement: Some SW v.1.2.3
+
+  2. a-successful-method
+     SUCCESS
+
+  3. some-unused-method
+     UNUSED
+
+  4. fail-platform
+     UNSUPPORTED: Platform XYZ not supported!""".lstrip("\n")
+        assert text == expected
+
+    def test_get_methods_text_empty(self):
+        assert ActivationResult([]).get_methods_text() == ""
+
+    def test_get_methods_text_detailed_empty(self):
+        assert ActivationResult([]).get_methods_text_detailed() == ""
+
+    def test_get_methods_text_detailed_with_wrapping(self):
+        """Test that max_width parameter wraps long lines correctly."""
+        mr_long_name = MethodActivationResult(
+            method=get_method_info("a-very-long-method-name-that-exceeds-width"),
+            success=False,
+            failure_stage=StageName.REQUIREMENTS,
+            failure_reason=(
+                "A very long error message that should definitely wrap across "
+                "multiple lines when the maximum width constraint is applied "
+                "to the output text"
+            ),
+        )
+        result = ActivationResult([mr_long_name])
+
+        text = result.get_methods_text_detailed(max_width=40)
+
+        expected = """
+  1. a-very-long-method-name-that-exceed
+     s-width
+     FAIL: A very long error message
+     that should definitely wrap across
+     multiple lines when the maximum
+     width constraint is applied to the
+     output text
+""".strip("\n")
+
+        assert text == expected
 
 
 class TestMethodActivationResult:
@@ -554,3 +640,41 @@ class TestMethodActivationResult:
 
     def test_repr(self, a: MethodActivationResult):
         assert a.__repr__() == '(FAIL @REQUIREMENTS, foo, "some-text")'
+
+    @pytest.mark.parametrize(
+        "success, failure_stage, expected_status",
+        [
+            (True, None, "SUCCESS"),
+            (False, StageName.PLATFORM_SUPPORT, "UNSUPPORTED"),
+            (False, StageName.REQUIREMENTS, "FAIL"),
+            (False, StageName.ACTIVATION, "FAIL"),
+            (False, StageName.WAKEPY_FORCE_FAILURE, "FAIL"),
+            (None, None, "UNUSED"),
+        ],
+    )
+    def test_get_status_string(self, success, failure_stage, expected_status):
+        mar = MethodActivationResult(
+            method=get_method_info("test-method"),
+            success=success,
+            failure_stage=failure_stage,
+            failure_reason="some reason" if success is False else "",
+        )
+        assert mar.get_status_string() == expected_status
+
+    def test_get_status_line_with_reason(self):
+        mar = MethodActivationResult(
+            method=get_method_info("test-method"),
+            success=False,
+            failure_stage=StageName.REQUIREMENTS,
+            failure_reason="missing dependency",
+        )
+        assert mar.get_status_line() == "FAIL: missing dependency"
+
+    def test_get_status_line_without_reason(self):
+        mar = MethodActivationResult(
+            method=get_method_info("test-method"),
+            success=False,
+            failure_stage=StageName.ACTIVATION,
+            failure_reason="",
+        )
+        assert mar.get_status_line() == "FAIL: Unknown reason"

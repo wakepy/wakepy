@@ -83,6 +83,7 @@ def get_test_method_class(
     heartbeat=METHOD_MISSING,
     exit_mode=METHOD_MISSING,
     supported_platforms=(PlatformType.ANY,),
+    name: str | None = None,
 ) -> Type[Method]:
     """Get a test Method class with the .caniuse(), .enter_mode(), .heartbeat()
     and .exit_mode() methods defined as wanted. All methods can either be:
@@ -94,6 +95,8 @@ def get_test_method_class(
     (c) Any value. In this case, the value will be returned. Typical values
       are True (success), string (fail with a reason), False (fail without
       giving a reason) and None.
+
+    If `name` is provided, uses that as the Method name.
 
     For the expected outcome of each of these, see:
         tests/unit/test_core/test_activation.py
@@ -120,7 +123,7 @@ def get_test_method_class(
         return m
 
     def _create_class() -> Type[Method]:
-        clsname = get_new_classname()
+        clsname = name if name is not None else get_new_classname()
         clskwargs = {
             "supported_platforms": supported_platforms,
             "name": clsname,
@@ -137,7 +140,7 @@ def get_test_method_class(
         }
         return type(clsname, (Method,), clskwargs)
 
-    key = (enter_mode, heartbeat, exit_mode, caniuse, supported_platforms)
+    key = (enter_mode, heartbeat, exit_mode, caniuse, supported_platforms, name)
     if key not in _test_method_classes:
         _test_method_classes[key] = _create_class()
 
