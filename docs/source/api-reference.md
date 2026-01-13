@@ -37,6 +37,7 @@ Wakepy Core
 
 .. autoclass:: wakepy.ActivationResult
     :members:
+    :inherited-members:
     :exclude-members: results
     :member-order: bysource
 

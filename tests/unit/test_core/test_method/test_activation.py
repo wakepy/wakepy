@@ -319,7 +319,7 @@ class TestTryEnterAndHeartbeat:
 
     def test_enter_mode_returns_bad_balue(self):
         # Case: returning bad value (None return value accepted)
-        method = get_test_method_class(**{"enter_mode": 132})()
+        method = get_test_method_class(enter_mode=132)()
         success, err_message, heartbeat_call_time = try_enter_and_heartbeat(method)
 
         assert success is False
@@ -328,7 +328,7 @@ class TestTryEnterAndHeartbeat:
 
     def test_heartbeat_returns_bad_balue(self):
         # Case: returning bad value (None return value accepted)
-        method = get_test_method_class(**{"heartbeat": 132})()
+        method = get_test_method_class(heartbeat=132)()
         success, err_message, heartbeat_call_time = try_enter_and_heartbeat(method)
 
         assert success is False
