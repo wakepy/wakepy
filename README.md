@@ -167,20 +167,31 @@ with keep.running()
 <!-- wakepy readme where used -->
 ## Where wakepy is used?
 
+**🧠 AI & Machine Learning**
 - [aTrain](https://github.com/JuergenFleiss/aTrain) — transcription of speech recordings utilizing machine learning models.
+- [UCSD-E4E/baboon-tracking](https://github.com/UCSD-E4E/baboon-tracking) — In pipelines of a Computer Vision project tracking baboons
+- [pysimai](https://github.com/ansys/pysimai) — A Python wrapper for Ansys SimAI
+
+**🎥 Media Processing & Conversion**
+- [BD_to_AVP](https://github.com/cbusillo/BD_to_AVP) — 3D Blu-ray to Apple Vision Pro converter
+- [davlee1972/upscale_video](https://github.com/davlee1972/upscale_video) — Upscaling video using AI
+- [viskillz-blender](https://www.sciencedirect.com/science/article/pii/S2352711023000249) — Generating assets of Mental Cutting Test exercises
+
+
+**🔧 Hardware Control, Automation & Instrumentation**
+- [AYAB - All Yarns Are Beautiful](https://github.com/AllYarnsAreBeautiful/ayab-desktop/) — Automated knitting software
+- [OceanOptics/Inlinino](https://github.com/OceanOptics/Inlinino) — Data logger for oceanography
+- [lakeshore](https://github.com/lakeshorecryotronics/python-driver) — Lake Shore instruments python Driver
+
+**🗄️ Data Preservation, Archival & Extraction**
+- [minarca](https://github.com/ikus060/minarca) — Cross-platform data backup software
+- [cogent3/ensembl_tui](https://github.com/cogent3/ensembl_tui) —  Obtaining dumps of Ensembl MySQL databases
+- [Crystal Website Archiver](https://github.com/davidfstr/Crystal-Web-Archiver) — Downloading websites for long-term archival
+
+**🎲 Misc**
 - [mpc-autofill](https://github.com/chilli-axe/mpc-autofill) — Automating MakePlayingCards' online ordering system
 - [LiveboxMonitor](https://github.com/p-dor/LiveboxMonitor) — Graphical user interface for routers (French project)
 - [FOLON-FO4Downgrader](https://github.com/Fallout-London/FOLON-FO4Downgrader) — Tool for reverting to a previous version of a game (Fallout 4)
-- [BD_to_AVP](https://github.com/cbusillo/BD_to_AVP) — 3D Blu-ray to Apple Vision Pro converter
-- [davlee1972/upscale_video](https://github.com/davlee1972/upscale_video) — Upscaling video using AI
-- [AYAB - All Yarns Are Beautiful](https://github.com/AllYarnsAreBeautiful/ayab-desktop/) — Automated knitting software
-- [minarca](https://github.com/ikus060/minarca) — Cross-platform data backup software
-- [OceanOptics/Inlinino](https://github.com/OceanOptics/Inlinino) — Data logger for oceanography
-- [cogent3/ensembl_tui](https://github.com/cogent3/ensembl_tui) —  Obtaining dumps of Ensembl MySQL databases
-- [lakeshore](https://github.com/lakeshorecryotronics/python-driver) — Lake Shore instruments python Driver
-- [UCSD-E4E/baboon-tracking](https://github.com/UCSD-E4E/baboon-tracking) — In pipelines of a Computer Vision project tracking baboons
-- [pysimai](https://github.com/ansys/pysimai) — A Python wrapper for Ansys SimAI
-- [viskillz-blender](https://www.sciencedirect.com/science/article/pii/S2352711023000249) — Generating assets of Mental Cutting Test exercises
 
 
 ## Links
