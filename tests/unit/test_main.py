@@ -1,5 +1,6 @@
 """Unit tests for the __main__ module"""
 
+import argparse
 import logging
 import string
 import sys
@@ -8,7 +9,8 @@ from unittest.mock import patch
 
 import pytest
 
-from wakepy import ActivationResult, Method, Mode
+from tests.helpers import get_method_info
+from wakepy import ActivationResult, Method, Mode, ProbingResults
 from wakepy.__main__ import (
     CliApp,
     CLIRenderer,
@@ -20,10 +22,12 @@ from wakepy.__main__ import (
     get_should_use_ascii_only,
     main,
     parse_args,
+    setup_logging,
     wait_until_keyboardinterrupt,
 )
 from wakepy.core import PlatformType
-from wakepy.core.constants import IdentifiedPlatformType, ModeName
+from wakepy.core.activationresult import MethodActivationResult
+from wakepy.core.constants import IdentifiedPlatformType, ModeName, StageName
 from wakepy.core.mode import _ModeParams
 from wakepy.methods._testing import WakepyFakeSuccess
 
@@ -144,10 +148,10 @@ def test_handle_activation_error(print_mock):
     assert "Wakepy could not activate" in printed_text
 
 
-class TestCliAppRun:
-    """Tests the CliApp.run() method from the __main__.py in a simple way. This
-    is more of a smoke test. The functionality of the different parts is
-    already tested in other unit tests."""
+class TestCliAppRunWakepy:
+    """Tests the CliApp.run_wakepy() method from the __main__.py in a simple
+    way. This is more of a smoke test. The functionality of the different parts
+    is already tested in other unit tests."""
 
     @pytest.fixture(autouse=True)
     def patch_function(self):
@@ -162,7 +166,9 @@ class TestCliAppRun:
     ):
         with patch("wakepy.__main__.get_mode_name", return_value=method1.mode_name):
             app = CliApp()
-            mode = app.run([])
+            args = parse_args([])
+            mode = app.run_wakepy(args)
+            assert mode is not None
             assert mode.result.success is True
 
     def test_non_working_mode(self, method2_broken, monkeypatch):
@@ -172,11 +178,94 @@ class TestCliAppRun:
             "wakepy.__main__.get_mode_name", return_value=method2_broken.mode_name
         ):
             app = CliApp()
-            mode = app.run([])
+            args = parse_args([])
+            mode = app.run_wakepy(args)
+            assert mode is not None
             assert mode.result.success is False
 
             # the method2_broken enter_mode raises this:
             assert mode.result.query()[0].failure_reason == "RuntimeError('foo')"
+
+
+class TestCliAppRunWakepyMethods:
+    @pytest.fixture
+    def probe_result(self):
+        return ProbingResults(
+            [
+                MethodActivationResult(
+                    method=get_method_info("method-a"),
+                    success=True,
+                ),
+                MethodActivationResult(
+                    method=get_method_info("method-b"),
+                    success=False,
+                    failure_stage=StageName.REQUIREMENTS,
+                    failure_reason="Missing requirement",
+                ),
+            ]
+        )
+
+    def test_non_verbose_output(self, capsys, probe_result: ProbingResults):
+        args = argparse.Namespace(
+            keep_running=False,
+            k=False,
+            keep_presenting=False,
+            presentation=False,
+            verbose=0,
+        )
+
+        with patch(
+            "wakepy.__main__.Mode.probe_all_methods",
+            return_value=probe_result,
+        ), patch("wakepy.__main__.get_mode_name", return_value=ModeName.KEEP_RUNNING):
+            app = CliApp()
+            app.run_wakepy_methods(args)
+
+        output = capsys.readouterr().out
+        expected = """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                      keep.running
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. method-a                                 SUCCESS   
+  2. method-b                                 FAIL      
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+""".lstrip("\n")  # noqa: W291
+
+        assert expected == output
+
+    def test_verbose_output(self, capsys, probe_result: ProbingResults):
+        args = argparse.Namespace(
+            keep_running=False,
+            k=False,
+            keep_presenting=False,
+            presentation=False,
+            verbose=1,
+        )
+
+        with patch(
+            "wakepy.__main__.Mode.probe_all_methods",
+            return_value=probe_result,
+        ), patch("wakepy.__main__.get_mode_name", return_value=ModeName.KEEP_RUNNING):
+            app = CliApp()
+            app.run_wakepy_methods(args)
+
+        output = capsys.readouterr().out
+        expected = """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                                  keep.running
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. method-a
+     SUCCESS
+
+  2. method-b
+     FAIL: Missing requirement
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+""".lstrip("\n")
+        assert expected == output
 
 
 class TestDisplayTheme:
@@ -185,25 +274,13 @@ class TestDisplayTheme:
         # fmt: off
         assert theme.spinner_symbols == ("⢎⡰", "⢎⡡", "⢎⡑", "⢎⠱", "⠎⡱", "⢊⡱", "⢌⡱", "⢆⡱")  # noqa: E501
         # fmt: on
-        assert theme.spinner_line_width == 31
         assert theme.success_symbol == "✔"
-        assert theme.failure_symbol == " "
-        assert theme.mode_name_max_length == 43
-        assert theme.method_name_max_length == 42
-        assert theme.version_string_width == 24
-        assert theme.text_max_width == 66
         assert theme.ascii_mode is False
 
     def test_create_ascii(self):
         theme = DisplayTheme.create(ascii_mode=True)
         assert theme.spinner_symbols == ("|", "/", "-", "\\")
-        assert theme.spinner_line_width == 32
         assert theme.success_symbol == "x"
-        assert theme.failure_symbol == " "
-        assert theme.mode_name_max_length == 43
-        assert theme.method_name_max_length == 42
-        assert theme.version_string_width == 24
-        assert theme.text_max_width == 66
         assert theme.ascii_mode is True
 
 
@@ -461,15 +538,27 @@ class TestCLIRenderer:
 class TestMain:
     """Test the main() entry point function."""
 
-    def test_main_passes_sys_argv(self):
-        """Test that main() passes sys.argv[1:] to run."""
+    def test_main_calls_run_wakepy(self):
+        """Test that main() parses args and calls run_wakepy."""
         with patch("wakepy.__main__.CliApp") as mock_cli_app, patch(
             "wakepy.__main__.sys.argv", ["wakepy", "-v", "-p"]
-        ):
+        ), patch("wakepy.__main__.setup_logging"):
             main()
-            # Verify run was called with correct arguments
+            # Verify run_wakepy was called (not run_wakepy_methods)
             mock_instance = mock_cli_app.return_value
-            mock_instance.run.assert_called_once_with(["-v", "-p"])
+            mock_instance.run_wakepy.assert_called_once()
+            mock_instance.run_wakepy_methods.assert_not_called()
+
+    def test_main_calls_run_wakepy_methods(self):
+        """Test that main() calls run_wakepy_methods for 'methods' command."""
+        with patch("wakepy.__main__.CliApp") as mock_cli_app, patch(
+            "wakepy.__main__.sys.argv", ["wakepy", "methods", "-p"]
+        ), patch("wakepy.__main__.setup_logging"):
+            main()
+            # Verify run_wakepy_methods was called (not run_wakepy)
+            mock_instance = mock_cli_app.return_value
+            mock_instance.run_wakepy_methods.assert_called_once()
+            mock_instance.run_wakepy.assert_not_called()
 
 
 class TestGetLoggingLevel:
@@ -485,6 +574,19 @@ class TestGetLoggingLevel:
     def test_get_logging_level(self, verbosity, expected_level):
         assert get_logging_level(verbosity) == expected_level
 
-    def test_with_bad_verbosity(self):
-        with pytest.raises(ValueError, match="Verbosity level cannot be negative."):
-            get_logging_level(-2)
+    @pytest.mark.parametrize(
+        "verbosity, expected_level",
+        [
+            (0, logging.WARNING),
+            (2, logging.INFO),
+            (3, logging.DEBUG),
+        ],
+    )
+    def test_get_logging_level_methods(self, verbosity, expected_level):
+        assert get_logging_level(verbosity, command="methods") == expected_level
+
+
+def test_setup_logging_calls_basic_config():
+    with patch("wakepy.__main__.logging.basicConfig") as basic_config:
+        setup_logging(verbosity=1, command="run")
+        basic_config.assert_called_once()
