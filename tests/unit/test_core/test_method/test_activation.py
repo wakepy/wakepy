@@ -46,7 +46,7 @@ class TestActivateMethod:
         ):
             activate_method(method)
 
-    @patch("wakepy.core.method.CURRENT_PLATFORM", IdentifiedPlatformType.WINDOWS)
+    @pytest.mark.usefixtures("set_current_platform_to_windows")
     def test_method_without_platform_support(self):
         UnsupportedMethod = get_test_method_class(
             supported_platforms=(PlatformType.LINUX,),
@@ -74,7 +74,7 @@ class TestActivateMethod:
         res, _ = activate_method(unsupported_method)
         assert res.success is True
 
-    @patch("wakepy.core.method.CURRENT_PLATFORM", IdentifiedPlatformType.UNKNOWN)
+    @pytest.mark.usefixtures("set_current_platform_to_unknown")
     def test_with_unknown_platform_support_just_linux(self):
         # This is otherwise supported method, so it works also on the UNKNOWN
         # system. Only the platform support check should return None ("I don't
@@ -319,7 +319,7 @@ class TestTryEnterAndHeartbeat:
 
     def test_enter_mode_returns_bad_balue(self):
         # Case: returning bad value (None return value accepted)
-        method = get_test_method_class(**{"enter_mode": 132})()
+        method = get_test_method_class(enter_mode=132)()
         success, err_message, heartbeat_call_time = try_enter_and_heartbeat(method)
 
         assert success is False
@@ -328,7 +328,7 @@ class TestTryEnterAndHeartbeat:
 
     def test_heartbeat_returns_bad_balue(self):
         # Case: returning bad value (None return value accepted)
-        method = get_test_method_class(**{"heartbeat": 132})()
+        method = get_test_method_class(heartbeat=132)()
         success, err_message, heartbeat_call_time = try_enter_and_heartbeat(method)
 
         assert success is False

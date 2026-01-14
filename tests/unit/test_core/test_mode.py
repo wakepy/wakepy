@@ -20,7 +20,7 @@ from wakepy import (
 )
 from wakepy.core import PlatformType
 from wakepy.core.activationresult import MethodActivationResult
-from wakepy.core.constants import StageName
+from wakepy.core.constants import IdentifiedPlatformType, StageName
 from wakepy.core.dbus import DBusAdapter
 from wakepy.core.heartbeat import Heartbeat
 from wakepy.core.mode import (
@@ -114,6 +114,52 @@ def mode1_with_dbus(
         dbus_adapter=dbus_adapter_cls,
     )
     return testmode_cls(params)
+
+
+class TestProbeAllMethods:
+    @pytest.mark.usefixtures("set_current_platform_to_linux")
+    def test_returns_results_for_each_method(self, monkeypatch, testutils):
+        testutils.empty_method_registry(monkeypatch)
+        method_a = get_test_method_class(
+            supported_platforms=(PlatformType.WINDOWS,),
+            name="MethodA",
+        )
+        method_b = get_test_method_class(
+            supported_platforms=(PlatformType.MACOS,),
+            name="MethodB",
+        )
+        method_c = get_test_method_class(
+            supported_platforms=(PlatformType.ANY,),
+            name="MethodC",
+            enter_mode=None,  # success
+        )
+        method_d = get_test_method_class(
+            supported_platforms=(PlatformType.LINUX,),
+            enter_mode=Exception("Failing on purpose"),
+            name="MethodD",
+        )
+
+        params = _ModeParams(
+            name="foo",
+            method_classes=[method_a, method_b, method_c, method_d],
+            methods_priority=["*"],
+        )
+        result = Mode(params).probe_all_methods()
+
+        methods_text = result.get_methods_text(
+            index_width=1,
+            name_width=7,
+            status_width=1,
+        )
+        assert (
+            methods_text
+            == """\
+1. MethodC   SUCCESS
+2. MethodD   FAIL
+3. MethodA   *
+4. MethodB   *"""
+        )
+        assert result.mode_name == "foo"
 
 
 class TestModeContextManager:
@@ -366,12 +412,10 @@ class TestSelectMethods:
             select_methods(methods, use_only=["B"], omit=["E"])
 
 
-class TestActivateOneOfMethods:
-    """tests for Mode._activate_one_of_methods"""
-
+class TestActivateFirstSuccessfulMethod:
     def test_activate_without_methods(self):
         # Act
-        res, active_method, heartbeat = Mode._activate_one_of_methods(
+        res, active_method, heartbeat = Mode._activate_first_successful_method(
             [], dbus_adapter=None
         )
 
@@ -386,7 +430,7 @@ class TestActivateOneOfMethods:
         methodcls_success = get_test_method_class(enter_mode=None)
 
         # Act
-        res, active_method, heartbeat = Mode._activate_one_of_methods(
+        res, active_method, heartbeat = Mode._activate_first_successful_method(
             [methodcls_success, methodcls_fail],
         )
         # Assert
@@ -411,7 +455,7 @@ class TestActivateOneOfMethods:
         )
 
         # Act
-        res, active_method, heartbeat = Mode._activate_one_of_methods(
+        res, active_method, heartbeat = Mode._activate_first_successful_method(
             [methodcls_success_with_hb],
         )
 
@@ -433,7 +477,9 @@ class TestActivateOneOfMethods:
         methodcls_fail = get_test_method_class(enter_mode=exc)
 
         # Act
-        res, active_method, heartbeat = Mode._activate_one_of_methods([methodcls_fail])
+        res, active_method, heartbeat = Mode._activate_first_successful_method(
+            [methodcls_fail]
+        )
 
         # Assert
         # The activation failed, so active_method and heartbeat is None
@@ -541,3 +587,44 @@ class TestWakepyForceFailure:
                 res.failure_stage == StageName.WAKEPY_FORCE_FAILURE
             ), "Only WAKEPY_FORCE_FAILURE should cause failure"
             assert "WAKEPY_FORCE_FAILURE" in res.failure_reason
+
+
+class TestSplitByPlatformSupport:
+    @pytest.mark.parametrize(
+        "current_platform",
+        [
+            IdentifiedPlatformType.WINDOWS,
+            IdentifiedPlatformType.LINUX,
+            IdentifiedPlatformType.UNKNOWN,
+        ],
+        indirect=["current_platform"],
+    )
+    def test_split_by_platform_support(
+        self,
+        current_platform,
+    ):
+        expected_supported, expected_unsupported = {
+            IdentifiedPlatformType.WINDOWS: ({"windows", "any"}, {"linux"}),
+            IdentifiedPlatformType.LINUX: ({"linux", "any"}, {"windows"}),
+            IdentifiedPlatformType.UNKNOWN: (
+                {"windows", "linux", "any"},
+                set(),
+            ),
+        }[current_platform]
+        windows_method = get_test_method_class(
+            supported_platforms=(PlatformType.WINDOWS,)
+        )
+        linux_method = get_test_method_class(supported_platforms=(PlatformType.LINUX,))
+        any_method = get_test_method_class(supported_platforms=(PlatformType.ANY,))
+        methods = {
+            "windows": windows_method,
+            "linux": linux_method,
+            "any": any_method,
+        }
+
+        possibly_supported, unsupported = Mode._split_by_platform_support(
+            [windows_method, linux_method, any_method]
+        )
+
+        assert set(possibly_supported) == {methods[k] for k in expected_supported}
+        assert set(unsupported) == {methods[k] for k in expected_unsupported}

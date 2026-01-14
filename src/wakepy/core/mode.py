@@ -19,9 +19,14 @@ from contextvars import ContextVar
 from dataclasses import dataclass, field
 from functools import wraps
 
-from wakepy.core.constants import WAKEPY_FAKE_SUCCESS_METHOD
+from wakepy.core.constants import WAKEPY_FAKE_SUCCESS_METHOD, StageName
+from wakepy.core.platform import CURRENT_PLATFORM, get_platform_supported
 
-from .activationresult import ActivationResult, MethodActivationResult
+from .activationresult import (
+    ActivationResult,
+    MethodActivationResult,
+    ProbingResults,
+)
 from .dbus import DBusAdapter, get_dbus_adapter
 from .heartbeat import Heartbeat
 from .method import Method, MethodInfo, activate_method, deactivate_method
@@ -555,6 +560,112 @@ class Mode:
 
         return False
 
+    def probe_all_methods(self) -> ProbingResults:
+        """Probe all methods for a mode.
+
+        Unlike normal activation (which stops on first success and keeps method
+        active), this tests all methods and deactivates each after testing.
+
+        You can use this to see which methods would work on the current system
+        (and which would not).
+
+        .. versionadded:: 1.0.0
+
+        Returns
+        -------
+        :class:`ProbingResults`
+            Result containing activation outcomes for each tested Method. Tells
+            which Methods would work on the current system and which would not.
+        """
+        self._thread_check()
+
+        possibly_supported, unsupported = self._get_supported_and_unsupported_methods()
+
+        method_kwargs = self._get_method_kwargs()
+        results = self._try_to_activate_each(possibly_supported, **method_kwargs)
+
+        platform_unsupported_results = self._create_unsupported_results(
+            unsupported,
+        )
+
+        results.extend(platform_unsupported_results)
+        return ProbingResults(results, mode_name=str(self.name))
+
+    def _activate(self) -> ActivationResult:
+        """Activates the mode with one of the methods which belong to the mode.
+        The methods are used with descending priority; highest priority first,
+        and the priority is determined with the mode.methods_priority.
+
+        The activation may be faked as to be successful by using the
+        WAKEPY_FAKE_SUCCESS environment variable, or forced to fail by using
+        the WAKEPY_FORCE_FAILURE environment variable.
+        """
+        self._thread_check()
+        if self._has_entered_context:
+            raise ContextAlreadyEnteredError(
+                "A Mode can only be activated once! If "
+                "you need to activate two Modes, you need to use two separate Mode "
+                "instances."
+            )
+
+        possibly_supported, unsupported = self._get_supported_and_unsupported_methods()
+        method_kwargs = self._get_method_kwargs()
+
+        logger.info(
+            'The full list of prioritized wakepy Methods for Mode "%s" is: %s',
+            self.name,
+            [m.name for m in possibly_supported],
+        )
+        logger.info(
+            'Unsupported wakepy Methods on %s, "%s" Mode: %s',
+            CURRENT_PLATFORM,
+            self.name,
+            [m.name for m in unsupported],
+        )
+        methodresults, self._active_method, self.heartbeat = (
+            self._activate_first_successful_method(
+                method_classes=possibly_supported, **method_kwargs
+            )
+        )
+        platform_unsupported_results = self._create_unsupported_results(unsupported)
+        methodresults.extend(platform_unsupported_results)
+
+        self.result = ActivationResult(methodresults, mode_name=self.name)
+
+        self.active_method = (
+            MethodInfo._from_method(self._active_method)
+            if self._active_method
+            else None
+        )
+        self.active = self.result.success
+        self._method = self._active_method
+        self.method = self.active_method
+
+        if self.active:
+            logger.info(
+                'Activated wakepy mode "%s" with method: %s',
+                self.name,
+                self.active_method,
+            )
+        else:
+            logger.info(
+                self.result.get_failure_text(style="inline"),
+            )
+
+        if not self.active:
+            handle_activation_fail(self.on_fail, self.result)
+
+        self._has_entered_context = True
+        return self.result
+
+    def _get_supported_and_unsupported_methods(
+        self,
+    ) -> Tuple[List[Type[Method]], List[Type[Method]]]:
+        method_classes = self._add_fake_success_if_needed(self._selected_method_classes)
+        ordered = order_methods_by_priority(method_classes, self.methods_priority)
+        possibly_supported, unsupported = self._split_by_platform_support(ordered)
+        return possibly_supported, unsupported
+
     def _set_current_mode(self) -> None:
         self._context_token = _current_mode.set(self)
         try:
@@ -585,32 +696,13 @@ class Mode:
         finally:
             _mode_lock.release()
 
-    def _activate(self) -> ActivationResult:
-        """Activates the mode with one of the methods which belong to the mode.
-        The methods are used with descending priority; highest priority first,
-        and the priority is determined with the mode.methods_priority.
-
-        The activation may be faked as to be successful by using the
-        WAKEPY_FAKE_SUCCESS environment variable, or forced to fail by using
-        the WAKEPY_FORCE_FAILURE environment variable.
-        """
-        if self._has_entered_context:
-            raise ContextAlreadyEnteredError(
-                "A Mode can only be activated once! If "
-                "you need to activate two Modes, you need to use two separate Mode "
-                "instances."
-            )
-        self._thread_check()
-
-        # Check for WAKEPY_FAKE_SUCCESS environment variable
-        # Note: If both WAKEPY_FAKE_SUCCESS and WAKEPY_FORCE_FAILURE are set,
-        # WAKEPY_FORCE_FAILURE takes precedence.
-        wakepy_fake_success = is_env_var_truthy("WAKEPY_FAKE_SUCCESS")
-
-        if wakepy_fake_success:
-            self._selected_method_classes.insert(
-                0, get_method(WAKEPY_FAKE_SUCCESS_METHOD)
-            )
+    def _add_fake_success_if_needed(
+        self,
+        method_classes: list[Type[Method]],
+    ) -> list[Type[Method]]:
+        methods = list(method_classes)
+        if is_env_var_truthy("WAKEPY_FAKE_SUCCESS"):
+            methods.insert(0, get_method(WAKEPY_FAKE_SUCCESS_METHOD))
             if is_env_var_truthy("WAKEPY_FORCE_FAILURE"):
                 logger.warning(
                     "Both WAKEPY_FAKE_SUCCESS and WAKEPY_FORCE_FAILURE are set. "
@@ -618,95 +710,111 @@ class Mode:
                     "be forced to fail. To remove this log message, unset "
                     "WAKEPY_FAKE_SUCCESS or set it to a falsy value."
                 )
-
-        method_classes_ordered = order_methods_by_priority(
-            self._selected_method_classes, self.methods_priority
-        )
-
-        logger.info(
-            'Activating wakepy mode "%s". Will try the following methods in this order: %s',  # noqa E501
-            self.name,
-            [m.name for m in method_classes_ordered],
-        )
-        methodresults, self._active_method, self.heartbeat = (
-            self._activate_one_of_methods(
-                method_classes=method_classes_ordered,
-                dbus_adapter=self._dbus_adapter,
-            )
-        )
-        self.active_method = (
-            MethodInfo._from_method(self._active_method)
-            if self._active_method
-            else None
-        )
-
-        self.result = ActivationResult(methodresults, mode_name=self.name)
-        self.active = self.result.success
-        self._method = self._active_method
-        self.method = self.active_method
-
-        if self.active:
-            logger.info(
-                'Activated wakepy mode "%s" with method: %s',
-                self.name,
-                self.active_method,
-            )
-        else:
-            logger.info(
-                self.result.get_failure_text(style="inline"),
-            )
-
-        if not self.active:
-            handle_activation_fail(self.on_fail, self.result)
-
-        self._has_entered_context = True
-        return self.result
+        return methods
 
     @staticmethod
-    def _activate_one_of_methods(
+    def _create_unsupported_results(
+        unsupported_method_classes: list[Type[Method]],
+    ) -> List[MethodActivationResult]:
+        results: List[MethodActivationResult] = []
+        for methodcls in unsupported_method_classes:
+            method_info = MethodInfo(
+                name=methodcls.name,
+                mode_name=str(methodcls.mode_name),
+                supported_platforms=methodcls.supported_platforms,
+            )
+            supported_platforms = ", ".join(methodcls.supported_platforms)
+            results.append(
+                MethodActivationResult(
+                    method=method_info,
+                    success=False,
+                    failure_stage=StageName.PLATFORM_SUPPORT,
+                    failure_reason=(
+                        f"{methodcls.name} is not supported on {CURRENT_PLATFORM}. "
+                        f"The supported platforms are: {supported_platforms}"
+                    ),
+                )
+            )
+        return results
+
+    @staticmethod
+    def _activate_first_successful_method(
         method_classes: list[Type[Method]],
         **method_kwargs: object,
     ) -> Tuple[List[MethodActivationResult], Optional[Method], Optional[Heartbeat]]:
-        """Activates mode using the first Method in `method_classes` which
-        succeeds. The methods are tried in the order given in `method_classes`
-        argument.
+        """Tries to activate methods in order, until the first successful one.
 
-        Parameters
-        ----------
-        method_classes:
-            The list of Methods to be used for activating this Mode.
-        method_kwargs:
-            optional kwargs passed to the all the Method class constructors.
+        If any of the Methods activate successfully, the Method is kept active.
+        """
+
+        results: List[MethodActivationResult] = []
+        active_method: Optional[Method] = None
+        heartbeat: Optional[Heartbeat] = None
+        tried = 0
+
+        # Find first successful method
+        for cls in method_classes:
+            method = cls(**method_kwargs)
+            result, heartbeat = activate_method(method)
+            results.append(result)
+            tried += 1
+            if result.success:
+                active_method, heartbeat = method, heartbeat
+                break
+
+        # Unused methods
+        for cls in method_classes[tried:]:
+            methodinfo = MethodInfo(
+                name=cls.name,
+                mode_name=str(cls.mode_name),
+                supported_platforms=cls.supported_platforms,
+            )
+            results.append(MethodActivationResult(method=methodinfo, success=None))
+
+        return results, active_method, heartbeat
+
+    @staticmethod
+    def _try_to_activate_each(
+        method_classes: list[Type[Method]],
+        **method_kwargs: object,
+    ) -> List[MethodActivationResult]:
+        """Try to activate all the given Methods.
+
+        If any Method activates successfully, deactivate it right after.
+        Used for probing all methods to see which would work on the
+        current system.
+        """
+        results: List[MethodActivationResult] = []
+        for cls in method_classes:
+            method = cls(**method_kwargs)
+            result, heartbeat = activate_method(method)
+            if result.success:
+                deactivate_method(method, heartbeat)
+            results.append(result)
+        return results
+
+    @staticmethod
+    def _split_by_platform_support(
+        method_classes: list[Type[Method]],
+    ) -> Tuple[List[Type[Method]], List[Type[Method]]]:
+        """Split methods into two groups based on platform support.
 
         Returns
         -------
-        List[MethodActivationResult], Optional[Method], Optional[Heartbeat]
-            A three-tuple: The list of method activation results, the activated
-            method (None if not any), the activated heartbeat (None if not
-            any).
+        possibly_supported, unsupported: tuple of two lists
+            First list contains methods supported on current platform or with
+            unknown support. Second list contains methods definitely not
+            supported on current platform.
         """
-
-        methodresults = []
-        while method_classes:
-            methodcls = method_classes.pop(0)
-            active_method = methodcls(**method_kwargs)
-            methodresult, heartbeat = activate_method(active_method)
-            methodresults.append(methodresult)
-            if methodresult.success:
-                break
-        else:
-            # Tried activate with all methods, but none of them succeed
-            active_method, heartbeat = None, None
-
-        # Add unused methods to the results
-        for methodcls in method_classes:
-            unused_method = methodcls(**method_kwargs)
-            method_info = MethodInfo._from_method(unused_method)
-            methodresults.append(
-                MethodActivationResult(method=method_info, success=None)
-            )
-
-        return methodresults, active_method, heartbeat
+        possibly_supported: List[Type[Method]] = []
+        unsupported: List[Type[Method]] = []
+        for cls in method_classes:
+            support = get_platform_supported(CURRENT_PLATFORM, cls.supported_platforms)
+            if support is False:
+                unsupported.append(cls)
+            else:
+                possibly_supported.append(cls)
+        return possibly_supported, unsupported
 
     def _deactivate(self) -> bool:
         """Deactivates the active mode, defined by the active Method, if any.
@@ -763,6 +871,10 @@ class Mode:
             )
             warnings.warn(warning_text, ThreadSafetyWarning, stacklevel=2)
             logger.warning(warning_text)
+
+    def _get_method_kwargs(self) -> dict[str, object]:
+        method_kwargs: dict[str, object] = {"dbus_adapter": self._dbus_adapter}
+        return method_kwargs
 
     @property
     def activation_result(self) -> ActivationResult:  # pragma: no cover

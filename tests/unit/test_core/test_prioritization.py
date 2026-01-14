@@ -5,7 +5,6 @@ import typing
 
 import pytest
 
-from wakepy.core import IdentifiedPlatformType
 from wakepy.core.constants import WAKEPY_FAKE_SUCCESS_METHOD
 from wakepy.core.prioritization import (
     _check_methods_priority,
@@ -20,21 +19,6 @@ if typing.TYPE_CHECKING:
     from typing import List, Type
 
     from wakepy import Method
-
-
-@pytest.fixture
-def set_current_platform_to_linux(monkeypatch):
-    monkeypatch.setattr(
-        "wakepy.core.prioritization.CURRENT_PLATFORM", IdentifiedPlatformType.LINUX
-    )
-
-
-@pytest.fixture
-def set_current_platform_to_windows(monkeypatch):
-    monkeypatch.setattr(
-        "wakepy.core.prioritization.CURRENT_PLATFORM",
-        IdentifiedPlatformType.WINDOWS,
-    )
 
 
 @pytest.mark.usefixtures("provide_methods_different_platforms")

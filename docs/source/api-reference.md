@@ -30,6 +30,7 @@ Wakepy Core
               on_fail,
               activation_result,
               active_method,
+              probe_all_methods,
     :member-order: bysource
 
 .. autoclass:: wakepy.MethodInfo
@@ -37,6 +38,7 @@ Wakepy Core
 
 .. autoclass:: wakepy.ActivationResult
     :members:
+    :inherited-members:
     :exclude-members: results
     :member-order: bysource
 
@@ -51,6 +53,12 @@ Wakepy Core
               mode_name,
               failure_stage,
               failure_reason,
+    :member-order: bysource
+
+.. autoclass:: wakepy.ProbingResults
+    :members:
+    :inherited-members:
+    :exclude-members: results
     :member-order: bysource
 
 .. autoclass:: wakepy.ActivationError

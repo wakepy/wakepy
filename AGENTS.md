@@ -1,4 +1,4 @@
-Agents MUST be extremely concise in all messages. Agents MUST prefer brevity over grammatical correctness.
+You MUST be concise in all messages. You SHOULD prefer brevity over grammatical correctness.
 
 wakepy: Cross-platform Python tool for preventing system suspend via native OS/DE APIs. No persistent settings modified.
 
@@ -37,9 +37,11 @@ REQUIREMENTS:
 - Test specific functions first, not full suite
 
 ALWAYS:
+- Instead of "python ARGS" run "uv run python ARGS". Instead of "python3 ARGS" run "uv run python ARGS"
 - If changing a file, in the end, format file and run tests (or other command to VERIFY the outcome). Does not apply to .md files.
 - Code should be easily READABLE
 - Prefer writing code that is easily TESTABLE (not requiring patching)
 - Prefer using FIXTURES in tests where possible
 - Use "just test-cli ARGUMENTS" instead of "python -m pytest ARGUMENTS" or "just test ARGUMENTS" or "pytest ARGUMENTS" for running tests
-- Put imports to top of the file also in tests (if possible)
+- imports to top of the file and not inside functions
+- To build docs, use "uv run sphinx-build -b html docs/source docs/build". Do NOT use "just docs" as it never returns!

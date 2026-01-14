@@ -4,6 +4,7 @@ from typing import Optional
 import pytest
 
 from tests.unit.test_core.testmethods import TestMethod
+from wakepy.core.constants import IdentifiedPlatformType
 from wakepy.core.strenum import StrEnum
 
 if sys.version_info < (3, 8):  # pragma: no-cover-if-py-gte-38
@@ -15,6 +16,21 @@ else:  # pragma: no-cover-if-py-lt-38
 @pytest.fixture
 def method1():
     return TestMethod()
+
+
+@pytest.fixture
+def set_current_platform_to_linux(monkeypatch: pytest.MonkeyPatch) -> None:
+    set_current_platform(monkeypatch, IdentifiedPlatformType.LINUX)
+
+
+@pytest.fixture
+def set_current_platform_to_windows(monkeypatch: pytest.MonkeyPatch) -> None:
+    set_current_platform(monkeypatch, IdentifiedPlatformType.WINDOWS)
+
+
+@pytest.fixture
+def set_current_platform_to_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
+    set_current_platform(monkeypatch, IdentifiedPlatformType.UNKNOWN)
 
 
 @pytest.fixture
@@ -54,3 +70,22 @@ def assert_strenum_values():
         assert set(typing.get_args(values)) == {member.value for member in strenum_cls}
 
     return _assert_strenum_values
+
+
+def set_current_platform(
+    monkeypatch: pytest.MonkeyPatch,
+    platform: IdentifiedPlatformType,
+) -> None:
+    monkeypatch.setattr("wakepy.core.prioritization.CURRENT_PLATFORM", platform)
+    monkeypatch.setattr("wakepy.core.mode.CURRENT_PLATFORM", platform)
+    monkeypatch.setattr("wakepy.core.method.CURRENT_PLATFORM", platform)
+
+
+@pytest.fixture
+def current_platform(
+    monkeypatch: pytest.MonkeyPatch,
+    request: pytest.FixtureRequest,
+) -> IdentifiedPlatformType:
+    platform = typing.cast(IdentifiedPlatformType, request.param)
+    set_current_platform(monkeypatch, platform)
+    return platform
