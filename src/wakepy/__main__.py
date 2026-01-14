@@ -670,8 +670,8 @@ def parse_args(args: list[str]) -> Namespace:
         action="count",
         default=0,
         help=(
-            "Increase verbosity level (-v for detailed output, -vv for DEBUG logging). "
-            "Default shows only method names and status."
+            "Increase verbosity level (-v for detailed output, -vv for INFO logging, "
+            "-vvv for DEBUG logging). Default shows only method names and status."
         ),
     )
 

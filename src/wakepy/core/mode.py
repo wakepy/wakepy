@@ -567,7 +567,8 @@ class Mode:
         active), this tests all methods and deactivates each after testing.
 
         You can use this to see which methods would work on the current system
-        (and which would not).
+        (and which would not). The CLI command :ref:`wakepy methods \
+        <wakepy-methods-cli>` uses this function internally.
 
         .. versionadded:: 1.0.0
 
