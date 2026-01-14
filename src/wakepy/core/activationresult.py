@@ -303,7 +303,7 @@ class _BaseActivationResult:
         name_width: int = 35,
         status_width: int = 8,
     ) -> str:
-        """Get method activation results as a simple list with status.
+        """Get method activation results as a compact text table.
 
         Parameters
         ----------
@@ -332,8 +332,8 @@ class _BaseActivationResult:
 
         .. versionadded:: 1.0.0
 
-        .. seealso:: Use this for compact display. For detailed failure \
-        reasons, use :meth:`get_methods_text_detailed`. To show only failures,\
+        .. seealso:: Use this for compact display. For more detailed results, \
+        use :meth:`get_methods_text_detailed`. To show only failures,\
         use :meth:`get_failure_text`.
 
 
