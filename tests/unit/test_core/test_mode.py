@@ -5,7 +5,7 @@ import re
 import threading
 import typing
 import warnings
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -117,7 +117,7 @@ def mode1_with_dbus(
 
 
 class TestProbeAllMethods:
-    @patch("wakepy.core.mode.CURRENT_PLATFORM", new=IdentifiedPlatformType.LINUX)
+    @pytest.mark.usefixtures("set_current_platform_to_linux")
     def test_returns_results_for_each_method(self, monkeypatch, testutils):
         testutils.empty_method_registry(monkeypatch)
         method_a = get_test_method_class(
@@ -591,16 +591,26 @@ class TestWakepyForceFailure:
 
 class TestSplitByPlatformSupport:
     @pytest.mark.parametrize(
-        "platform,expected_supported,expected_unsupported",
+        "current_platform",
         [
-            (IdentifiedPlatformType.WINDOWS, {"windows", "any"}, {"linux"}),
-            (IdentifiedPlatformType.LINUX, {"linux", "any"}, {"windows"}),
-            (IdentifiedPlatformType.UNKNOWN, {"windows", "linux", "any"}, set()),
+            IdentifiedPlatformType.WINDOWS,
+            IdentifiedPlatformType.LINUX,
+            IdentifiedPlatformType.UNKNOWN,
         ],
+        indirect=["current_platform"],
     )
     def test_split_by_platform_support(
-        self, platform, expected_supported, expected_unsupported
+        self,
+        current_platform,
     ):
+        expected_supported, expected_unsupported = {
+            IdentifiedPlatformType.WINDOWS: ({"windows", "any"}, {"linux"}),
+            IdentifiedPlatformType.LINUX: ({"linux", "any"}, {"windows"}),
+            IdentifiedPlatformType.UNKNOWN: (
+                {"windows", "linux", "any"},
+                set(),
+            ),
+        }[current_platform]
         windows_method = get_test_method_class(
             supported_platforms=(PlatformType.WINDOWS,)
         )
@@ -612,10 +622,9 @@ class TestSplitByPlatformSupport:
             "any": any_method,
         }
 
-        with patch("wakepy.core.mode.CURRENT_PLATFORM", platform):
-            possibly_supported, unsupported = Mode._split_by_platform_support(
-                [windows_method, linux_method, any_method]
-            )
+        possibly_supported, unsupported = Mode._split_by_platform_support(
+            [windows_method, linux_method, any_method]
+        )
 
-            assert set(possibly_supported) == {methods[k] for k in expected_supported}
-            assert set(unsupported) == {methods[k] for k in expected_unsupported}
+        assert set(possibly_supported) == {methods[k] for k in expected_supported}
+        assert set(unsupported) == {methods[k] for k in expected_unsupported}

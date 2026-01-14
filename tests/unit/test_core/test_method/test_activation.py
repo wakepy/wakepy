@@ -46,7 +46,7 @@ class TestActivateMethod:
         ):
             activate_method(method)
 
-    @patch("wakepy.core.method.CURRENT_PLATFORM", IdentifiedPlatformType.WINDOWS)
+    @pytest.mark.usefixtures("set_current_platform_to_windows")
     def test_method_without_platform_support(self):
         UnsupportedMethod = get_test_method_class(
             supported_platforms=(PlatformType.LINUX,),
@@ -74,7 +74,7 @@ class TestActivateMethod:
         res, _ = activate_method(unsupported_method)
         assert res.success is True
 
-    @patch("wakepy.core.method.CURRENT_PLATFORM", IdentifiedPlatformType.UNKNOWN)
+    @pytest.mark.usefixtures("set_current_platform_to_unknown")
     def test_with_unknown_platform_support_just_linux(self):
         # This is otherwise supported method, so it works also on the UNKNOWN
         # system. Only the platform support check should return None ("I don't

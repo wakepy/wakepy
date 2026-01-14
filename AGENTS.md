@@ -1,4 +1,4 @@
-Agents MUST be extremely concise in all messages. Agents MUST prefer brevity over grammatical correctness.
+You MUST be concise in all messages. You SHOULD prefer brevity over grammatical correctness.
 
 wakepy: Cross-platform Python tool for preventing system suspend via native OS/DE APIs. No persistent settings modified.
 
