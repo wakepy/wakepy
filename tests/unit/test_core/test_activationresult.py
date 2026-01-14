@@ -412,7 +412,7 @@ Tried Methods (in the order of attempt):
             ]
         )
 
-        text = result.get_methods_text(width_index=2, width_name=18, width_status=7)
+        text = result.get_methods_text(index_width=2, name_width=18, status_width=7)
 
         expected = """
  1. fail-requirements    FAIL   

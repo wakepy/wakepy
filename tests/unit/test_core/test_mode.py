@@ -147,9 +147,9 @@ class TestProbeAllMethods:
         result = Mode(params).probe_all_methods()
 
         methods_text = result.get_methods_text(
-            width_index=1,
-            width_name=7,
-            width_status=1,
+            index_width=1,
+            name_width=7,
+            status_width=1,
         )
         assert (
             methods_text

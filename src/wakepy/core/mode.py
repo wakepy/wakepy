@@ -569,13 +569,13 @@ class Mode:
         You can use this to see which methods would work on the current system
         (and which would not).
 
+        .. versionadded:: 1.0.0
+
         Returns
         -------
-        ProbingResults
+        :class:`ProbingResults`
             Result containing activation outcomes for each tested Method. Tells
             which Methods would work on the current system and which would not.
-
-        .. versionadded:: 1.0.0
         """
         self._thread_check()
 

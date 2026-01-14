@@ -44,3 +44,4 @@ ALWAYS:
 - Prefer using FIXTURES in tests where possible
 - Use "just test-cli ARGUMENTS" instead of "python -m pytest ARGUMENTS" or "just test ARGUMENTS" or "pytest ARGUMENTS" for running tests
 - imports to top of the file and not inside functions
+- To build docs, use "uv run sphinx-build -b html docs/source docs/build". Do NOT use "just docs" as it never returns!

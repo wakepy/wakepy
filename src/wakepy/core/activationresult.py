@@ -120,10 +120,10 @@ class _BaseActivationResult:
             If True, ignores all unused / remaining methods. Default:
             ``False``.
 
-
         See Also
         --------
-        query
+        :meth:`query`, :meth:`get_methods_text`, \
+            :meth:`get_methods_text_detailed`
 
         """
 
@@ -237,10 +237,10 @@ class _BaseActivationResult:
             The ``style`` parameter was added in wakepy 1.0.0, and the default
             style was changed to "block".
 
-
-        See Also
-        --------
-        list_methods, query, get_methods_text, get_methods_text_detailed
+        .. seealso::  This shows only failures. To include successful methods \
+        too, use :meth:`get_methods_text` or :meth:`get_methods_text_detailed`. \
+        For programmatic access to method results, use :meth:`list_methods` or \
+        :meth:`query`.
 
         """  # noqa: E501, W505
 
@@ -299,27 +299,28 @@ class _BaseActivationResult:
     def get_methods_text(
         self,
         *,
-        width_index: int = 3,
-        width_name: int = 35,
-        width_status: int = 8,
+        index_width: int = 3,
+        name_width: int = 35,
+        status_width: int = 8,
     ) -> str:
-        """Format method activation results as a simple list with status.
+        """Get method activation results as a simple list with status.
 
         Parameters
         ----------
-        width_index: int, optional
+        index_width: int, optional
             Width for the index number column. You can also control the level
             of indent by changing this value.
-        width_name: int, optional
+        name_width: int, optional
             Maximum width for method name column. Long names will be truncated
             with "...".
-        width_status: int, optional
+        status_width: int, optional
             Width for status column.
 
         Returns
         -------
         str
             Formatted output with method names and status
+
 
         Examples
         --------
@@ -331,8 +332,10 @@ class _BaseActivationResult:
 
         .. versionadded:: 1.0.0
 
-        .. seealso:: :meth:`get_methods_text_detailed`,
-            :meth:`get_failure_text`
+        .. seealso:: Use this for compact display. For detailed failure \
+        reasons, use :meth:`get_methods_text_detailed`. To show only failures,\
+        use :meth:`get_failure_text`.
+
 
         """
         results = self._method_results
@@ -344,14 +347,14 @@ class _BaseActivationResult:
             status = result.get_status_string(unsupported="*")
             name = result.method_name
 
-            if len(name) > width_name:
-                method_formatted = name[: width_name - 3] + "..."
+            if len(name) > name_width:
+                method_formatted = name[: name_width - 3] + "..."
             else:
-                method_formatted = name.ljust(width_name)
+                method_formatted = name.ljust(name_width)
 
-            status_formatted = status.ljust(width_status)
+            status_formatted = status.ljust(status_width)
 
-            lines.append(f"{i:>{width_index}}. {method_formatted}   {status_formatted}")
+            lines.append(f"{i:>{index_width}}. {method_formatted}   {status_formatted}")
         return "\n".join(lines)
 
     def get_methods_text_detailed(
@@ -363,7 +366,7 @@ class _BaseActivationResult:
         unused: str = "UNUSED",
         unsupported: str = "UNSUPPORTED",
     ) -> str:
-        """Format method activation results with detailed status and reasons.
+        """Get method activation results with detailed status and reasons.
 
         Parameters
         ----------
@@ -407,7 +410,9 @@ class _BaseActivationResult:
 
         .. versionadded:: 1.0.0
 
-        .. seealso:: :meth:`get_methods_text`, :meth:`get_failure_text`
+        .. seealso::  Use this when you need to understand why methods failed.\
+            For compact output, use :meth:`get_methods_text`. To show only \
+            failures, use :meth:`get_failure_text`.
         """
         data = self._get_methods_text_detailed_list(
             success=success, fail=fail, unused=unused, unsupported=unsupported
@@ -543,8 +548,6 @@ class ProbingResults(_BaseActivationResult):
     methods: List[MethodInfo] = field(init=False)
     """List of all :class:`MethodInfo` about wakepy Methods used, in the order
     they were tried.
-
-    .. versionadded:: 1.0.0
     """
 
     def __post_init__(

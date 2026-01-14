@@ -4,11 +4,12 @@
 🗓️ Unreleased
 
 ### ✨ Features
-- Decorator syntax: `@keep.running` and `@keep.presenting` and the helper functions `current_mode()`, `global_modes()` and `modecount()` ([#477](https://github.com/wakepy/wakepy/pull/477))
+- [Decorator syntax](https://wakepy.readthedocs.io/latest/user-guide.html#decorator-syntax): `@keep.running` and `@keep.presenting` and the helper functions [current_mode()](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.current_mode), [global_modes()](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.global_modes) and [modecount()](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.modecount) ([#477](https://github.com/wakepy/wakepy/pull/477))
 - Update the wakepy CLI printout: Adds the used Method and activated Mode to the printout ([#434](https://github.com/wakepy/wakepy/pull/434))
 - Added `-v` (INFO) and `-vv` (DEBUG) verbosity flags for the [wakepy CLI command](https://wakepy.readthedocs.io/stable/cli-api.html). ([#439](https://github.com/wakepy/wakepy/pull/439))
 - Add [Mode.method](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.Mode.method), [ActivationResult.method](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.ActivationResult.method) and [MethodActivationResult.method](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.MethodActivationResult.method) attributes, which are instances of [MethodInfo](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.MethodInfo) ([#459](https://github.com/wakepy/wakepy/pull/459), [#460](https://github.com/wakepy/wakepy/pull/460), [#464](https://github.com/wakepy/wakepy/pull/464))
 - Make [Mode.active_method](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.Mode.active_method) a [MethodInfo](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.MethodInfo) instance (was a string) ([#459](https://github.com/wakepy/wakepy/pull/459))
+- Add [Mode.probe_all_methods()](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.Mode.probe_all_methods) method and [ProbingResults](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.ProbingResults) class for testing which Methods work on the current system without keeping them active ([#564](https://github.com/wakepy/wakepy/pull/564))
 
 ### 🌱 Minor Enhancements
 - Better error messages: When selected Method is not part of the selected Mode ([#427](https://github.com/wakepy/wakepy/pull/427)) and when a D-Bus -based method fails ([#438](https://github.com/wakepy/wakepy/pull/438)). 
@@ -17,6 +18,7 @@
 - Add logging to every Method activation and deactivation step ([#469](https://github.com/wakepy/wakepy/pull/469))
 - Improve logging: org.gnome.Sessionmanager and freedesktop methods ([#474](https://github.com/wakepy/wakepy/pull/474))
 - Make ActivationWarning use proper stacklevel, so that issued warnings point to user code, and not into wakepy source code. ([#432](https://github.com/wakepy/wakepy/pull/432))
+- Add helper methods for formatting activation results: [`ActivationResult.get_methods_text()`](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.ActivationResult.get_methods_text), [`ActivationResult.get_methods_text_detailed()`](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.ActivationResult.get_methods_text_detailed), [`MethodActivationResult.get_status_string()`](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.MethodActivationResult.get_status_string), and [`MethodActivationResult.get_status_line()`](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.MethodActivationResult.get_status_line) ([#564](https://github.com/wakepy/wakepy/pull/564))
 
 ### 🐞 Bug fixes
 - Fix ResourceWarning with caffeinate Method on macOS ([#479](https://github.com/wakepy/wakepy/pull/479))
