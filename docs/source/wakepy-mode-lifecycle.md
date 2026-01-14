@@ -57,7 +57,7 @@ The rest of this document uses the context manager syntax in the examples becaus
 The diagram below illustrates how wakepy selects and prioritizes *Methods*, then activates a *Mode*.
 
 1. **Selected Methods**: When a {class}`~wakepy.Mode` instance is created, all Methods that support the Mode are filtered using the optional `omit` or `methods` input arguments to form the *Selected Methods* list.
-2. **WakepyFakeSuccess**: The [`WAKEPY_FAKE_SUCCESS`](#WAKEPY_FAKE_SUCCESS) option may add an additional WakepyFakeSuccess Method to the beginning of the list.
+2. **WakepyFakeSuccess**: The [`WAKEPY_FAKE_SUCCESS`](#WAKEPY_FAKE_SUCCESS) option may insert an additional WakepyFakeSuccess Method to the beginning of the list.
 3. **Prioritization**: The *Prioritized Methods* list is created by reordering Selected Methods according to the `methods_priority` argument.
 4. **Platform Support**: Methods incompatible with the current platform are removed.
 5. **Activation**: During activation, each platform-supported Method is tried in priority order until activation succeeds or no Methods remain.
@@ -172,7 +172,7 @@ The python process creates a new Mode context manager instance and uses it every
 The {numref}`fig-activate-mode-activity-diagram` presents an activity diagram from the "Activate Mode" step of {numref}`fig-mode-activity-diagram`. The steps are:
 - ***Check WAKEPY_FAKE_SUCCESS***: If the [`WAKEPY_FAKE_SUCCESS`](#WAKEPY_FAKE_SUCCESS) environment variable is set to a truthy value, the `WakepyFakeSuccess` method is inserted at the beginning of the methods list. This special method has `.caniuse()`, `.enter_mode()`, `.heartbeat()` and `.exit_mode()` which always succeed without making any real system calls, which is useful for testing.
 - ***Prioritize Methods***: Methods are prioritized with `methods_priority` from the user, if given.
-- ***Platform Support***: Methods not supported by the current platform are removed from the list of methods to be tried. (Check current platform against `Method.supported_platform`) 
+- ***Platform Support***: Methods not supported by the current platform are removed from the list of methods to be tried. (Check current platform against `Method.supported_platform`)
 - ***Activate with a Method***: Try to activate the Mode using the Method with highest priority. This is explained in more detail in the [next section](#section-activating-with-a-method). Note that only *one* Method is ever used to activate a Mode; the first one which does not fail, in priority order.
 
 This process happens in the `Mode._activate` method and it returns an `ActivationResult` object, the used `wakepy.Method` instance (if successful)  and a `Heartbeat` instance (if used).

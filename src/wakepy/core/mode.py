@@ -612,7 +612,7 @@ class Mode:
         method_kwargs = self._get_method_kwargs()
 
         logger.info(
-            'The full list of prioritized wakepy Methods is for Mode "%s" is: %s',
+            'The full list of prioritized wakepy Methods for Mode "%s" is: %s',
             self.name,
             [m.name for m in possibly_supported],
         )
