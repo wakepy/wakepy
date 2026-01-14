@@ -183,26 +183,17 @@ def parse_args(args: list[str]) -> Namespace:
 
 
 def get_mode_name(args: Namespace) -> ModeName:
-    """Determine which mode to activate based on command-line flags.
-
-    Default is KEEP_RUNNING. Only one mode can be active.
-    Supports deprecated flags during transition period.
-    """
-    # Normalize deprecated flags
     keep_running = args.keep_running or args.k
     keep_presenting = args.keep_presenting or args.presentation
 
-    # Check for conflicts
     if keep_running and keep_presenting:
         raise ValueError(
             "Cannot use both --keep-running and --keep-presenting. " "See: wakepy -h"
         )
 
-    # Explicit mode selection
     if keep_presenting:
         return ModeName.KEEP_PRESENTING
 
-    # Default (whether explicit or no flags)
     return ModeName.KEEP_RUNNING
 
 

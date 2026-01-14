@@ -31,8 +31,6 @@ from wakepy.core import PlatformType
 from wakepy.core.activationresult import MethodActivationResult
 from wakepy.core.constants import IdentifiedPlatformType, ModeName, StageName
 
-# OutputHandler abstraction removed - tests now use capsys or patch print()
-
 
 @pytest.fixture
 def mode_name_working():
