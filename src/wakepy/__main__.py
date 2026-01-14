@@ -21,7 +21,11 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from itertools import cycle
 from textwrap import dedent, fill, wrap
-from typing import TypedDict
+
+if sys.version_info < (3, 8):  # pragma: no-cover-if-py-gte-38
+    from typing_extensions import TypedDict
+else:  # pragma: no-cover-if-py-lt-38
+    from typing import TypedDict
 
 from wakepy import ModeExit
 from wakepy.core.activationresult import ActivationResult, ProbingResults
