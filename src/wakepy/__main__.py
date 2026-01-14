@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from textwrap import dedent, fill, wrap
 
 from wakepy import ModeExit
+from wakepy.core.activationresult import ActivationResult, ProbingResults
 from wakepy.core.constants import IdentifiedPlatformType, ModeName
 from wakepy.core.mode import Mode, create_mode_params
 from wakepy.core.platform import CURRENT_PLATFORM, get_platform_debug_info, is_windows
@@ -86,8 +87,8 @@ class DisplayTheme:
         return self.mode_name_max_length - 1
 
     # Text wrapping widths
-    text_max_width: int = 66
-    error_text_width: int = 80
+    below_box_text_width: int = 66
+    general_text_width: int = 80
 
     @classmethod
     def create(cls, ascii_mode: bool | None = None) -> DisplayTheme:
@@ -323,7 +324,7 @@ class CLIRenderer:
         return "\n".join(
             wrap(
                 text,
-                self.theme.text_max_width,
+                self.theme.below_box_text_width,
                 break_long_words=True,
                 break_on_hyphens=True,
             )
@@ -362,7 +363,25 @@ class CLIRenderer:
 
         """
         blocks = dedent(error_text.strip("\n")).split("\n")
-        return "\n".join(fill(block, self.theme.error_text_width) for block in blocks)
+        return "\n".join(fill(block, self.theme.general_text_width) for block in blocks)
+
+    def render_methods_output(
+        self, mode_name: str, result: ProbingResults, *, verbose: bool
+    ) -> str:
+        """Render the methods listing output."""
+        width = self.theme.general_text_width if verbose else 55
+        separator = "━" * width
+        header = mode_name.center(width).rstrip()
+
+        if verbose:
+            methods_text = result.get_methods_text_detailed(max_width=width)
+            content = f"\n{methods_text}\n"
+        else:
+            content = result.get_methods_text(
+                index_width=3, name_width=width - 17, status_width=10
+            )
+
+        return f"{separator}\n{header}\n{separator}\n{content}\n{separator}\n"
 
 
 class CliApp:
@@ -372,14 +391,13 @@ class CliApp:
         theme = DisplayTheme.create()
         self.renderer = CLIRenderer(theme)
 
-    def run(self, sysargs: list[str]) -> Mode:
-        """Run the wakepy CLI with the given command line arguments.
+    def run_wakepy(self, args: Namespace) -> Mode:
+        """Run the main wakepy command.
 
         Parameters
         ----------
-        sysargs : list[str]
-            The command line arguments to parse and use. You should pass
-            sys.argv[1:] as the sysargs.
+        args : Namespace
+            Parsed command line arguments
 
         Returns
         -------
@@ -387,10 +405,6 @@ class CliApp:
             The Mode instance that was run
 
         """
-        args = parse_args(sysargs)
-
-        setup_logging(args.verbose)
-
         mode_name = get_mode_name(args)
         deprecations = get_deprecations(args)
 
@@ -418,85 +432,38 @@ class CliApp:
             print("\nExited.")
         return mode
 
+    def run_wakepy_methods(self, args: Namespace) -> None:
+        """Run the 'methods' subcommand.
+
+        Parameters
+        ----------
+        args : Namespace
+            Parsed command line arguments
+
+        """
+        mode_name = get_mode_name(args)
+        params = create_mode_params(mode_name=mode_name)
+        result = Mode(params).probe_all_methods()
+        output = self.renderer.render_methods_output(
+            mode_name, result, verbose=args.verbose >= 1
+        )
+        print(output)
+
     def handle_activation_error(self, result: ActivationResult) -> None:
         print(self.renderer.render_activation_error(result))
 
 
-def parse_args(args: list[str]) -> Namespace:
-    """Parse the command line arguments and return the parsed Namespace.
+def main() -> None:
+    """Entry point for the wakepy CLI."""
+    args = parse_args(sys.argv[1:])
+    setup_logging(args.verbose, args.command)
 
-    Parameters
-    ----------
-    args : list[str]
-        Command line arguments to parse
+    app = CliApp()
 
-    Returns
-    -------
-    Namespace
-        Parsed arguments
-
-    """
-    parser = argparse.ArgumentParser(
-        prog="wakepy",
-        formatter_class=lambda prog: argparse.HelpFormatter(
-            prog,
-            # makes more space for the "options" area on the left
-            max_help_position=27,
-        ),
-    )
-
-    parser.add_argument(
-        "-r",
-        "--keep-running",
-        help=(
-            "Keep programs running (DEFAULT); inhibit automatic idle timer based sleep "
-            "/ suspend. If a screen lock (or a screen saver) with a password is "
-            "enabled, your system *may* still lock the session automatically. You may, "
-            "and probably should, lock the session manually. Locking the workstation "
-            "does not stop programs from executing."
-        ),
-        action="store_true",
-        default=False,
-    )
-
-    # old name for -r, --keep-running. Used during deprecation time
-    parser.add_argument(
-        "-k",
-        help=argparse.SUPPRESS,
-        action="store_true",
-        default=False,
-    )
-
-    parser.add_argument(
-        "-p",
-        "--keep-presenting",
-        help=(
-            "Presentation mode; inhibit automatic idle timer based sleep, screensaver, "
-            "screenlock and display power management."
-        ),
-        action="store_true",
-        default=False,
-    )
-
-    # old name for -p, --keep-presenting. Used during deprecation time
-    parser.add_argument(
-        "--presentation",
-        help=argparse.SUPPRESS,
-        action="store_true",
-        default=False,
-    )
-
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        default=0,
-        help=(
-            "Increase verbosity level (-v for INFO, -vv for DEBUG). Default is "
-            "WARNING, which shows only really important messages."
-        ),
-    )
-    return parser.parse_args(args)
+    if args.command == "methods":
+        app.run_wakepy_methods(args)
+    else:
+        app.run_wakepy(args)
 
 
 def get_mode_name(args: Namespace) -> ModeName:
@@ -566,21 +533,28 @@ def get_deprecations(args: Namespace) -> str:
     return "\n".join(deprecations) if deprecations else ""
 
 
-def setup_logging(verbosity: int) -> None:
-    log_level = get_logging_level(verbosity)
+def setup_logging(verbosity: int, command: str) -> None:
+    log_level = get_logging_level(verbosity, command)
     logging.basicConfig(
         level=log_level, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
 
-def get_logging_level(verbosity: int) -> int:
-    if verbosity >= 2:  # Corresponds to -vv or higher
-        return logging.DEBUG
-    elif verbosity == 1:  # Corresponds to -v
-        return logging.INFO
-    elif verbosity == 0:  # No -v flags
-        return logging.WARNING
-    raise ValueError("Verbosity level cannot be negative.")
+def get_logging_level(verbosity: int, command: str | None = None) -> int:
+    if command == "methods":
+        if verbosity >= 3:  # Corresponds to -vvv or higher
+            return logging.DEBUG
+        elif verbosity == 2:  # Corresponds to -vv
+            return logging.INFO
+        else:
+            return logging.WARNING
+    else:
+        if verbosity >= 2:  # Corresponds to -vv or higher
+            return logging.DEBUG
+        elif verbosity == 1:  # Corresponds to -v
+            return logging.INFO
+        else:  # No -v flags
+            return logging.WARNING
 
 
 def wait_until_keyboardinterrupt(renderer: CLIRenderer) -> None:
@@ -641,9 +615,118 @@ def get_wakepy_version() -> str:
     return __version__
 
 
-def main() -> None:
-    """Entry point for the wakepy CLI."""
-    CliApp().run(sys.argv[1:])
+def parse_args(args: list[str]) -> Namespace:
+    """Parse the command line arguments and return the parsed Namespace.
+
+    Parameters
+    ----------
+    args : list[str]
+        Command line arguments to parse
+
+    Returns
+    -------
+    Namespace
+        Parsed arguments
+
+    """
+    parser = argparse.ArgumentParser(
+        prog="wakepy",
+        formatter_class=lambda prog: argparse.HelpFormatter(
+            prog,
+            # makes more space for the "options" area on the left
+            max_help_position=27,
+        ),
+    )
+
+    # Main wakepy command arguments (when no subcommand)
+    _add_mode_arguments(parser)
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help=(
+            "Increase verbosity level (-v for INFO, -vv for DEBUG). Default is "
+            "WARNING, which shows only really important messages."
+        ),
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # Add 'methods' subcommand
+    methods_parser = subparsers.add_parser(
+        "methods",
+        help=(
+            "List all available wakepy Methods for the selected mode in "
+            "priority order"
+        ),
+        formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=27),
+    )
+
+    _add_mode_arguments(methods_parser)
+    methods_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help=(
+            "Increase verbosity level (-v for detailed output, -vv for INFO logging, "
+            "-vvv for DEBUG logging). Default shows only method names and status."
+        ),
+    )
+
+    return parser.parse_args(args)
+
+
+def _add_mode_arguments(parser: argparse.ArgumentParser) -> None:
+    """Add mode selection arguments to a parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        The parser to add arguments to
+
+    """
+    parser.add_argument(
+        "-r",
+        "--keep-running",
+        help=(
+            "Keep programs running (DEFAULT); inhibit automatic idle timer based sleep "
+            "/ suspend. If a screen lock (or a screen saver) with a password is "
+            "enabled, your system *may* still lock the session automatically. You may, "
+            "and probably should, lock the session manually. Locking the workstation "
+            "does not stop programs from executing."
+        ),
+        action="store_true",
+        default=False,
+    )
+
+    # old name for -r, --keep-running. Used during deprecation time
+    parser.add_argument(
+        "-k",
+        help=argparse.SUPPRESS,
+        action="store_true",
+        default=False,
+    )
+
+    parser.add_argument(
+        "-p",
+        "--keep-presenting",
+        help=(
+            "Presentation mode; inhibit automatic idle timer based sleep, screensaver, "
+            "screenlock and display power management."
+        ),
+        action="store_true",
+        default=False,
+    )
+
+    # old name for -p, --keep-presenting. Used during deprecation time
+    parser.add_argument(
+        "--presentation",
+        help=argparse.SUPPRESS,
+        action="store_true",
+        default=False,
+    )
 
 
 if __name__ == "__main__":
