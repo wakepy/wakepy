@@ -168,7 +168,6 @@ class TestCliAppRunWakepy:
             app = CliApp()
             args = parse_args([])
             mode = app.run_wakepy(args)
-            assert mode is not None
             assert mode.result.success is True
 
     def test_non_working_mode(self, method2_broken, monkeypatch):
@@ -180,7 +179,6 @@ class TestCliAppRunWakepy:
             app = CliApp()
             args = parse_args([])
             mode = app.run_wakepy(args)
-            assert mode is not None
             assert mode.result.success is False
 
             # the method2_broken enter_mode raises this:
@@ -578,6 +576,7 @@ class TestGetLoggingLevel:
         "verbosity, expected_level",
         [
             (0, logging.WARNING),
+            (1, logging.WARNING),  # -v only enables detailed output, not INFO
             (2, logging.INFO),
             (3, logging.DEBUG),
         ],
