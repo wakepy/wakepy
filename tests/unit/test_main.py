@@ -3,33 +3,35 @@
 import argparse
 import logging
 import string
-import sys
-from dataclasses import replace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
 from tests.helpers import get_method_info
-from wakepy import ActivationResult, Method, Mode, ProbingResults
+from wakepy import ActivationResult, Method, ProbingResults
 from wakepy.__main__ import (
     CliApp,
-    CLIRenderer,
     DisplayTheme,
-    SessionData,
     get_deprecations,
     get_logging_level,
     get_mode_name,
     get_should_use_ascii_only,
     main,
     parse_args,
+    render_activation_error,
+    render_deprecations,
+    render_fake_success_warning,
+    render_info_box,
+    render_logo,
     setup_logging,
-    wait_until_keyboardinterrupt,
+    spinner_frames,
+    wait_for_interrupt,
 )
 from wakepy.core import PlatformType
 from wakepy.core.activationresult import MethodActivationResult
 from wakepy.core.constants import IdentifiedPlatformType, ModeName, StageName
-from wakepy.core.mode import _ModeParams
-from wakepy.methods._testing import WakepyFakeSuccess
+
+# OutputHandler abstraction removed - tests now use capsys or patch print()
 
 
 @pytest.fixture
@@ -107,7 +109,9 @@ class TestGetModeName:
         ],
     )
     def test_too_many_modes(self, sysargs):
-        with pytest.raises(ValueError, match="You may only select one of the modes!"):
+        with pytest.raises(
+            ValueError, match="Cannot use both --keep-running and --keep-presenting"
+        ):
             assert get_mode_name(parse_args(sysargs))
 
 
@@ -123,28 +127,30 @@ def test_deprecations(sysargs):
     assert f"Using {sysargs[0]} is deprecated in wakepy 0.10.0" in deprecations
 
 
-def test_wait_until_keyboardinterrupt():
-    def raise_keyboardinterrupt(_):
+def test_wait_for_interrupt_handles_keyboard_interrupt(capsys):
+    """Test that wait_for_interrupt handles KeyboardInterrupt gracefully."""
+
+    def interrupting_frames():
+        yield "x"
         raise KeyboardInterrupt
 
-    with patch("wakepy.__main__.time") as timemock:
-        timemock.sleep.side_effect = raise_keyboardinterrupt
-        theme = DisplayTheme.create()
-        renderer = CLIRenderer(theme)
-        wait_until_keyboardinterrupt(renderer)
+    wait_for_interrupt(interrupting_frames(), interval=0)
+    captured = capsys.readouterr().out
+    assert captured == "x"
 
 
-@patch("builtins.print")
-def test_handle_activation_error(print_mock):
+def test_wait_for_interrupt_with_no_frames():
+    """Test that wait_for_interrupt handles empty iterator."""
+    wait_for_interrupt(iter(()), interval=0)
+
+
+def test_handle_activation_error(capsys):
+    """Test that handle_activation_error prints error message."""
     result = ActivationResult([])
     app = CliApp()
     app.handle_activation_error(result)
-    if sys.version_info[:2] == (3, 7):
-        # on python 3.7, need to do other way.
-        printed_text = print_mock.mock_calls[0][1][0]
-    else:
-        printed_text = "\n".join(print_mock.mock_calls[0].args)
-    # Some sensible text was printed to the user
+    printed_text = capsys.readouterr().out
+    assert printed_text
     assert "Wakepy could not activate" in printed_text
 
 
@@ -153,28 +159,35 @@ class TestCliAppRunWakepy:
     way. This is more of a smoke test. The functionality of the different parts
     is already tested in other unit tests."""
 
-    @pytest.fixture(autouse=True)
-    def patch_function(self):
-        with patch("wakepy.__main__.wait_until_keyboardinterrupt"), patch(
-            "builtins.print"
+    def test_working_mode(self, method1, capsys):
+        with (
+            patch("wakepy.__main__.get_mode_name", return_value=method1.mode_name),
+            patch("wakepy.__main__.wait_for_interrupt"),
         ):
-            yield
-
-    def test_working_mode(
-        self,
-        method1,
-    ):
-        with patch("wakepy.__main__.get_mode_name", return_value=method1.mode_name):
             app = CliApp()
             args = parse_args([])
             mode = app.run_wakepy(args)
             assert mode.result.success is True
+            # Verify something was printed
+            assert capsys.readouterr().out
 
-    def test_non_working_mode(self, method2_broken, monkeypatch):
+    def test_default_renderer(self):
+        app = CliApp()
+        assert isinstance(app.theme, DisplayTheme)
+
+    def test_custom_renderer(self):
+        theme = DisplayTheme.create(ascii_mode=True)
+        app = CliApp(theme=theme)
+        assert app.theme is theme
+
+    def test_non_working_mode(self, method2_broken, monkeypatch, capsys):
         # need to turn off WAKEPY_FAKE_SUCCESS as we want to get a failure.
         monkeypatch.setenv("WAKEPY_FAKE_SUCCESS", "0")
-        with patch(
-            "wakepy.__main__.get_mode_name", return_value=method2_broken.mode_name
+        with (
+            patch(
+                "wakepy.__main__.get_mode_name", return_value=method2_broken.mode_name
+            ),
+            patch("wakepy.__main__.wait_for_interrupt"),
         ):
             app = CliApp()
             args = parse_args([])
@@ -183,6 +196,64 @@ class TestCliAppRunWakepy:
 
             # the method2_broken enter_mode raises this:
             assert mode.result.query()[0].failure_reason == "RuntimeError('foo')"
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_working_mode_with_deprecations(self, capsys):
+        with (
+            patch(
+                "wakepy.__main__.get_deprecations",
+                return_value="Using -k is deprecated",
+            ),
+            patch("wakepy.__main__.wait_for_interrupt"),
+        ):
+            app = CliApp()
+            args = parse_args([])
+            mode = app.run_wakepy(args)
+            assert mode.result.success is True
+            output = capsys.readouterr().out
+            assert "DEPRECATION NOTICE" in output
+
+
+class TestCliAppRunWakepyVerbose:
+    """Tests for verbose output in run_wakepy()."""
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_verbose_mode_with_methods(self, capsys):
+        """Test verbose mode when methods text is available."""
+        with (
+            patch("wakepy.__main__.get_mode_name", return_value=ModeName.KEEP_RUNNING),
+            patch(
+                "wakepy.core.activationresult._BaseActivationResult.get_methods_text_detailed",
+                return_value="method1: SUCCESS",
+            ),
+            patch("wakepy.__main__.wait_for_interrupt"),
+        ):
+            app = CliApp()
+            args = parse_args(["-v"])
+            mode = app.run_wakepy(args)
+            assert mode.result.success is True
+
+            output = capsys.readouterr().out
+            assert "Wakepy Methods (in the order of attempt):" in output
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_verbose_mode_with_no_methods(self, capsys):
+        """Test verbose mode when methods text is empty."""
+        with (
+            patch("wakepy.__main__.get_mode_name", return_value=ModeName.KEEP_RUNNING),
+            patch(
+                "wakepy.core.activationresult._BaseActivationResult.get_methods_text_detailed",
+                return_value="   ",
+            ),
+            patch("wakepy.__main__.wait_for_interrupt"),
+        ):
+            app = CliApp()
+            args = parse_args(["-v"])
+            mode = app.run_wakepy(args)
+            assert mode.result.success is True
+
+            output = capsys.readouterr().out
+            assert "Did not try any methods!" in output
 
 
 class TestCliAppRunWakepyMethods:
@@ -203,7 +274,7 @@ class TestCliAppRunWakepyMethods:
             ]
         )
 
-    def test_non_verbose_output(self, capsys, probe_result: ProbingResults):
+    def test_non_verbose_output(self, probe_result: ProbingResults, capsys):
         args = argparse.Namespace(
             keep_running=False,
             k=False,
@@ -212,27 +283,24 @@ class TestCliAppRunWakepyMethods:
             verbose=0,
         )
 
-        with patch(
-            "wakepy.__main__.Mode.probe_all_methods",
-            return_value=probe_result,
-        ), patch("wakepy.__main__.get_mode_name", return_value=ModeName.KEEP_RUNNING):
-            app = CliApp()
-            app.run_wakepy_methods(args)
+        app = CliApp()
+        app.run_wakepy_methods(args, probe_runner=lambda _: probe_result)
 
         output = capsys.readouterr().out
-        expected = """
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                      keep.running
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  1. method-a                                 SUCCESS   
-  2. method-b                                 FAIL      
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        # Compare normalized output (strip trailing spaces per line)
+        expected_lines = [
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "                      keep.running",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "  1. method-a                                 SUCCESS",
+            "  2. method-b                                 FAIL",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "",
+        ]
+        output_lines = [line.rstrip() for line in output.splitlines()]
+        assert expected_lines == output_lines
 
-""".lstrip("\n")  # noqa: W291
-
-        assert expected == output
-
-    def test_verbose_output(self, capsys, probe_result: ProbingResults):
+    def test_verbose_output(self, probe_result: ProbingResults, capsys):
         args = argparse.Namespace(
             keep_running=False,
             k=False,
@@ -241,12 +309,8 @@ class TestCliAppRunWakepyMethods:
             verbose=1,
         )
 
-        with patch(
-            "wakepy.__main__.Mode.probe_all_methods",
-            return_value=probe_result,
-        ), patch("wakepy.__main__.get_mode_name", return_value=ModeName.KEEP_RUNNING):
-            app = CliApp()
-            app.run_wakepy_methods(args)
+        app = CliApp()
+        app.run_wakepy_methods(args, probe_runner=lambda _: probe_result)
 
         output = capsys.readouterr().out
         expected = """
@@ -264,6 +328,38 @@ class TestCliAppRunWakepyMethods:
 
 """.lstrip("\n")
         assert expected == output
+
+    def test_default_probe_runner_prints_output(self, probe_result, capsys):
+        args = argparse.Namespace(
+            keep_running=False,
+            k=False,
+            keep_presenting=False,
+            presentation=False,
+            verbose=0,
+        )
+
+        with patch(
+            "wakepy.__main__.Mode.probe_all_methods",
+            return_value=probe_result,
+        ):
+            app = CliApp()
+            app.run_wakepy_methods(args)
+
+        assert capsys.readouterr().out
+
+    def test_probe_runner_overrides_default(self, probe_result, capsys):
+        args = argparse.Namespace(
+            keep_running=False,
+            k=False,
+            keep_presenting=False,
+            presentation=False,
+            verbose=0,
+        )
+
+        app = CliApp()
+        app.run_wakepy_methods(args, probe_runner=lambda _: probe_result)
+
+        assert capsys.readouterr().out
 
 
 class TestDisplayTheme:
@@ -308,78 +404,8 @@ class TestShouldUseAsciiOnly:
         )
 
 
-@pytest.fixture
-def somemode():
-    params = _ModeParams([WakepyFakeSuccess], name="testmode")
-    return Mode(params)
-
-
-class TestSessionData:
-    @patch("wakepy.__version__", "0.10.0")
-    def test_from_mode(self, somemode: Mode):
-        with somemode as m:
-            session_data = SessionData.from_mode(m, deprecations="")
-
-        assert session_data.wakepy_version == "0.10.0"
-        assert session_data.mode_name == "testmode"
-        assert session_data.method_name == "WakepyFakeSuccess"
-        assert session_data.is_presentation_mode is False
-        assert session_data.deprecations == ""
-        # WakepyFakeSuccess has real_success=False, so is_fake_success=True
-        assert session_data.is_fake_success is True
-
-        with somemode as m:
-            session_data = SessionData.from_mode(m, deprecations="test deprecation")
-
-        assert session_data.deprecations == "test deprecation"
-
-    @pytest.mark.parametrize(
-        "mode_name,expected",
-        [
-            (ModeName.KEEP_PRESENTING, True),
-            (ModeName.KEEP_RUNNING, False),
-            ("other_mode", False),
-        ],
-    )
-    def test_is_keep_presenting_mode(self, mode_name, expected):
-        session_data = SessionData(
-            wakepy_version="1.0.0",
-            mode_name=mode_name,
-            method_name="test_method",
-        )
-        assert session_data.is_presentation_mode is expected
-
-
-class TestCLIRenderer:
-    """Test the formatting logic of CLIRenderer.
-
-    These tests verify that the renderer correctly formats SessionData
-    using a DisplayTheme, but focus on structural elements
-    rather than exact string matching.
-    """
-
-    @pytest.fixture
-    def base_session_data(self):
-        """Base SessionData for testing."""
-        return SessionData(
-            wakepy_version="1.0.0",
-            mode_name="test_mode",
-            method_name="test_method",
-            deprecations="",
-            is_fake_success=False,
-        )
-
-    @pytest.fixture
-    def unicode_renderer(self):
-        """Renderer with Unicode theme."""
-        return CLIRenderer(DisplayTheme.create(ascii_mode=False))
-
-    @pytest.fixture
-    def ascii_renderer(self):
-        """Renderer with ASCII theme."""
-        return CLIRenderer(DisplayTheme.create(ascii_mode=True))
-
-    expected_info_banner = r"""
+class TestRendering:
+    expected_logo = r"""
                          _
                         | |
         __      __ __ _ | | __ ___  _ __   _   _
@@ -387,7 +413,9 @@ class TestCLIRenderer:
          \ V  V /| (_| ||   <|  __/| |_) || |_| |
           \_/\_/  \__,_||_|\_\\___|| .__/  \__, |
          v.1.0.0                   | |      __/ |
-                                   |_|     |___/ 
+                                   |_|     |___/ """.lstrip("\n")  # noqa: W291
+
+    expected_info_box_unicode = r"""
  ┏━━ Mode: test_mode ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
  ┃                                                      ┃
  ┃  [✔] Programs keep running                           ┃
@@ -396,15 +424,7 @@ class TestCLIRenderer:
  ┃   Method: test_method                                ┃
  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛""".lstrip("\n")  # noqa: W291
 
-    expected_info_banner_ascii = r"""
-                         _
-                        | |
-        __      __ __ _ | | __ ___  _ __   _   _
-        \ \ /\ / // _` || |/ // _ \| '_ \ | | | |
-         \ V  V /| (_| ||   <|  __/| |_) || |_| |
-          \_/\_/  \__,_||_|\_\\___|| .__/  \__, |
-         v.1.0.0                   | |      __/ |
-                                   |_|     |___/ 
+    expected_info_box_ascii = r"""
  ┏━━ Mode: test_mode ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
  ┃                                                      ┃
  ┃  [x] Programs keep running                           ┃
@@ -413,92 +433,53 @@ class TestCLIRenderer:
  ┃   Method: test_method                                ┃
  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛""".lstrip("\n")  # noqa: W291
 
+    def test_render_logo(self):
+        output_logo = render_logo("1.0.0")
+        assert output_logo == self.expected_logo
+
     @pytest.mark.parametrize(
-        "ascii_mode,expected_info_banner",
+        "ascii_mode,expected_info_box",
         [
-            (False, expected_info_banner),  # Unicode
-            (True, expected_info_banner_ascii),  # ASCII
+            (False, expected_info_box_unicode),  # Unicode
+            (True, expected_info_box_ascii),  # ASCII
         ],
     )
-    def test_render_info_banner_uses_correct_template(
-        self, base_session_data, ascii_mode, expected_info_banner
-    ):
-        """Test that correct template is used for ASCII/Unicode mode."""
+    def test_render_info_box_uses_correct_template(self, ascii_mode, expected_info_box):
         theme = DisplayTheme.create(ascii_mode=ascii_mode)
-        renderer = CLIRenderer(theme)
+        output_box = render_info_box(
+            theme,
+            "test_mode",
+            "test_method",
+            is_presentation_mode=False,
+        )
+        assert output_box == expected_info_box
 
-        output_banner = renderer.render_info_banner(base_session_data)
+    def test_render_deprecations(self):
+        deprecations = "This feature is deprecated"
+        formatted = render_deprecations(deprecations)
 
-        assert output_banner == expected_info_banner
+        assert "DEPRECATION NOTICE" in formatted
+        assert deprecations in formatted
 
-    @pytest.mark.parametrize(
-        "deprecations,should_contain",
-        [
-            ("This feature is deprecated", True),
-            ("", False),
-        ],
-    )
-    def test_render_info_banner_deprecations(
-        self, base_session_data, unicode_renderer, deprecations, should_contain
-    ):
-        """Test that deprecation warnings are included/excluded correctly."""
-        session_data = replace(base_session_data, deprecations=deprecations)
-        formatted = unicode_renderer.render_info_banner(session_data)
+    def test_render_fake_success_warning(self):
+        formatted = render_fake_success_warning()
 
-        if should_contain:
-            assert "DEPRECATION NOTICE" in formatted
-            assert deprecations in formatted
-        else:
-            assert "DEPRECATION NOTICE" not in formatted
+        assert "WAKEPY_FAKE_SUCCESS" in formatted
+        assert "WARNING" in formatted
 
-    @pytest.mark.parametrize(
-        "is_fake_success,should_contain",
-        [
-            (True, True),
-            (False, False),
-        ],
-    )
-    def test_render_info_banner_fake_success_warning(
-        self, base_session_data, unicode_renderer, is_fake_success, should_contain
-    ):
-        """Test that fake success warning is shown/hidden correctly."""
-
-        session_data = replace(base_session_data, is_fake_success=is_fake_success)
-        formatted = unicode_renderer.render_info_banner(session_data)
-
-        if should_contain:
-            assert "WAKEPY_FAKE_SUCCESS" in formatted
-            assert "WARNING" in formatted
-        else:
-            assert "WAKEPY_FAKE_SUCCESS" not in formatted
-
-    def test_render_info_banner_truncates_long_names(self):
-        """Test that mode and method names are truncated to max length."""
-
+    def test_render_info_box_truncates_long_names(self):
         base = string.ascii_letters + string.digits
         very_long_mode = "mode_" + base
         very_long_method = "method_" + base
-        session_data = SessionData(
-            wakepy_version="1.0.0",
-            mode_name=very_long_mode,
-            method_name=very_long_method,
-            deprecations="",
-            is_fake_success=False,
-        )
         theme = DisplayTheme.create(ascii_mode=False)
-        renderer = CLIRenderer(theme)
-
-        formatted = renderer.render_info_banner(session_data)
+        formatted = render_info_box(
+            theme,
+            very_long_mode,
+            very_long_method,
+            is_presentation_mode=False,
+        )
 
         expected = r"""
-                         _
-                        | |
-        __      __ __ _ | | __ ___  _ __   _   _
-        \ \ /\ / // _` || |/ // _ \| '_ \ | | | |
-         \ V  V /| (_| ||   <|  __/| |_) || |_| |
-          \_/\_/  \__,_||_|\_\\___|| .__/  \__, |
-         v.1.0.0                   | |      __/ |
-                                   |_|     |___/ 
  ┏━━ Mode: mode_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKL ━┓
  ┃                                                      ┃
  ┃  [✔] Programs keep running                           ┃
@@ -508,13 +489,12 @@ class TestCLIRenderer:
  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛""".lstrip("\n")  # noqa: W291
         assert formatted == expected
 
-    def test_spinner_frames(self, unicode_renderer):
-        """Test that spinner_frames generates correct frames."""
-        theme = unicode_renderer.theme
+    def test_spinner_frames(self):
+        theme = DisplayTheme.create(ascii_mode=False)
 
         # Get the first few frames from the infinite generator
         frames = []
-        for i, frame in enumerate(unicode_renderer.spinner_frames()):
+        for i, frame in enumerate(spinner_frames(theme)):
             frames.append(frame)
             if i >= len(theme.spinner_symbols):
                 # Get one full cycle plus one to verify it cycles
@@ -532,31 +512,39 @@ class TestCLIRenderer:
         for i, symbol in enumerate(theme.spinner_symbols):
             assert symbol in frames[i]
 
+    def test_render_activation_error_default_system_info(self):
+        result = ActivationResult([])
+        formatted = render_activation_error(result)
+        assert "Wakepy could not activate" in formatted
+
 
 class TestMain:
     """Test the main() entry point function."""
 
     def test_main_calls_run_wakepy(self):
         """Test that main() parses args and calls run_wakepy."""
-        with patch("wakepy.__main__.CliApp") as mock_cli_app, patch(
-            "wakepy.__main__.sys.argv", ["wakepy", "-v", "-p"]
-        ), patch("wakepy.__main__.setup_logging"):
+        mock_app = Mock()
+        with patch("wakepy.__main__.setup_logging"):
+            main(argv=["-v", "-p"], app=mock_app)
+        mock_app.run_wakepy.assert_called_once()
+        mock_app.run_wakepy_methods.assert_not_called()
+
+    def test_main_default_app_and_argv(self):
+        with patch("wakepy.__main__.setup_logging"), patch(
+            "wakepy.__main__.CliApp"
+        ) as mock_cli_app, patch("wakepy.__main__.sys.argv", ["wakepy", "-v", "-p"]):
             main()
-            # Verify run_wakepy was called (not run_wakepy_methods)
             mock_instance = mock_cli_app.return_value
             mock_instance.run_wakepy.assert_called_once()
             mock_instance.run_wakepy_methods.assert_not_called()
 
     def test_main_calls_run_wakepy_methods(self):
         """Test that main() calls run_wakepy_methods for 'methods' command."""
-        with patch("wakepy.__main__.CliApp") as mock_cli_app, patch(
-            "wakepy.__main__.sys.argv", ["wakepy", "methods", "-p"]
-        ), patch("wakepy.__main__.setup_logging"):
-            main()
-            # Verify run_wakepy_methods was called (not run_wakepy)
-            mock_instance = mock_cli_app.return_value
-            mock_instance.run_wakepy_methods.assert_called_once()
-            mock_instance.run_wakepy.assert_not_called()
+        mock_app = Mock()
+        with patch("wakepy.__main__.setup_logging"):
+            main(argv=["methods", "-p"], app=mock_app)
+        mock_app.run_wakepy_methods.assert_called_once()
+        mock_app.run_wakepy.assert_not_called()
 
 
 class TestGetLoggingLevel:

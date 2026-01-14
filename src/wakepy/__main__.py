@@ -12,15 +12,16 @@ or using the executable
 from __future__ import annotations
 
 import argparse
-import itertools
 import logging
 import platform
 import sys
-import textwrap
 import time
 import typing
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from itertools import cycle
 from textwrap import dedent, fill, wrap
+from typing import TypedDict
 
 from wakepy import ModeExit
 from wakepy.core.activationresult import ActivationResult, ProbingResults
@@ -30,7 +31,6 @@ from wakepy.core.platform import CURRENT_PLATFORM, get_platform_debug_info, is_w
 
 if typing.TYPE_CHECKING:
     from argparse import Namespace
-    from collections.abc import Iterator
 
     from wakepy import ActivationResult
 
@@ -57,55 +57,46 @@ INFO_BOX = """
 
 WAKEPY_BANNER = WAKEPY_LOGO + INFO_BOX
 
+# Display layout constants
+MODE_NAME_MAX_LENGTH = 43
+VERSION_STRING_WIDTH = 24
+BELOW_BOX_TEXT_WIDTH = 66
+GENERAL_TEXT_WIDTH = 80
+
+
+def _create_help_formatter(prog: str) -> argparse.HelpFormatter:
+    """Create help formatter with wider help position for better layout."""
+    return argparse.HelpFormatter(prog, max_help_position=27)
+
+
+def wait_for_interrupt(frames: Iterator[str], interval: float) -> None:
+    """Display animated frames until keyboard interrupt.
+
+    Args:
+        frames: Iterator of frame strings to display
+        interval: Seconds to wait between frames
+    """
+    try:
+        for frame in frames:
+            print(frame, end="")
+            time.sleep(interval)
+    except KeyboardInterrupt:
+        pass
+
 
 @dataclass(frozen=True)
 class DisplayTheme:
-    """Visual theme configuration based on terminal capabilities.
-
-    This is immutable configuration that determines HOW things are displayed
-    (symbols, widths, formatting constraints).
-    """
-
-    # Character encoding mode
     ascii_mode: bool
-
-    # Spinner animation
     spinner_symbols: tuple[str, ...]
-    spinner_line_width: int
-
-    # Status indicators
     success_symbol: str
     failure_symbol: str = " "
 
-    # Layout constraints for info box
-    mode_name_max_length: int = 43
-    version_string_width: int = 24
-
     @property
-    def method_name_max_length(self) -> int:
-        """Method name max length is always mode_name_max_length - 1."""
-        return self.mode_name_max_length - 1
-
-    # Text wrapping widths
-    below_box_text_width: int = 66
-    general_text_width: int = 80
+    def spinner_line_width(self) -> int:
+        return 32 if self.ascii_mode else 31
 
     @classmethod
     def create(cls, ascii_mode: bool | None = None) -> DisplayTheme:
-        """Create theme based on platform capabilities.
-
-        Parameters
-        ----------
-        ascii_mode : bool | None
-            If True, use ASCII-only symbols. If False, use Unicode symbols.
-            If None (default), auto-detect based on platform capabilities.
-
-        Returns
-        -------
-        DisplayTheme
-            Theme configured for the current terminal capabilities
-
-        """
         if ascii_mode is None:
             ascii_mode = get_should_use_ascii_only()
 
@@ -113,352 +104,31 @@ class DisplayTheme:
             return cls(
                 ascii_mode=True,
                 spinner_symbols=("|", "/", "-", "\\"),
-                spinner_line_width=32,
                 success_symbol="x",
             )
         else:
             return cls(
                 ascii_mode=False,
                 spinner_symbols=("⢎⡰", "⢎⡡", "⢎⡑", "⢎⠱", "⠎⡱", "⢊⡱", "⢌⡱", "⢆⡱"),
-                spinner_line_width=31,
                 success_symbol="✔",
             )
 
 
-@dataclass
-class SessionData:
-    """Runtime data about the current wakepy session.
-
-    This is mutable data that represents WHAT is being displayed - the actual
-    values from the running mode, version information, and any warnings.
-
-    Parameters
-    ----------
-    wakepy_version : str
-        Wakepy version string
-    mode_name : str
-        Name of the wakepy Mode
-    method_name : str
-        Name of the active method
-    deprecations : str
-        Deprecation warnings (default: empty string)
-    is_fake_success : bool
-        Whether this is a fake success (default: False)
-
-    """
-
+class SystemInfo(TypedDict):
     wakepy_version: str
-    mode_name: str
-    method_name: str
-    deprecations: str = ""
-    is_fake_success: bool = False
+    python_version: str
+    platform_info: str
 
-    @property
-    def is_presentation_mode(self) -> bool:
-        return self.mode_name == ModeName.KEEP_PRESENTING
 
-    @classmethod
-    def from_mode(cls, mode: Mode, deprecations: str) -> SessionData:
-        """Create SessionData from an active Mode.
-
-        Parameters
-        ----------
-        mode : Mode
-            The active Mode instance
-        deprecations : str
-            Deprecation warnings to display
-
-        Returns
-        -------
-        SessionData
-            Session data ready for rendering
-
-        """
-        mode_name = mode.name or "(unknown mode)"
-        method_name = mode.active_method.name if mode.active_method else "(no method)"
-        is_fake_success = not mode.result.real_success
-
-        return cls(
-            wakepy_version=get_wakepy_version(),
-            mode_name=mode_name,
-            method_name=method_name,
-            deprecations=deprecations,
-            is_fake_success=is_fake_success,
-        )
-
-
-class CLIRenderer:
-    """Renders all CLI output including banners, errors, and messages.
-
-    This is the presentation layer that knows how to format SessionData
-    using a DisplayTheme. It handles all the visual formatting, truncation,
-    and layout calculations. This is the single source of truth for converting
-    data objects to formatted strings for CLI display.
-    """
-
-    # External documentation URLs
-    FAKE_SUCCESS_URL = (
-        "https://wakepy.readthedocs.io/stable/tests-and-ci.html#wakepy-fake-success"
-    )
-    GITHUB_ISSUES_URL = "https://github.com/wakepy/wakepy/issues/"
-
-    def __init__(self, theme: DisplayTheme, spinner_interval: float = 0.8):
-        """Initialize renderer with a display theme.
-
-        Parameters
-        ----------
-        theme : DisplayTheme
-            The theme to use for rendering
-        spinner_interval : float
-            Animation interval for spinner in seconds (default: 0.8)
-
-        """
-        self.theme = theme
-        self.spinner_interval = spinner_interval
-
-    def render_info_banner(self, data: SessionData) -> str:
-        """Render the main info banner with logo.
-
-        Parameters
-        ----------
-        data : SessionData
-            The session data to display
-
-        Returns
-        -------
-        str
-            Formatted banner text ready for printing
-
-        """
-        banner = self.render_main_info(data)
-        banner += self.render_deprecations(data)
-        banner += self.render_fake_success_warning(data)
-        return banner
-
-    def spinner_frames(self) -> Iterator[str]:
-        """Generate spinner animation frames.
-
-        Yields
-        ------
-        str
-            Formatted spinner frame ready for printing
-
-        """
-        for symbol in itertools.cycle(self.theme.spinner_symbols):  # pragma: no branch
-            yield (
-                f"\r {symbol}{' ' * self.theme.spinner_line_width}"
-                "[Press Ctrl+C to exit] "
-            )
-
-    def render_main_info(self, data: SessionData) -> str:
-        """Render the main info box with mode and method information.
-
-        Parameters
-        ----------
-        data : SessionData
-            The session data to display
-
-        Returns
-        -------
-        str
-            Formatted info box
-
-        """
-        # Truncate to fit layout constraints
-        mode_name = data.mode_name[: self.theme.mode_name_max_length]
-        method_name = data.method_name[: self.theme.method_name_max_length]
-        version = data.wakepy_version[: self.theme.version_string_width]
-
-        header_bars = "━" * (self.theme.mode_name_max_length - len(mode_name))
-        method_spacing = " " * (self.theme.method_name_max_length - len(method_name))
-        version_string = f"{version: <{self.theme.version_string_width}}"
-
-        presentation_symbol = (
-            self.theme.success_symbol
-            if data.is_presentation_mode
-            else self.theme.failure_symbol
-        )
-
-        return WAKEPY_BANNER.strip("\n").format(
-            version_string=version_string,
-            wakepy_mode=mode_name,
-            header_bars=header_bars,
-            no_auto_suspend=self.theme.success_symbol,
-            presentation_mode=presentation_symbol,
-            wakepy_method=method_name,
-            method_spacing=method_spacing,
-        )
-
-    def render_deprecations(self, data: SessionData) -> str:
-        """Render deprecation warnings if present.
-
-        Parameters
-        ----------
-        data : SessionData
-            The session data to check for deprecations
-
-        Returns
-        -------
-        str
-            Formatted deprecation warnings or empty string
-
-        """
-        if not data.deprecations:
-            return ""
-
-        text = self.wrap_text(f"DEPRECATION NOTICE: {data.deprecations}")
-        return f"\n\n{text}\n"
-
-    def render_fake_success_warning(self, data: SessionData) -> str:
-        if not data.is_fake_success:
-            return ""
-
-        warning = (
-            f"WARNING: You are using the WAKEPY_FAKE_SUCCESS. "
-            f"Wakepy is not active. See: {self.FAKE_SUCCESS_URL}"
-        )
-        text = self.wrap_text(warning)
-        return f"\n{text}\n"
-
-    def wrap_text(self, text: str) -> str:
-        return "\n".join(
-            wrap(
-                text,
-                self.theme.below_box_text_width,
-                break_long_words=True,
-                break_on_hyphens=True,
-            )
-        )
-
-    def render_activation_error(self, result: ActivationResult) -> str:
-        error_text = f"""
-        Wakepy could not activate the "{result.mode_name}" mode. This might occur because of a bug or because your current platform is not yet supported or your system is missing required software.
-
-        Check if there is already a related issue in the issue tracker at {self.GITHUB_ISSUES_URL} and if not, please create a new one.
-
-        Include the following:
-        - wakepy version: {get_wakepy_version()}
-        - Mode: {result.mode_name}
-        - Python version: {sys.version}
-        {textwrap.indent(get_platform_debug_info().strip(), ' '*4).strip()}
-        - Additional details: [FILL OR REMOVE THIS LINE]
-
-        Thank you!
-        """  # noqa: E501
-
-        return self.render_error_message(error_text)
-
-    def render_error_message(self, error_text: str) -> str:
-        """Format error text into wrapped blocks.
-
-        Parameters
-        ----------
-        error_text : str
-            Raw error text to format
-
-        Returns
-        -------
-        str
-            Formatted error text with proper line wrapping
-
-        """
-        blocks = dedent(error_text.strip("\n")).split("\n")
-        return "\n".join(fill(block, self.theme.general_text_width) for block in blocks)
-
-    def render_methods_output(
-        self, mode_name: str, result: ProbingResults, *, verbose: bool
-    ) -> str:
-        """Render the methods listing output."""
-        width = self.theme.general_text_width if verbose else 55
-        separator = "━" * width
-        header = mode_name.center(width).rstrip()
-
-        if verbose:
-            methods_text = result.get_methods_text_detailed(max_width=width)
-            content = f"\n{methods_text}\n"
-        else:
-            content = result.get_methods_text(
-                index_width=3, name_width=width - 17, status_width=10
-            )
-
-        return f"{separator}\n{header}\n{separator}\n{content}\n{separator}\n"
-
-
-class CliApp:
-    """The wakepy CLI Application."""
-
-    def __init__(self) -> None:
-        theme = DisplayTheme.create()
-        self.renderer = CLIRenderer(theme)
-
-    def run_wakepy(self, args: Namespace) -> Mode:
-        """Run the main wakepy command.
-
-        Parameters
-        ----------
-        args : Namespace
-            Parsed command line arguments
-
-        Returns
-        -------
-        Mode
-            The Mode instance that was run
-
-        """
-        mode_name = get_mode_name(args)
-        deprecations = get_deprecations(args)
-
-        params = create_mode_params(
-            mode_name=mode_name,
-            on_fail=self.handle_activation_error,
-        )
-        keepawake = Mode(params)
-
-        with keepawake as mode:
-            if not mode.active:
-                raise ModeExit
-
-            # Render and display banner
-            data = SessionData.from_mode(mode, deprecations)
-            print(self.renderer.render_info_banner(data))
-
-            # Wait with spinner animation
-            wait_until_keyboardinterrupt(self.renderer)
-            print("\n", end="")  # Add newline before logs
-
-        if mode.result and mode.result.success:
-            # If activation did not succeed, there is also no deactivation /
-            # exit.
-            print("\nExited.")
-        return mode
-
-    def run_wakepy_methods(self, args: Namespace) -> None:
-        """Run the 'methods' subcommand.
-
-        Parameters
-        ----------
-        args : Namespace
-            Parsed command line arguments
-
-        """
-        mode_name = get_mode_name(args)
-        params = create_mode_params(mode_name=mode_name)
-        result = Mode(params).probe_all_methods()
-        output = self.renderer.render_methods_output(
-            mode_name, result, verbose=args.verbose >= 1
-        )
-        print(output)
-
-    def handle_activation_error(self, result: ActivationResult) -> None:
-        print(self.renderer.render_activation_error(result))
-
-
-def main() -> None:
+def main(argv: list[str] | None = None, app: CliApp | None = None) -> None:
     """Entry point for the wakepy CLI."""
-    args = parse_args(sys.argv[1:])
-    setup_logging(args.verbose, args.command)
+    if argv is None:
+        argv = sys.argv[1:]
+    if app is None:
+        app = CliApp()
 
-    app = CliApp()
+    args = parse_args(argv)
+    setup_logging(args.verbose, args.command)
 
     if args.command == "methods":
         app.run_wakepy_methods(args)
@@ -466,57 +136,77 @@ def main() -> None:
         app.run_wakepy(args)
 
 
+def parse_args(args: list[str]) -> Namespace:
+    parser = argparse.ArgumentParser(
+        prog="wakepy",
+        formatter_class=_create_help_formatter,
+    )
+
+    # Main wakepy command arguments (when no subcommand)
+    _add_mode_arguments(parser)
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help=(
+            "Increase verbosity level (-v for INFO, -vv for DEBUG). Default is "
+            "WARNING, which shows only really important messages."
+        ),
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # Add 'methods' subcommand
+    methods_parser = subparsers.add_parser(
+        "methods",
+        help=(
+            "List all available wakepy Methods for the selected mode in "
+            "priority order"
+        ),
+        formatter_class=_create_help_formatter,
+    )
+
+    _add_mode_arguments(methods_parser)
+    methods_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help=(
+            "Increase verbosity level (-v for detailed output, -vv for INFO logging, "
+            "-vvv for DEBUG logging). Default shows only method names and status."
+        ),
+    )
+
+    return parser.parse_args(args)
+
+
 def get_mode_name(args: Namespace) -> ModeName:
-    """Extract the mode name from parsed arguments.
+    """Determine which mode to activate based on command-line flags.
 
-    Parameters
-    ----------
-    args : Namespace
-        Parsed command line arguments
-
-    Returns
-    -------
-    ModeName
-        The name of the selected mode
-
-    Raises
-    ------
-    ValueError
-        If multiple modes are selected
-
+    Default is KEEP_RUNNING. Only one mode can be active.
+    Supports deprecated flags during transition period.
     """
-    # For the duration of deprecation, allow also the old flags
+    # Normalize deprecated flags
     keep_running = args.keep_running or args.k
     keep_presenting = args.keep_presenting or args.presentation
 
-    n_flags_selected = sum((keep_running, keep_presenting))
+    # Check for conflicts
+    if keep_running and keep_presenting:
+        raise ValueError(
+            "Cannot use both --keep-running and --keep-presenting. " "See: wakepy -h"
+        )
 
-    if n_flags_selected > 1:
-        raise ValueError('You may only select one of the modes! See: "wakepy -h"')
-
-    if keep_running or n_flags_selected == 0:
-        # The default action, if nothing is selected, is "keep running"
-        return ModeName.KEEP_RUNNING
-    else:
-        # We know keep_presenting is True, so it's safe to assert it
-        assert keep_presenting  # noqa: S101
+    # Explicit mode selection
+    if keep_presenting:
         return ModeName.KEEP_PRESENTING
+
+    # Default (whether explicit or no flags)
+    return ModeName.KEEP_RUNNING
 
 
 def get_deprecations(args: Namespace) -> str:
-    """Generate deprecation warnings based on used arguments.
-
-    Parameters
-    ----------
-    args : Namespace
-        Parsed command line arguments
-
-    Returns
-    -------
-    str
-        Deprecation warning text, or empty string if no deprecated args used
-
-    """
     deprecations: list[str] = []
 
     if args.k:
@@ -557,43 +247,10 @@ def get_logging_level(verbosity: int, command: str | None = None) -> int:
             return logging.WARNING
 
 
-def wait_until_keyboardinterrupt(renderer: CLIRenderer) -> None:
-    """Display a spinner and wait for keyboard interrupt.
-
-    Parameters
-    ----------
-    renderer : CLIRenderer
-        The renderer to use for spinner frames
-
-    """
-    try:
-        for frame in renderer.spinner_frames():  # pragma: no branch
-            print(frame, end="")
-            time.sleep(renderer.spinner_interval)
-    except KeyboardInterrupt:
-        pass
-
-
 def get_should_use_ascii_only(
     current_platform: IdentifiedPlatformType | None = None,
     python_impl: str | None = None,
 ) -> bool:
-    """Check if ASCII-only mode should be used.
-
-    Parameters
-    ----------
-    current_platform : IdentifiedPlatformType | None
-        The platform to check. If None, uses CURRENT_PLATFORM.
-    python_impl : str | None
-        Python implementation name. If None, uses
-        platform.python_implementation().
-
-    Returns
-    -------
-    bool
-        True if ASCII-only mode should be used, False otherwise.
-
-    """
     if current_platform is None:
         current_platform = CURRENT_PLATFORM
     if python_impl is None:
@@ -615,78 +272,225 @@ def get_wakepy_version() -> str:
     return __version__
 
 
-def parse_args(args: list[str]) -> Namespace:
-    """Parse the command line arguments and return the parsed Namespace.
+class CliApp:
+    def __init__(
+        self,
+        theme: DisplayTheme | None = None,
+        system_info: SystemInfo | None = None,
+        spinner_interval: float = 0.8,
+    ) -> None:
+        self.theme = theme or DisplayTheme.create()
+        self.system_info = system_info or get_system_info()
+        self.spinner_interval = spinner_interval
 
-    Parameters
-    ----------
-    args : list[str]
-        Command line arguments to parse
+    def run_wakepy(self, args: Namespace) -> Mode:
+        mode_name = get_mode_name(args)
+        deprecations = get_deprecations(args)
 
-    Returns
-    -------
-    Namespace
-        Parsed arguments
+        keepawake = Mode(
+            create_mode_params(
+                mode_name=mode_name,
+                on_fail=self.handle_activation_error,
+            )
+        )
 
-    """
-    parser = argparse.ArgumentParser(
-        prog="wakepy",
-        formatter_class=lambda prog: argparse.HelpFormatter(
-            prog,
-            # makes more space for the "options" area on the left
-            max_help_position=27,
-        ),
+        with keepawake as mode:
+            res = mode.result
+            method_name = (
+                mode.active_method.name if mode.active_method else "(no method)"
+            )
+
+            if res.success and args.verbose >= 1:
+                txt = res.get_methods_text_detailed(max_width=80)
+                if not txt.strip():
+                    print("\nDid not try any methods!")
+                else:
+                    print(f"\nWakepy Methods (in the order of attempt):\n\n{txt}")
+
+            print(render_logo(get_wakepy_version()))
+
+            if res.success is False:
+                print("\n" + res.get_failure_text(style="block"))
+
+            if not mode.active:
+                raise ModeExit
+
+            print(
+                render_info_box(
+                    self.theme,
+                    str(mode_name),
+                    method_name,
+                    is_presentation_mode=mode_name == ModeName.KEEP_PRESENTING,
+                )
+            )
+
+            if deprecations:
+                print(render_deprecations(deprecations))
+
+            if not res.real_success:
+                print(render_fake_success_warning())
+
+            wait_for_interrupt(spinner_frames(self.theme), self.spinner_interval)
+            print("\n", end="")
+
+        if mode.result.success:
+            # If activation did not succeed, there is also no deactivation /
+            # exit.
+            print("\nExited.")
+        return mode
+
+    def run_wakepy_methods(
+        self,
+        args: Namespace,
+        probe_runner: Callable[[ModeName], ProbingResults] | None = None,
+    ) -> None:
+        mode_name = get_mode_name(args)
+        if probe_runner is None:
+            params = create_mode_params(mode_name=mode_name)
+            result = Mode(params).probe_all_methods()
+        else:
+            result = probe_runner(mode_name)
+        output = render_methods_output(mode_name, result, verbose=args.verbose >= 1)
+        print(output)
+
+    def handle_activation_error(
+        self,
+        result: ActivationResult,
+    ) -> None:
+        print(render_activation_error(result, system_info=self.system_info))
+
+
+def get_system_info() -> SystemInfo:
+    return {
+        "wakepy_version": get_wakepy_version(),
+        "python_version": sys.version,
+        "platform_info": get_platform_debug_info().strip(),
+    }
+
+
+def spinner_frames(theme: DisplayTheme) -> Iterator[str]:
+    padding = " " * theme.spinner_line_width
+    suffix = " [Press Ctrl+C to exit] "
+
+    for symbol in cycle(theme.spinner_symbols):  # pragma: no branch
+        yield f"\r {symbol}{padding}{suffix}"
+
+
+def render_logo(wakepy_version: str) -> str:
+    version = wakepy_version[:VERSION_STRING_WIDTH]
+    version_string = f"{version: <{VERSION_STRING_WIDTH}}"
+    return WAKEPY_LOGO.strip("\n").format(version_string=version_string)
+
+
+def render_info_box(
+    theme: DisplayTheme,
+    mode_name: str,
+    method_name: str,
+    *,
+    is_presentation_mode: bool,
+) -> str:
+    mode_name = mode_name[:MODE_NAME_MAX_LENGTH]
+    method_name_max_length = MODE_NAME_MAX_LENGTH - 1
+    method_name = method_name[:method_name_max_length]
+
+    header_bars = "━" * (MODE_NAME_MAX_LENGTH - len(mode_name))
+    method_spacing = " " * (method_name_max_length - len(method_name))
+
+    presentation_symbol = (
+        theme.success_symbol if is_presentation_mode else theme.failure_symbol
     )
 
-    # Main wakepy command arguments (when no subcommand)
-    _add_mode_arguments(parser)
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        default=0,
-        help=(
-            "Increase verbosity level (-v for INFO, -vv for DEBUG). Default is "
-            "WARNING, which shows only really important messages."
-        ),
+    return INFO_BOX.strip("\n").format(
+        wakepy_mode=mode_name,
+        header_bars=header_bars,
+        no_auto_suspend=theme.success_symbol,
+        presentation_mode=presentation_symbol,
+        wakepy_method=method_name,
+        method_spacing=method_spacing,
     )
 
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    # Add 'methods' subcommand
-    methods_parser = subparsers.add_parser(
-        "methods",
-        help=(
-            "List all available wakepy Methods for the selected mode in "
-            "priority order"
-        ),
-        formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=27),
+def render_deprecations(deprecations: str) -> str:
+    text = "\n".join(
+        wrap(
+            f"DEPRECATION NOTICE: {deprecations}",
+            BELOW_BOX_TEXT_WIDTH,
+            break_long_words=True,
+            break_on_hyphens=True,
+        )
     )
+    return f"\n\n{text}\n"
 
-    _add_mode_arguments(methods_parser)
-    methods_parser.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        default=0,
-        help=(
-            "Increase verbosity level (-v for detailed output, -vv for INFO logging, "
-            "-vvv for DEBUG logging). Default shows only method names and status."
-        ),
+
+def render_fake_success_warning() -> str:
+    warning = (
+        "WARNING: You are using the WAKEPY_FAKE_SUCCESS. "
+        "Wakepy is not active. See: "
+        "https://wakepy.readthedocs.io/stable/tests-and-ci.html#"
+        "wakepy-fake-success"
     )
+    text = "\n".join(
+        wrap(
+            warning,
+            BELOW_BOX_TEXT_WIDTH,
+            break_long_words=True,
+            break_on_hyphens=True,
+        )
+    )
+    return f"\n{text}\n"
 
-    return parser.parse_args(args)
+
+def render_error_message(error_text: str) -> str:
+    blocks = dedent(error_text.strip("\n")).split("\n")
+    return "\n".join(fill(block, GENERAL_TEXT_WIDTH) for block in blocks)
+
+
+def render_activation_error(
+    result: ActivationResult,
+    system_info: SystemInfo | None = None,
+) -> str:
+    if system_info is None:
+        system_info = get_system_info()
+    error_text = f"""
+Wakepy could not activate the "{result.mode_name}" mode. This might occur because of a bug or because your current platform is not yet supported or your system is missing required software.
+
+Check if there is already a related issue in the issue tracker at https://github.com/wakepy/wakepy/issues/ and if not, please create a new one.
+
+Include the following:
+- wakepy version: {system_info["wakepy_version"]}
+- Mode: {result.mode_name}
+- Python version: {system_info["python_version"]}
+{system_info["platform_info"]}
+- Additional details: [FILL OR REMOVE THIS LINE]
+
+Thank you!
+"""  # noqa: E501
+
+    return render_error_message(error_text)
+
+
+def render_methods_output(
+    mode_name: str,
+    result: ProbingResults,
+    *,
+    verbose: bool,
+) -> str:
+    width = GENERAL_TEXT_WIDTH if verbose else 55
+    separator = "━" * width
+    header = mode_name.center(width).rstrip()
+
+    if verbose:
+        methods_text = result.get_methods_text_detailed(max_width=width)
+        content = f"\n{methods_text}\n"
+    else:
+        content = result.get_methods_text(
+            index_width=3, name_width=width - 17, status_width=10
+        )
+
+    return f"{separator}\n{header}\n{separator}\n{content}\n{separator}\n"
 
 
 def _add_mode_arguments(parser: argparse.ArgumentParser) -> None:
-    """Add mode selection arguments to a parser.
-
-    Parameters
-    ----------
-    parser : argparse.ArgumentParser
-        The parser to add arguments to
-
-    """
     parser.add_argument(
         "-r",
         "--keep-running",
