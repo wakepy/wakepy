@@ -154,12 +154,9 @@ class TestCliAppRunWakepy:
     is already tested in other unit tests."""
 
     def test_working_mode(self, method_working):
-        with (
-            patch(
-                "wakepy.__main__.get_mode_name", return_value=method_working.mode_name
-            ),
-            patch.object(UI, "wait_for_interrupt"),
-        ):
+        with patch(
+            "wakepy.__main__.get_mode_name", return_value=method_working.mode_name
+        ), patch.object(UI, "wait_for_interrupt"):
             app = CliApp()
             args = parse_args([])
             mode = app.run_wakepy(args)
@@ -168,12 +165,9 @@ class TestCliAppRunWakepy:
     def test_non_working_mode(self, method2_broken, monkeypatch, capsys):
         monkeypatch.setenv("WAKEPY_FAKE_SUCCESS", "0")  # needed for a failure
 
-        with (
-            patch(
-                "wakepy.__main__.get_mode_name", return_value=method2_broken.mode_name
-            ),
-            patch.object(UI, "wait_for_interrupt"),
-        ):
+        with patch(
+            "wakepy.__main__.get_mode_name", return_value=method2_broken.mode_name
+        ), patch.object(UI, "wait_for_interrupt"):
             app = CliApp()
             args = parse_args([])
             mode = app.run_wakepy(args)
@@ -185,13 +179,10 @@ class TestCliAppRunWakepy:
 
     @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
     def test_working_mode_with_deprecations(self, capsys):
-        with (
-            patch(
-                "wakepy.__main__.get_deprecations",
-                return_value="Using -k is deprecated",
-            ),
-            patch.object(UI, "wait_for_interrupt"),
-        ):
+        with patch(
+            "wakepy.__main__.get_deprecations",
+            return_value="Using -k is deprecated",
+        ), patch.object(UI, "wait_for_interrupt"):
             app = CliApp()
             args = parse_args([])
             mode = app.run_wakepy(args)
@@ -206,12 +197,9 @@ class TestCliAppRunWakepyVerbose:
     @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
     def test_verbose_mode_with_methods(self, capsys, method_working: Method):
         """Test verbose mode when methods text is available."""
-        with (
-            patch(
-                "wakepy.__main__.get_mode_name", return_value=method_working.mode_name
-            ),
-            patch.object(UI, "wait_for_interrupt"),
-        ):
+        with patch(
+            "wakepy.__main__.get_mode_name", return_value=method_working.mode_name
+        ), patch.object(UI, "wait_for_interrupt"):
             app = CliApp()
             args = parse_args(["-v"])
             mode = app.run_wakepy(args)
@@ -220,11 +208,10 @@ class TestCliAppRunWakepyVerbose:
             output = capsys.readouterr().out
             assert "Wakepy Methods (in the order of attempt):" in output
 
-    def test_verbose_mode_with_no_methods(self, capsys, method_working: Method):
+    def test_verbose_mode_with_no_methods(self, capsys):
         """Test verbose mode when methods text is empty."""
-        with (
-            patch("wakepy.__main__.get_mode_name", return_value="asdas"),
-            patch.object(UI, "wait_for_interrupt"),
+        with patch("wakepy.__main__.get_mode_name", return_value="asdas"), patch.object(
+            UI, "wait_for_interrupt"
         ):
             app = CliApp()
             args = parse_args(["-v"])
