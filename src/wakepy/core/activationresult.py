@@ -122,8 +122,8 @@ class _BaseActivationResult:
 
         See Also
         --------
-        :meth:`query`, :meth:`get_methods_text`, \
-            :meth:`get_methods_text_detailed`
+        :meth:`query`, :meth:`get_summary_text`, \
+            :meth:`get_detailed_summary_text`
 
         """
 
@@ -238,7 +238,7 @@ class _BaseActivationResult:
             style was changed to "block".
 
         .. seealso::  This shows only failures. To include successful methods \
-        too, use :meth:`get_methods_text` or :meth:`get_methods_text_detailed`. \
+        too, use :meth:`get_summary_text` or :meth:`get_detailed_summary_text`. \
         For programmatic access to method results, use :meth:`list_methods` or \
         :meth:`query`.
 
@@ -259,7 +259,7 @@ class _BaseActivationResult:
         msg = f'Could not activate wakepy Mode "{mode_name}"!'
 
         if style == "block":
-            methods_text = self.get_methods_text_detailed(
+            methods_text = self.get_detailed_summary_text(
                 fail="Reason", unsupported="Reason"
             )
             return (
@@ -271,9 +271,7 @@ class _BaseActivationResult:
                 index,
                 method_name,
                 failure_reason,
-            ) in self._get_methods_text_detailed_list(
-                fail="Reason", unsupported="Reason"
-            ):
+            ) in self._get_methods_tuples(fail="Reason", unsupported="Reason"):
                 inline_items.append(f"(#{index}, {method_name}, {failure_reason})")
             inline = ", ".join(inline_items)
             tried = (
@@ -296,7 +294,7 @@ class _BaseActivationResult:
                 return True
         return False
 
-    def get_methods_text(
+    def get_summary_text(
         self,
         *,
         index_width: int = 3,
@@ -324,7 +322,7 @@ class _BaseActivationResult:
 
         Examples
         --------
-        >>> print(result.get_methods_text())
+        >>> print(result.get_summary_text())
           1. org.freedesktop.PowerManagement             SUCCESS
           2. org.gnome.SessionManager                    FAIL
           3. caffeinate                                  *
@@ -333,7 +331,7 @@ class _BaseActivationResult:
         .. versionadded:: 1.0.0
 
         .. seealso:: Use this for compact display. For more detailed results, \
-        use :meth:`get_methods_text_detailed`. To show only failures,\
+        use :meth:`get_detailed_summary_text`. To show only failures,\
         use :meth:`get_failure_text`.
 
 
@@ -357,7 +355,7 @@ class _BaseActivationResult:
             lines.append(f"{i:>{index_width}}. {method_formatted}   {status_formatted}")
         return "\n".join(lines)
 
-    def get_methods_text_detailed(
+    def get_detailed_summary_text(
         self,
         max_width: int = 80,
         *,
@@ -388,7 +386,7 @@ class _BaseActivationResult:
 
         Examples
         --------
-        >>> print(result.get_methods_text_detailed())
+        >>> print(result.get_detailed_summary_text())
           1. org.freedesktop.PowerManagement
              FAIL: DBusCallError("DBus call of method 'Inhibit' on interface
              'org.freedesktop.PowerManagement.Inhibit' with args ('wakepy',
@@ -411,10 +409,10 @@ class _BaseActivationResult:
         .. versionadded:: 1.0.0
 
         .. seealso::  Use this when you need to understand why methods failed.\
-            For compact output, use :meth:`get_methods_text`. To show only \
+            For compact output, use :meth:`get_summary_text`. To show only \
             failures, use :meth:`get_failure_text`.
         """
-        data = self._get_methods_text_detailed_list(
+        data = self._get_methods_tuples(
             success=success, fail=fail, unused=unused, unsupported=unsupported
         )
         if not data:
@@ -445,7 +443,7 @@ class _BaseActivationResult:
 
         return "\n\n".join(lines)
 
-    def _get_methods_text_detailed_list(
+    def _get_methods_tuples(
         self,
         *,
         success: str = "SUCCESS",

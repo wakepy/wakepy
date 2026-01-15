@@ -146,7 +146,7 @@ class TestProbeAllMethods:
         )
         result = Mode(params).probe_all_methods()
 
-        methods_text = result.get_methods_text(
+        methods_text = result.get_summary_text(
             index_width=1,
             name_width=7,
             status_width=1,

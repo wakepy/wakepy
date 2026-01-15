@@ -394,7 +394,7 @@ Tried Methods (in the order of attempt):
             "ActivationResult(success=True, real_success=True, failure=False, mode_name='foo', method="  # noqa: E501
         )
 
-    def test_get_methods_text(
+    def test_get_summary_text(
         self,
         mr_platform_support_fail: MethodActivationResult,
         mr_requirements_fail: MethodActivationResult,
@@ -412,7 +412,7 @@ Tried Methods (in the order of attempt):
             ]
         )
 
-        text = result.get_methods_text(index_width=2, name_width=18, status_width=7)
+        text = result.get_summary_text(index_width=2, name_width=18, status_width=7)
 
         expected = """
  1. fail-requirements    FAIL   
@@ -422,7 +422,7 @@ Tried Methods (in the order of attempt):
 """.strip("\n")  # noqa: W291
         assert text == expected
 
-    def test_get_methods_text_detailed(
+    def test_get_detailed_summary_text(
         self,
         mr_platform_support_fail: MethodActivationResult,
         mr_requirements_fail: MethodActivationResult,
@@ -438,7 +438,7 @@ Tried Methods (in the order of attempt):
             ]
         )
 
-        text = result.get_methods_text_detailed()
+        text = result.get_detailed_summary_text()
 
         expected = """
   1. fail-requirements
@@ -454,13 +454,13 @@ Tried Methods (in the order of attempt):
      UNSUPPORTED: Platform XYZ not supported!""".lstrip("\n")
         assert text == expected
 
-    def test_get_methods_text_empty(self):
-        assert ActivationResult([]).get_methods_text() == ""
+    def test_get_summary_text_empty(self):
+        assert ActivationResult([]).get_summary_text() == ""
 
-    def test_get_methods_text_detailed_empty(self):
-        assert ActivationResult([]).get_methods_text_detailed() == ""
+    def test_get_detailed_summary_text_empty(self):
+        assert ActivationResult([]).get_detailed_summary_text() == ""
 
-    def test_get_methods_text_detailed_with_wrapping(self):
+    def test_get_detailed_summary_text_with_wrapping(self):
         """Test that max_width parameter wraps long lines correctly."""
         mr_long_name = MethodActivationResult(
             method=get_method_info("a-very-long-method-name-that-exceeds-width"),
@@ -474,7 +474,7 @@ Tried Methods (in the order of attempt):
         )
         result = ActivationResult([mr_long_name])
 
-        text = result.get_methods_text_detailed(max_width=40)
+        text = result.get_detailed_summary_text(max_width=40)
 
         expected = """
   1. a-very-long-method-name-that-exceed
