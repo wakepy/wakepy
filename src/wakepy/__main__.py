@@ -212,10 +212,10 @@ Thank you!
         header = mode_name.center(width).rstrip()
 
         if verbose:
-            methods_text = result.get_methods_text_detailed(max_width=width)
+            methods_text = result.get_detailed_summary_text(max_width=width)
             content = f"\n{methods_text}\n"
         else:
-            content = result.get_methods_text(
+            content = result.get_summary_text(
                 index_width=3, name_width=width - 17, status_width=10
             )
 
@@ -271,7 +271,7 @@ class CliApp:
             )
 
             if res.success and args.verbose >= 1:
-                txt = res.get_methods_text_detailed(max_width=80)
+                txt = res.get_detailed_summary_text(max_width=80)
                 print(f"\nWakepy Methods (in the order of attempt):\n\n{txt}")
 
             print(self.ui.render_logo(self.system_info["wakepy_version"]))
