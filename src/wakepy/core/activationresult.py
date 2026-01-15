@@ -271,9 +271,7 @@ class _BaseActivationResult:
                 index,
                 method_name,
                 failure_reason,
-            ) in self._get_methods_text_detailed_list(
-                fail="Reason", unsupported="Reason"
-            ):
+            ) in self._get_methods_tuples(fail="Reason", unsupported="Reason"):
                 inline_items.append(f"(#{index}, {method_name}, {failure_reason})")
             inline = ", ".join(inline_items)
             tried = (
@@ -414,7 +412,7 @@ class _BaseActivationResult:
             For compact output, use :meth:`get_summary_text`. To show only \
             failures, use :meth:`get_failure_text`.
         """
-        data = self._get_methods_text_detailed_list(
+        data = self._get_methods_tuples(
             success=success, fail=fail, unused=unused, unsupported=unsupported
         )
         if not data:
@@ -445,7 +443,7 @@ class _BaseActivationResult:
 
         return "\n\n".join(lines)
 
-    def _get_methods_text_detailed_list(
+    def _get_methods_tuples(
         self,
         *,
         success: str = "SUCCESS",
