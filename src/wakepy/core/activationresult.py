@@ -251,9 +251,9 @@ class _BaseActivationResult:
         method_results = self.query()
 
         if not method_results:
-            tried_methods_text = "Did not try any methods!"
-            sep = "\n\n" if style == "block" else " "
             msg = f'Could not activate wakepy Mode "{mode_name}"!'
+            sep = "\n\n" if style == "block" else " "
+            tried_methods_text = "Did not try any methods!"
             return f"{msg}{sep}{tried_methods_text}"
 
         msg = f'Could not activate wakepy Mode "{mode_name}"!'
