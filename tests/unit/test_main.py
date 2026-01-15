@@ -10,6 +10,7 @@ import pytest
 from tests.helpers import get_method_info
 from wakepy import ActivationResult, Method, ProbingResults
 from wakepy.__main__ import (
+    UI,
     CliApp,
     DisplayTheme,
     get_deprecations,
@@ -18,32 +19,25 @@ from wakepy.__main__ import (
     get_should_use_ascii_only,
     main,
     parse_args,
-    render_activation_error,
-    render_deprecations,
-    render_fake_success_warning,
-    render_info_box,
-    render_logo,
     setup_logging,
-    spinner_frames,
-    wait_for_interrupt,
 )
 from wakepy.core import PlatformType
 from wakepy.core.activationresult import MethodActivationResult
 from wakepy.core.constants import IdentifiedPlatformType, ModeName, StageName
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def mode_name_working():
     return "testmode_working"
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def mode_name_broken():
     return "testmode_broken"
 
 
-@pytest.fixture
-def method1(mode_name_working):
+@pytest.fixture(scope="session")
+def method_working(mode_name_working):
     class WorkingMethod(Method):
         """This is a successful method as it implements enter_mode which
         returns None"""
@@ -126,29 +120,31 @@ def test_deprecations(sysargs):
 
 
 def test_wait_for_interrupt_handles_keyboard_interrupt(capsys):
-    """Test that wait_for_interrupt handles KeyboardInterrupt gracefully."""
+    """Test that UI.wait_for_interrupt handles KeyboardInterrupt gracefully."""
+    ui = UI()
 
     def interrupting_frames():
         yield "x"
         raise KeyboardInterrupt
 
-    wait_for_interrupt(interrupting_frames(), interval=0)
+    with patch.object(ui, "spinner_frames", return_value=interrupting_frames()):
+        ui.wait_for_interrupt(interval=0)
+
     captured = capsys.readouterr().out
     assert captured == "x"
 
 
 def test_wait_for_interrupt_with_no_frames():
-    """Test that wait_for_interrupt handles empty iterator."""
-    wait_for_interrupt(iter(()), interval=0)
+    ui = UI()
+    with patch.object(ui, "spinner_frames", return_value=iter(())):
+        ui.wait_for_interrupt(interval=0)
 
 
 def test_handle_activation_error(capsys):
-    """Test that handle_activation_error prints error message."""
     result = ActivationResult([])
     app = CliApp()
     app.handle_activation_error(result)
     printed_text = capsys.readouterr().out
-    assert printed_text
     assert "Wakepy could not activate" in printed_text
 
 
@@ -157,35 +153,26 @@ class TestCliAppRunWakepy:
     way. This is more of a smoke test. The functionality of the different parts
     is already tested in other unit tests."""
 
-    def test_working_mode(self, method1, capsys):
+    def test_working_mode(self, method_working):
         with (
-            patch("wakepy.__main__.get_mode_name", return_value=method1.mode_name),
-            patch("wakepy.__main__.wait_for_interrupt"),
+            patch(
+                "wakepy.__main__.get_mode_name", return_value=method_working.mode_name
+            ),
+            patch.object(UI, "wait_for_interrupt"),
         ):
             app = CliApp()
             args = parse_args([])
             mode = app.run_wakepy(args)
             assert mode.result.success is True
-            # Verify something was printed
-            assert capsys.readouterr().out
-
-    def test_default_renderer(self):
-        app = CliApp()
-        assert isinstance(app.theme, DisplayTheme)
-
-    def test_custom_renderer(self):
-        theme = DisplayTheme.create(ascii_mode=True)
-        app = CliApp(theme=theme)
-        assert app.theme is theme
 
     def test_non_working_mode(self, method2_broken, monkeypatch, capsys):
-        # need to turn off WAKEPY_FAKE_SUCCESS as we want to get a failure.
-        monkeypatch.setenv("WAKEPY_FAKE_SUCCESS", "0")
+        monkeypatch.setenv("WAKEPY_FAKE_SUCCESS", "0")  # needed for a failure
+
         with (
             patch(
                 "wakepy.__main__.get_mode_name", return_value=method2_broken.mode_name
             ),
-            patch("wakepy.__main__.wait_for_interrupt"),
+            patch.object(UI, "wait_for_interrupt"),
         ):
             app = CliApp()
             args = parse_args([])
@@ -194,6 +181,7 @@ class TestCliAppRunWakepy:
 
             # the method2_broken enter_mode raises this:
             assert mode.result.query()[0].failure_reason == "RuntimeError('foo')"
+            assert "Wakepy could not activate" in capsys.readouterr().out
 
     @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
     def test_working_mode_with_deprecations(self, capsys):
@@ -202,7 +190,7 @@ class TestCliAppRunWakepy:
                 "wakepy.__main__.get_deprecations",
                 return_value="Using -k is deprecated",
             ),
-            patch("wakepy.__main__.wait_for_interrupt"),
+            patch.object(UI, "wait_for_interrupt"),
         ):
             app = CliApp()
             args = parse_args([])
@@ -216,15 +204,13 @@ class TestCliAppRunWakepyVerbose:
     """Tests for verbose output in run_wakepy()."""
 
     @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
-    def test_verbose_mode_with_methods(self, capsys):
+    def test_verbose_mode_with_methods(self, capsys, method_working: Method):
         """Test verbose mode when methods text is available."""
         with (
-            patch("wakepy.__main__.get_mode_name", return_value=ModeName.KEEP_RUNNING),
             patch(
-                "wakepy.core.activationresult._BaseActivationResult.get_methods_text_detailed",
-                return_value="method1: SUCCESS",
+                "wakepy.__main__.get_mode_name", return_value=method_working.mode_name
             ),
-            patch("wakepy.__main__.wait_for_interrupt"),
+            patch.object(UI, "wait_for_interrupt"),
         ):
             app = CliApp()
             args = parse_args(["-v"])
@@ -234,21 +220,16 @@ class TestCliAppRunWakepyVerbose:
             output = capsys.readouterr().out
             assert "Wakepy Methods (in the order of attempt):" in output
 
-    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
-    def test_verbose_mode_with_no_methods(self, capsys):
+    def test_verbose_mode_with_no_methods(self, capsys, method_working: Method):
         """Test verbose mode when methods text is empty."""
         with (
-            patch("wakepy.__main__.get_mode_name", return_value=ModeName.KEEP_RUNNING),
-            patch(
-                "wakepy.core.activationresult._BaseActivationResult.get_methods_text_detailed",
-                return_value="   ",
-            ),
-            patch("wakepy.__main__.wait_for_interrupt"),
+            patch("wakepy.__main__.get_mode_name", return_value="asdas"),
+            patch.object(UI, "wait_for_interrupt"),
         ):
             app = CliApp()
             args = parse_args(["-v"])
             mode = app.run_wakepy(args)
-            assert mode.result.success is True
+            assert mode.result.success is False
 
             output = capsys.readouterr().out
             assert "Did not try any methods!" in output
@@ -432,7 +413,8 @@ class TestRendering:
  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛""".lstrip("\n")  # noqa: W291
 
     def test_render_logo(self):
-        output_logo = render_logo("1.0.0")
+        ui = UI()
+        output_logo = ui.render_logo("1.0.0")
         assert output_logo == self.expected_logo
 
     @pytest.mark.parametrize(
@@ -444,8 +426,8 @@ class TestRendering:
     )
     def test_render_info_box_uses_correct_template(self, ascii_mode, expected_info_box):
         theme = DisplayTheme.create(ascii_mode=ascii_mode)
-        output_box = render_info_box(
-            theme,
+        ui = UI(theme=theme)
+        output_box = ui.render_info_box(
             "test_mode",
             "test_method",
             is_presentation_mode=False,
@@ -453,14 +435,16 @@ class TestRendering:
         assert output_box == expected_info_box
 
     def test_render_deprecations(self):
+        ui = UI()
         deprecations = "This feature is deprecated"
-        formatted = render_deprecations(deprecations)
+        formatted = ui.render_deprecations(deprecations)
 
         assert "DEPRECATION NOTICE" in formatted
         assert deprecations in formatted
 
     def test_render_fake_success_warning(self):
-        formatted = render_fake_success_warning()
+        ui = UI()
+        formatted = ui.render_fake_success_warning()
 
         assert "WAKEPY_FAKE_SUCCESS" in formatted
         assert "WARNING" in formatted
@@ -470,8 +454,8 @@ class TestRendering:
         very_long_mode = "mode_" + base
         very_long_method = "method_" + base
         theme = DisplayTheme.create(ascii_mode=False)
-        formatted = render_info_box(
-            theme,
+        ui = UI(theme=theme)
+        formatted = ui.render_info_box(
             very_long_mode,
             very_long_method,
             is_presentation_mode=False,
@@ -489,10 +473,11 @@ class TestRendering:
 
     def test_spinner_frames(self):
         theme = DisplayTheme.create(ascii_mode=False)
+        ui = UI(theme=theme)
 
         # Get the first few frames from the infinite generator
         frames = []
-        for i, frame in enumerate(spinner_frames(theme)):
+        for i, frame in enumerate(ui.spinner_frames()):
             frames.append(frame)
             if i >= len(theme.spinner_symbols):
                 # Get one full cycle plus one to verify it cycles
@@ -511,8 +496,9 @@ class TestRendering:
             assert symbol in frames[i]
 
     def test_render_activation_error_default_system_info(self):
+        ui = UI()
         result = ActivationResult([])
-        formatted = render_activation_error(result)
+        formatted = ui.render_activation_error(result)
         assert "Wakepy could not activate" in formatted
 
 
