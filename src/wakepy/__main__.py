@@ -431,8 +431,8 @@ def parse_args(args: list[str]) -> Namespace:
         action="count",
         default=0,
         help=(
-            "Increase verbosity level (-v for INFO, -vv for DEBUG). Default is "
-            "WARNING, which shows only really important messages."
+            "Increase verbosity level (-v for INFO + method summary, -vv for DEBUG). "
+            "Default is WARNING, which shows only really important messages."
         ),
     )
 
