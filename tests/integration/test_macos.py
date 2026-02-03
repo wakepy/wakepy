@@ -9,14 +9,14 @@ if platform.system() != "Darwin":
 
 
 class TestMacOS:
-    def test_caffeinate_runs(self):
-        # Test that the caffeinate command can be run without errors
+    """This test runs the actual 'caffeinate' command on macOS."""
+
+    def test_caffeinate_keep_running(self):
         with keep.running() as m:
             assert m.active is True
             assert str(m.method) == "caffeinate"
 
-    def test_caffeinate_presents(self):
-        # Test that the caffeinate command can be run without errors
+    def test_caffeinate_keep_presenting(self):
         with keep.presenting() as m:
             assert m.active is True
             assert str(m.method) == "caffeinate"
