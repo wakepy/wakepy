@@ -26,6 +26,7 @@
 - Fix ResourceWarning with caffeinate Method on macOS ([#479](https://github.com/wakepy/wakepy/pull/479))
 - Fix prioritized order of Methods ([#429](https://github.com/wakepy/wakepy/pull/429)).
 - Raise ContextAlreadyEnteredError (subclass of RuntimeError) if trying to use context manager twice without exiting first ([#476](https://github.com/wakepy/wakepy/pull/476))
+- Terminate caffeinate process even if python process is killed abruptly (Thanks to [basilevs](https://github.com/basilevs) for [#572](https://github.com/wakepy/wakepy/pull/572))
 
 ### 📖 Documentation
 - Add [CONTRIBUTING.md](https://github.com/wakepy/wakepy/blob/main/CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](https://github.com/wakepy/wakepy/blob/main/CODE_OF_CONDUCT.md) ([#513](https://github.com/wakepy/wakepy/pull/513), [#515](https://github.com/wakepy/wakepy/pull/515))

@@ -18,6 +18,12 @@ class _MacCaffeinate(Method, ABC):
 
     Docs: https://ss64.com/osx/caffeinate.html
     Also: https://web.archive.org/web/20140604153141/https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man8/caffeinate.8.html
+
+    The caffeinate command was introduced in OS X 10.8 Mountain Lion (2012) [1]
+
+    [1]: "Interesting new UNIX commands/binaries in OS X Mountain Lion",
+          2012-07-27 by Patrick Seemann
+          https://apple.blogoverflow.com/2012/07/interesting-new-unix-commandsbinaries-in-os-x-mountain-lion/
     """
 
     supported_platforms = (PlatformType.MACOS,)
@@ -60,12 +66,33 @@ class _MacCaffeinate(Method, ABC):
 
 class CaffeinateKeepRunning(_MacCaffeinate):
     mode_name = ModeName.KEEP_RUNNING
+
+    # The cat command reads from stdin and echoes it to stdout. With no input,
+    # it just waits indefinitely. This is a trick to force stop caffeinate if
+    # the python process is killed abruptly. In this situation, the stdin pipe
+    # will be closed by the OS, causing cat to exit, which in turn causes
+    # caffeinate to exit as well. [1]
+    #
+    # Alternative option would be use -w PID, but that is not available on
+    # OS X 10.8 Mountain Lion (2012)[2] or OS X 10.9 Mavericks (2013).[3]
+    #
+    # [1]: https://github.com/wakepy/wakepy/pull/572 and
+    #      https://github.com/wakepy/wakepy/issues/571
+    # [2]: OSX Daily 2022-08-03 article "Disable Sleep on a Mac from the
+    #      Command Line with caffeinate".
+    #      https://osxdaily.com/2012/08/03/disable-sleep-mac-caffeinate-command/
+    # [3]: Mac OS X 10.9 manual.
+    #      https://web.archive.org/web/20140604153141/https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man8/caffeinate.8.html
+    #      https://www.manpagez.com/man/8/caffeinate/osx-10.9.php
+
     command = ["caffeinate", "cat"]
     name = "caffeinate"
 
 
 class CaffeinateKeepPresenting(_MacCaffeinate):
     mode_name = ModeName.KEEP_PRESENTING
+
+    # About the "cat" command, see CaffeinateKeepRunning.
     # -d:  Create an assertion to prevent the display from sleeping.
     command = ["caffeinate", "-d", "cat"]
     name = "caffeinate"
