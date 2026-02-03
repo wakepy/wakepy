@@ -23,7 +23,7 @@ Methods are different ways of entering in (or keeping a) Mode. A Method may supp
 - **Multiprocess safe?**: Yes
 - **What if the process holding the lock dies?**: The lock is automatically removed.
 - **How to check it?**: You should be able to see a process with a command `/bin/bash caffeinate` or similar associated with it using a task manager.
-- **Requirements**: Mac OS X 10.8 Mountain Lion (July 2012) or newer.
+- **Requirements**: Mac OS X 10.8 Mountain Lion (July 2012) or newer. Ref: *Interesting new UNIX commands/binaries in OS X Mountain Lion*, (2012-07-27 by Patrick Seemann, [link](https://apple.blogoverflow.com/2012/07/interesting-new-unix-commandsbinaries-in-os-x-mountain-lion/)), *Disable Sleep on a Mac from the Command Line with caffeinate* (2012-08-03, OSX Daily, [link](https://osxdaily.com/2012/08/03/disable-sleep-mac-caffeinate-command/)).
 
 
 (org-freedesktop-powermanagement)=
