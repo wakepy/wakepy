@@ -221,6 +221,8 @@ exclude_lines = [
 "platform_system != 'Linux'" = "**/wakepy/dbus_adapters/*.py"
 # Windows methods only need to be tested on Windows
 "platform_system != 'Windows'" = "**/wakepy/methods/windows.py"
+# MacOS methods only need to be tested on MacOS
+"platform_system != 'Darwin'" = "**/wakepy/methods/macos.py"
 
 [tool.coverage.coverage_conditional_plugin.rules]
 no-cover-if-no-dbus = "platform_system != 'Linux'"

@@ -60,12 +60,12 @@ class _MacCaffeinate(Method, ABC):
 
 class CaffeinateKeepRunning(_MacCaffeinate):
     mode_name = ModeName.KEEP_RUNNING
-    command = ["caffeinate"]
+    command = ["caffeinate", "cat"]
     name = "caffeinate"
 
 
 class CaffeinateKeepPresenting(_MacCaffeinate):
     mode_name = ModeName.KEEP_PRESENTING
     # -d:  Create an assertion to prevent the display from sleeping.
-    command = ["caffeinate", "-d"]
+    command = ["caffeinate", "-d", "cat"]
     name = "caffeinate"
