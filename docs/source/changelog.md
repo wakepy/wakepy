@@ -50,6 +50,7 @@
 - Switch from isort to ruff (Thanks to [@honerop](https://github.com/honerop) for [#531](https://github.com/wakepy/wakepy/issues/531))
 - Switch from black to ruff ([#523](https://github.com/wakepy/wakepy/pull/523))
 - Add AGENTS.md for AI coding assistants ([#508](https://github.com/wakepy/wakepy/pull/508))
+- Add devcontainer ([#574](https://github.com/wakepy/wakepy/pull/574))
 - Replace invoke (tasks.py) with just (.justfile) ([#509](https://github.com/wakepy/wakepy/pull/509))
 - Switch to uv and remove tox ([#499](https://github.com/wakepy/wakepy/pull/499))
 - Split testing pipelines into [Fast Tests 🚀](https://github.com/wakepy/wakepy/actions/workflows/fast-tests.yml) and [Full Tests 🔬](https://github.com/wakepy/wakepy/actions/workflows/full-tests.yml). Fast tests run on every push to PR, and Full tests run after merging to main and before creating a release. ([#530](https://github.com/wakepy/wakepy/pull/530))

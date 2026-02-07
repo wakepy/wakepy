@@ -38,7 +38,9 @@ test *args="":
     if ! env -u DBUS_SESSION_BUS_ADDRESS uv run python -m pytest -W error {{ args }} --cov-branch --cov ./src --cov-fail-under=100; then
         echo "Tests failed. Generating coverage report..."
         uv run coverage html
-        uv run python -m webbrowser -t htmlcov/index.html
+        echo "Coverage HTML generated at htmlcov/index.html"
+        echo "To see the report, run:"
+        echo "  just coverage-serve"
         exit 1
     fi
 
@@ -59,6 +61,19 @@ test-cli *args="":
 
     echo "Tests passed. Running static checks..."
     just check
+
+# Serve coverage report (HTML) for browsing
+coverage-serve port="8011":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if [ ! -f "htmlcov/index.html" ]; then
+        echo "htmlcov/index.html not found. Run 'uv run coverage html' first."
+        exit 1
+    fi
+
+    echo "Serving coverage at http://localhost:{{ port }}/index.html"
+    uv run python -m http.server -d htmlcov {{ port }}
 
 # Build the package (sdist and wheel)
 build:

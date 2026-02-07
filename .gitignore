@@ -20,6 +20,8 @@ htmlcov/
 .venv
 venv/
 
-# IDEs
+# Editors and AI agents
 .vscode/*
 .idea/*
+.claude/*
+

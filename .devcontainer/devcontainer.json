@@ -1,0 +1,24 @@
+{
+  "name": "Wakepy Development Container",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "runArgs": [
+    "--name",
+    "wakepy-dev"
+  ],
+  "customizations": {
+    "vscode": {
+      "settings": {},
+      "extensions": [
+        "charliermarsh.ruff",
+        "ms-python.python"
+      ]
+    }
+  },
+  // This will make sure that any dotfiles.repository install command is fully
+  // finished before the container gives possibility to open the terminal.
+  "waitFor": "updateContentCommand",
+  "postCreateCommand": "echo the dev container is ready! devcontainerId: ${devcontainerId}"
+}
