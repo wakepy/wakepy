@@ -1,5 +1,5 @@
 # CLI API
-
+## wakepy
 It is possible to start wakepy from the command line either by running
 
 ```{code-block} text
