@@ -149,17 +149,6 @@ class UI:
             method_spacing=method_spacing,
         )
 
-    def render_deprecations(self, deprecations: str) -> str:
-        text = "\n".join(
-            wrap(
-                f"DEPRECATION NOTICE: {deprecations}",
-                self.BELOW_BOX_TEXT_WIDTH,
-                break_long_words=True,
-                break_on_hyphens=True,
-            )
-        )
-        return f"\n\n{text}\n"
-
     def render_fake_success_warning(self) -> str:
         warning = (
             "WARNING: You are using the WAKEPY_FAKE_SUCCESS. "
@@ -260,7 +249,6 @@ class CliApp:
 
     def run_wakepy(self, args: Namespace) -> Mode:
         mode_name = get_mode_name(args)
-        deprecations = get_deprecations(args)
 
         keepawake = Mode(
             create_mode_params(
@@ -307,9 +295,6 @@ class CliApp:
                 )
             )
 
-            if deprecations:
-                print(self.ui.render_deprecations(deprecations))
-
             if not res.real_success:
                 print(self.ui.render_fake_success_warning())
 
@@ -340,8 +325,8 @@ class CliApp:
 
 
 def get_mode_name(args: Namespace) -> ModeName:
-    keep_running = args.keep_running or args.k
-    keep_presenting = args.keep_presenting or args.presentation
+    keep_running = args.keep_running
+    keep_presenting = args.keep_presenting
 
     if keep_running and keep_presenting:
         raise MultipleModesSelectedError(
@@ -352,23 +337,6 @@ def get_mode_name(args: Namespace) -> ModeName:
         return ModeName.KEEP_RUNNING
 
     return ModeName.KEEP_PRESENTING
-
-
-def get_deprecations(args: Namespace) -> str:
-    deprecations: list[str] = []
-
-    if args.k:
-        deprecations.append(
-            "Using -k is deprecated in wakepy 0.10.0, and will be removed in a future "
-            "release. Use -r/--keep-running, instead.",
-        )
-    if args.presentation:
-        deprecations.append(
-            "Using --presentation is deprecated in wakepy 0.10.0, and will be removed "
-            "in a future release. Use -p/--keep-presenting, instead. "
-            "Note that this is the default value so -p is optional.",
-        )
-    return "\n".join(deprecations) if deprecations else ""
 
 
 def setup_logging(verbosity: int, command: str) -> None:
@@ -488,14 +456,6 @@ def _add_mode_arguments(parser: argparse.ArgumentParser) -> None:
         default=False,
     )
 
-    # old name for -r, --keep-running. Used during deprecation time
-    parser.add_argument(
-        "-k",
-        help=argparse.SUPPRESS,
-        action="store_true",
-        default=False,
-    )
-
     parser.add_argument(
         "-p",
         "--keep-presenting",
@@ -503,14 +463,6 @@ def _add_mode_arguments(parser: argparse.ArgumentParser) -> None:
             "Presentation mode (DEFAULT); inhibit automatic idle timer based sleep, "
             "screensaver, screenlock and display power management."
         ),
-        action="store_true",
-        default=False,
-    )
-
-    # old name for -p, --keep-presenting. Used during deprecation time
-    parser.add_argument(
-        "--presentation",
-        help=argparse.SUPPRESS,
         action="store_true",
         default=False,
     )
