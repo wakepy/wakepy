@@ -92,9 +92,23 @@ options:
                          shows only method names and status.
 ```
 
-**Example output (default):**
+**Example with `wakepy methods`**
 
 ```{code-block} output
+$ wakepy methods
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                    keep.presenting
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. org.freedesktop.ScreenSaver              SUCCESS   
+  2. org.gnome.SessionManager                 SUCCESS   
+  3. caffeinate                               *         
+  4. SetThreadExecutionState                  *         
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Example with `wakepy methods -r`:**
+```{code-block} output
+$ wakepy methods -r
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                       keep.running
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -105,19 +119,16 @@ options:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Example output (with `-v`):**
+**Example with `wakepy methods -v`:**
 
 ```{code-block} output
+$ wakepy methods -v
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                                  keep.running
+                                keep.presenting
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  1. org.freedesktop.PowerManagement
-     FAIL: DBusCallError("DBus call of method 'Inhibit' on interface
-     'org.freedesktop.PowerManagement.Inhibit' with args ('wakepy', 'wakelock
-     active') failed with message: [org.freedesktop.DBus.Error.ServiceUnknown]
-     ('The name org.freedesktop.PowerManagement was not provided by any .service
-     files',)")
+  1. org.freedesktop.ScreenSaver
+     SUCCESS
 
   2. org.gnome.SessionManager
      SUCCESS
