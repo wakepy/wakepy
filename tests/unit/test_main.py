@@ -74,8 +74,6 @@ class TestGetModeName:
         [
             ["-r"],
             ["--keep-running"],
-            # Also no args means keep running
-            [],
         ],
     )
     def test_keep_running(self, sysargs):
@@ -86,6 +84,8 @@ class TestGetModeName:
         [
             ["-p"],
             ["--keep-presenting"],
+            # No args means keep presenting (default)
+            [],
         ],
     )
     def test_keep_presenting(self, sysargs):
@@ -242,7 +242,7 @@ class TestCliAppRunWakepyMethods:
 
     def test_non_verbose_output(self, probe_result: ProbingResults, capsys):
         args = argparse.Namespace(
-            keep_running=False,
+            keep_running=True,
             k=False,
             keep_presenting=False,
             presentation=False,
@@ -268,7 +268,7 @@ class TestCliAppRunWakepyMethods:
 
     def test_verbose_output(self, probe_result: ProbingResults, capsys):
         args = argparse.Namespace(
-            keep_running=False,
+            keep_running=True,
             k=False,
             keep_presenting=False,
             presentation=False,

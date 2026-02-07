@@ -111,13 +111,13 @@ Here's some reasons why you might want to consider using wakepy:
 
 ## Command line interface (CLI)
 
-To keep system from sleeping, run
+To keep system from sleeping and prevent screen lock, run
 
 ```
 wakepy
 ```
 
-For presentation mode, add `-p` flag. See also: <a href="https://wakepy.readthedocs.io/stable/cli-api.html">CLI API</a>.
+For keep.running mode (allows screen lock), add `-r` flag. See also: <a href="https://wakepy.readthedocs.io/stable/cli-api.html">CLI API</a>.
 
 ## Basic usage within Python
 

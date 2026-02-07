@@ -12,7 +12,7 @@ or
 python -m wakepy
 ```
 
-This starts wakepy in the *default mode* (`-r`), which corresponds to a [`keep.running`](#keep-running-mode) mode with default arguments. The available options are:
+This starts wakepy in the *default mode* (`-p`), which corresponds to a [`keep.presenting`](#keep-presenting-mode) mode with default arguments. The available options are:
 
 ```{code-block} output
 usage: wakepy [-h] [-r] [-p] [-v] {methods} ...
@@ -24,14 +24,14 @@ positional arguments:
 
 options:
   -h, --help             show this help message and exit
-  -r, --keep-running     Keep programs running (DEFAULT); inhibit automatic
+  -r, --keep-running     Keep programs running; inhibit automatic
                          idle timer based sleep / suspend. If a screen lock
                          (or a screen saver) with a password is enabled,
                          your system *may* still lock the session
                          automatically. You may, and probably should, lock
                          the session manually. Locking the workstation does
                          not stop programs from executing.
-  -p, --keep-presenting  Presentation mode; inhibit automatic idle timer
+  -p, --keep-presenting  Presentation mode (DEFAULT); inhibit automatic idle timer
                          based sleep, screensaver, screenlock and display
                          power management.
   -v, --verbose          Increase verbosity level (-v for INFO, -vv for
@@ -60,8 +60,8 @@ Renamed `-k` to `-r` and `--presentation` to `--keep-presenting` ([wakepy/#355](
 Lists all available [wakepy Methods](methods-reference.md#wakepy-methods) for the selected mode in priority order, showing which ones work on the current system and which ones don't.
 
 **Usage:**
-- `wakepy methods` - List methods for keep.running mode (default, compact output)
-- `wakepy methods -p` - List methods for keep.presenting mode
+- `wakepy methods` - List methods for keep.presenting mode (default, compact output)
+- `wakepy methods -r` - List methods for keep.running mode
 - `wakepy methods -v` - Show detailed output with failure reasons
 - `wakepy methods -vv` - Enable INFO logging
 - `wakepy methods -vvv` - Enable DEBUG logging
@@ -73,14 +73,14 @@ usage: wakepy methods [-h] [-r] [-p] [-v]
 
 options:
   -h, --help             show this help message and exit
-  -r, --keep-running     Keep programs running (DEFAULT); inhibit automatic
+  -r, --keep-running     Keep programs running; inhibit automatic
                          idle timer based sleep / suspend. If a screen lock
                          (or a screen saver) with a password is enabled, your
                          system *may* still lock the session automatically.
                          You may, and probably should, lock the session
                          manually. Locking the workstation does not stop
                          programs from executing.
-  -p, --keep-presenting  Presentation mode; inhibit automatic idle timer based
+  -p, --keep-presenting  Presentation mode (DEFAULT); inhibit automatic idle timer based
                          sleep, screensaver, screenlock and display power
                          management.
   -v, --verbose          Increase verbosity level (-v for detailed output, -vv
