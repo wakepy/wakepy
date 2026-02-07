@@ -2,21 +2,41 @@
 
 import re
 import struct
+import subprocess
 import sys
+from shutil import which
 from unittest.mock import patch
 
 import pytest
 
+
+def has_dbus_daemon_running() -> bool:
+    if which("pgrep") is None:
+        # If a linux system does not have pgrep, there is, with very high
+        # probability, no dbus-daemon running either. Not bothering to check.
+        return False
+
+    result = subprocess.run(  # noqa: S603
+        ["pgrep", "-f", "dbus-daemon"],  # noqa: S607
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    # 0 = at least one match, 1 = no matches. 2 = error
+    return result.returncode == 0
+
+
 if not sys.platform.lower().startswith("linux"):
-    # D-Bus methods currently support only linux.
-    pytest.skip(allow_module_level=True)
+    pytest.skip("D-Bus methods currently support only linux.", allow_module_level=True)
+if not has_dbus_daemon_running():
+    pytest.skip("No dbus-daemon running", allow_module_level=True)
 
-import jeepney
-import pytest
+# These platform specific imports need to be after the above checks
+import jeepney  # noqa: E402
 
-from wakepy import JeepneyDBusAdapter
-from wakepy.core import DBusAddress, DBusMethod, DBusMethodCall
-from wakepy.dbus_adapters.jeepney import DBusNotFoundError
+from wakepy import JeepneyDBusAdapter  # noqa: E402
+from wakepy.core import DBusAddress, DBusMethod, DBusMethodCall  # noqa: E402
+from wakepy.dbus_adapters.jeepney import DBusNotFoundError  # noqa: E402
 
 # For some unknown reason the D-Bus integration tests emit warnings like
 #

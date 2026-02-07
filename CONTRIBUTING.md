@@ -4,19 +4,21 @@ Thank you for your interest in contributing to wakepy! We're excited to have you
 
 ## Table of Contents
 
-- [How to Contribute](#how-to-contribute)
-- [Getting Started](#getting-started)
-- [Introduction to the wakepy repo](#introduction-to-the-wakepy-repo)
-- [Development Workflow](#development-workflow)
-- [Testing](#testing)
-- [Code Standards](#code-standards)
-- [Adding support for a new Platform/DE](#adding-support-for-a-new-platformde)
-- [Documentation](#documentation)
-- [FAQ](#faq)
-- [Release Process](#release-process-for-maintainers)
+1. [How to Contribute](#1-how-to-contribute)
+2. [Development Environment Setup](#2-development-environment-setup)
+3. [Git Workflow](#3-git-workflow)
+4. [Introduction to the wakepy repo](#4-introduction-to-the-wakepy-repo)
+5. [Development Workflow](#5-development-workflow)
+6. [Testing](#6-testing)
+7. [Code Standards](#7-code-standards)
+8. [Adding support for a new Platform/DE](#8-adding-support-for-a-new-platformde)
+9. [Documentation](#9-documentation)
+10. [FAQ](#10-faq)
+11. [Release Process](#11-release-process-for-maintainers)
+12. [Platform-Specific Setup Notes](#12-platform-specific-setup-notes)
 
 
-## How to Contribute
+## 1. How to Contribute
 
 There are many ways to contribute to wakepy, and all of them are much appreciated 🙌
 
@@ -63,37 +65,72 @@ Have an idea for improvement? Create an [issue](https://github.com/wakepy/wakepy
 - Add examples
 - Update outdated information
 
-## Getting Started
+## 2. Development Environment Setup
 
-### Prerequisites
+You can develop wakepy in two ways:
 
+### Option 1: Developing Locally
+
+**Prerequisites:**
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) package manager
 - [just](https://github.com/casey/just) command runner
 
-### Installation
-
+**Setup:**
 1. Fork and clone the wakepy repository
 2. Install all dependencies (run in the root folder):
-
-```bash
-uv sync
-```
-
+   ```bash
+   uv sync
+   ```
 3. Verify everything works:
+   ```bash
+   just test
+   ```
+
+➜ FreeBSD user? See [Platform-Specific Setup Notes](#freebsd) below
+
+### Option 2: Developing Inside a Devcontainer
+
+[Devcontainers](https://code.visualstudio.com/docs/devcontainers/containers) provide a pre-configured development environment with all necessary tools installed and ready to use. They are supported by many editors, including [VS Code](https://code.visualstudio.com/docs/devcontainers/containers), [PyCharm](https://www.jetbrains.com/help/pycharm/connect-to-devcontainer.html), [Zed](https://zed.dev/docs/dev-containers), [Cursor](https://www.vcluster.com/blog/cursor-with-devpod) and [Windsurf](https://docs.windsurf.com/windsurf/advanced#dev-containers).
+
+**Why use a devcontainer?**
+- **Consistent environment** across different machines and contributors - no "works on my machine" issues
+- **Isolated sandbox** perfect for running AI agents and experimental tools without affecting your host system
+- **Zero local setup** - no need to install Python, uv, just, or other dependencies on your machine
+
+**Quick Start:**
+1. Open the repository in VS Code
+2. When prompted, click "Reopen in Container" (or use Command Palette: "Dev Containers: Reopen in Container")
+3. Wait for the container to build and start
+4. Run `just test` to verify
+
+**Want to add custom tools like AI agents?**: You could add for example these features to add claude-code, codex and custom firewall rules (Edit [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) in VS Code):
 
 ```
-just test
+{
+  "dev.containers.defaultFeatures": {
+    "ghcr.io/w3cj/devcontainer-features/firewall@sha256:f8ae63faf64094305ef247befc0a9c66eecd7a01768df0cc826c7d4a81a92bfc": {
+      "verbose": true,
+      "pypi": true,
+      "anthropicApi": true,
+      "openaiApi": true,
+      "googleAiApi": true,
+      "vscodeMarketplace": true
+    },
+    "ghcr.io/fohrloop/devcontainer-features/codex@sha256:7d78dad69447100e6694d4eb73b4307566c07e678f3f346d06e0c6fe37ef959c": {},
+    "ghcr.io/fohrloop/anthropics-devcontainer-features-fork/claude-code@sha256:f76bc7179de085269881172935f6c5541321478f607c129872b0881d7109d5bf": {}
+  }
+}
 ```
 
-➜ FreeBSD user? see [the notes below](#freebsd).
+For more details on adding extensions, dotfiles, and features, see [.devcontainer/CUSTOMIZATIONS.md](.devcontainer/CUSTOMIZATIONS.md).
 
-### Branching and PRs
+## 3. Git Workflow
 
 - The **`main`** branch is the only long-living branch. New code is merged into it through Pull Requests.
 - Create a local short-lived feature branch for development.
 - After done with your changes, push the changes into the remote of the forked repo, and create a PR against main branch in the wakepy repository.
 
-## Introduction to the wakepy repo
+## 4. Introduction to the wakepy repo
 
 ### Key Files
 
@@ -136,7 +173,7 @@ pyproject.toml                     Build configuration, dependencies, and tool s
 
 If you want to understand how wakepy works internally, start from any of the public factory functions (e.g. `keep.presenting()` or `keep.running()` in [modes/keep.py](src/wakepy/modes/keep.py)). These create a `wakepy.Mode` instance which is defined in [core/mode.py](src/wakepy/core/mode.py). The starting point for entering a mode is `Mode.__enter__()` in [mode.py](src/wakepy/core/mode.py).
 
-## Development Workflow
+## 5. Development Workflow
 
 This project uses [just](https://github.com/casey/just) as a command runner. To see all available commands, run:
 
@@ -161,7 +198,7 @@ just format
 just test
 ```
 
-## Testing
+## 6. Testing
 
 ### Test Commands (from smallest to largest iteration cycle)
 
@@ -201,7 +238,7 @@ uv sync
 You can see the list of available python versions with `uv python list`. The list is tied to the installed uv version.
 
 
-## Code Standards
+## 7. Code Standards
 
 - **Type hints**: All code must be fully typed (mypy strict mode)
 - **Code style**: Follow the project's formatting (enforced by ruff)
@@ -210,7 +247,7 @@ You can see the list of available python versions with `uv python list`. The lis
 - **Tests**: When writing tests, use pytest with classes, and use fixtures when applicable. Try to avoid I/O in tests.
 - **Docs**: Use Nympy docstyle, and make sure docstrings are parsed correctly when documentation is built (if part of public API).
 
-## Adding support for a new Platform/DE
+## 8. Adding support for a new Platform/DE
 
 1. Create new file in `src/wakepy/methods/` (e.g., `new_platform.py`)
 2. Inherit from `Method` base class. Important parts:
@@ -223,7 +260,7 @@ You can see the list of available python versions with `uv python list`. The lis
 3. Add unit tests in `tests/unit/test_methods/`
 4. Update documentation in `docs/source/`
 
-## Documentation
+## 9. Documentation
 
 The documentation uses Sphinx with MyST (Markdown) and the source code lives at `./docs/source`.
 
@@ -248,7 +285,7 @@ Just merge in main on GitHub, and readthedocs will automatically build documenta
 Versions selected for documentation are selected in the readthedocs UI. Select one version per `major.minor` version (latest of them) from the git tags.
 
 
-## FAQ
+## 10. FAQ
 
 ### Do I need to complete the entire PR myself?
 
@@ -259,7 +296,7 @@ Not at all! Partial contributions are welcome and appreciated. If you start work
 No. Most contributors don't have access to all platforms (Windows, macOS, Gnome, KDE, etc.). Just test on the platform you have available. The CI pipeline will run tests on multiple platforms, and maintainers or other contributors can help test on platforms you don't have access to.
 
 
-## Release Process (for Maintainers)
+## 11. Release Process (for Maintainers)
 
 The release process is automated, but changelog creation takes a few manual steps.
 
@@ -276,7 +313,7 @@ The release process is automated, but changelog creation takes a few manual step
 9. Copy-paste back to the GitHub Releases, and save
 
 
-## Platform-Specific Setup Notes
+## 12. Platform-Specific Setup Notes
 
 ### FreeBSD
 
