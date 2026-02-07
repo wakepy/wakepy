@@ -337,10 +337,10 @@ def get_mode_name(args: Namespace) -> ModeName:
             "Cannot use both --keep-running and --keep-presenting. " "See: wakepy -h"
         )
 
-    if keep_presenting:
-        return ModeName.KEEP_PRESENTING
+    if keep_running:
+        return ModeName.KEEP_RUNNING
 
-    return ModeName.KEEP_RUNNING
+    return ModeName.KEEP_PRESENTING
 
 
 def get_deprecations(args: Namespace) -> str:
@@ -349,13 +349,13 @@ def get_deprecations(args: Namespace) -> str:
     if args.k:
         deprecations.append(
             "Using -k is deprecated in wakepy 0.10.0, and will be removed in a future "
-            "release. Use -r/--keep-running, instead. "
-            "Note that this is the default value so -r is optional.",
+            "release. Use -r/--keep-running, instead.",
         )
     if args.presentation:
         deprecations.append(
             "Using --presentation is deprecated in wakepy 0.10.0, and will be removed "
-            "in a future release. Use -p/--keep-presenting, instead. ",
+            "in a future release. Use -p/--keep-presenting, instead. "
+            "Note that this is the default value so -p is optional.",
         )
     return "\n".join(deprecations) if deprecations else ""
 
@@ -468,7 +468,7 @@ def _add_mode_arguments(parser: argparse.ArgumentParser) -> None:
         "-r",
         "--keep-running",
         help=(
-            "Keep programs running (DEFAULT); inhibit automatic idle timer based sleep "
+            "Keep programs running; inhibit automatic idle timer based sleep "
             "/ suspend. If a screen lock (or a screen saver) with a password is "
             "enabled, your system *may* still lock the session automatically. You may, "
             "and probably should, lock the session manually. Locking the workstation "
@@ -490,8 +490,8 @@ def _add_mode_arguments(parser: argparse.ArgumentParser) -> None:
         "-p",
         "--keep-presenting",
         help=(
-            "Presentation mode; inhibit automatic idle timer based sleep, screensaver, "
-            "screenlock and display power management."
+            "Presentation mode (DEFAULT); inhibit automatic idle timer based sleep, "
+            "screensaver, screenlock and display power management."
         ),
         action="store_true",
         default=False,
