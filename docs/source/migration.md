@@ -20,7 +20,7 @@ def another_long_running_function():
     do_something()
 ```
 
-The existing context manager syntax continues to work as before, but the decorator syntax gives the possibility save one indentation level. If you need to access the currend `Mode` when using the decorator syntax, use [`current_mode()`](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.current_mode).
+The existing context manager syntax continues to work as before, but the decorator syntax gives the possibility save one indentation level. If you need to access the current `Mode` when using the decorator syntax, use [`current_mode()`](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.current_mode).
 
 
 
@@ -132,7 +132,7 @@ The following are no longer part of the public API:
 If you were using these, you should use the public API instead. For creating modes, use {func}`keep.running() <wakepy.keep.running>` or {func}`keep.presenting() <wakepy.keep.presenting>`.
 
 
-### Wakepy  CLI
+### Wakepy CLI
 
 
 Default mode for the wakepy CLI has changed from `keep.running` to `keep.presenting`.
