@@ -7,7 +7,7 @@
 
 #### Python API
 
-**Decorator Syntax**: You can now use [`keep.running`](#keep-running-mode) and [`keep.presenting`](#keep-presenting-mode) as [decorators](https://wakepy.readthedocs.io/latest/user-guide.html#decorator-syntax) to prevent system sleep during function execution:
+**Decorator Syntax**: You can now use [`keep.running`](#keep-running-mode) and [`keep.presenting`](#keep-presenting-mode) as [decorators](https://wakepy.readthedocs.io/stable/user-guide.html#decorator-syntax) to prevent system sleep during function execution:
 
 ```python
 from wakepy import keep
@@ -63,7 +63,7 @@ wakepy -v
 wakepy -vv
 ```
 
-**New [wakepy methods](https://wakepy.readthedocs.io/latest/cli-api.html#wakepy-methods) Command**: for testing which [Method](#wakepy-methods) work on your system:
+**New [wakepy methods](https://wakepy.readthedocs.io/stable/cli-api.html#wakepy-methods) Command**: for testing which [Method](#wakepy-methods) work on your system:
 
 ```bash
 # List all available methods for the default keep.presenting mode
@@ -110,7 +110,7 @@ For a complete list of changes, including minor enhancements, bug fixes, documen
 #### ✨ wakepy CLI
 - 🚨 Make `keep.presenting` mode the default for the wakepy CLI. Previously the default was `keep.running` mode ([#576](https://github.com/wakepy/wakepy/pull/576))
 - Update the wakepy CLI printout: Adds the used Method and activated Mode to the printout ([#434](https://github.com/wakepy/wakepy/pull/434))
-- Add [`wakepy methods`](https://wakepy.readthedocs.io/latest/cli-api.html#wakepy-methods) CLI subcommand for listing all available Methods for a mode in priority order, showing which ones work on the current system ([#566](https://github.com/wakepy/wakepy/pull/566))
+- Add [`wakepy methods`](https://wakepy.readthedocs.io/stable/cli-api.html#wakepy-methods) CLI subcommand for listing all available Methods for a mode in priority order, showing which ones work on the current system ([#566](https://github.com/wakepy/wakepy/pull/566))
 - 🚨 Remove deprecated CLI flags `-k` and `--presentation` (deprecated in 0.10.0). Use `-r`/`--keep-running` and `-p`/`--keep-presenting` instead
 
 #### ✨ Improve observability

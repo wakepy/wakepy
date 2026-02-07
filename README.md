@@ -144,11 +144,11 @@ def long_running_task():
 
 <!-- wakepy decorator syntax note start -->
 > [!NOTE]
-> The [decorator syntax](https://wakepy.readthedocs.io/latest/user-guide.html#decorator-syntax) was added in wakepy version 1.0.0
+> The [decorator syntax](https://wakepy.readthedocs.io/stable/user-guide.html#decorator-syntax) was added in wakepy version 1.0.0
 <!-- wakepy decorator syntax note end -->
 
 
-It's also possible to use the <a href="https://wakepy.readthedocs.io/stable/modes.html#keep-running-mode">keep.running()</a> and <a href="https://wakepy.readthedocs.io/stable/modes.html#keep-presenting-mode">keep.presenting()</a> as [context managers](https://wakepy.readthedocs.io/latest/user-guide.html#context-managers), like this:
+It's also possible to use the <a href="https://wakepy.readthedocs.io/stable/modes.html#keep-running-mode">keep.running()</a> and <a href="https://wakepy.readthedocs.io/stable/modes.html#keep-presenting-mode">keep.presenting()</a> as [context managers](https://wakepy.readthedocs.io/stable/user-guide.html#context-managers), like this:
 
 
 ```python
