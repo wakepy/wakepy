@@ -274,20 +274,20 @@ class CliApp:
             method_name = (
                 mode.active_method.name if mode.active_method else "(no method)"
             )
-            logo = self.ui.render_logo(self.system_info["wakepy_version"])
+            rendered_logo = self.ui.render_logo(self.system_info["wakepy_version"])
 
             if res.success:
                 if args.verbose >= 1:
                     txt = res.get_detailed_summary_text(max_width=80)
                     print(f"\nWakepy Methods (in the order of attempt):\n\n{txt}")
-                print(logo)
+                print(rendered_logo)
             else:
-                print(logo)
+                print(rendered_logo)
                 method_results = res.query()
                 if method_results:
-                    methods_text = res.get_detailed_summary_text(max_width=80)
+                    methods_txt = res.get_detailed_summary_text(max_width=80)
                     print(
-                        f"\nTried Methods (in the order of attempt):\n\n{methods_text}\n"
+                        f"\nTried Methods (in the order of attempt):\n\n{methods_txt}\n"
                     )
                 else:
                     print("\nDid not try any methods!\n")
