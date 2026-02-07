@@ -126,6 +126,9 @@ For a complete list of changes, including minor enhancements, bug fixes, documen
 - Improve CLI error messages ([#577](https://github.com/wakepy/wakepy/pull/577))
 - Add {meth}`Mode.probe_all_methods() <wakepy.Mode.probe_all_methods>` method and {class}`~wakepy.ProbingResults` class for testing which Methods work on the current system without keeping them active ([#564](https://github.com/wakepy/wakepy/pull/564))
 
+#### ✨ Other
+- Add [WAKEPY_FORCE_FAILURE](#WAKEPY_FORCE_FAILURE) environment variable which can be used to force activation failure (for testing/development) ([#542](https://github.com/wakepy/wakepy/pull/542))
+
 ### 🐞 Bug fixes
 - Terminate caffeinate process even if python process is killed abruptly (Thanks to [basilevs](https://github.com/basilevs) for [#572](https://github.com/wakepy/wakepy/pull/572))
 - Fix ResourceWarning with caffeinate Method on macOS ([#479](https://github.com/wakepy/wakepy/pull/479))
@@ -247,13 +250,13 @@ For a complete list of changes, including minor enhancements, bug fixes, documen
 - Possibility to exit from a mode context manager early with {class}`ModeExit <wakepy.ModeExit>`  ([#72](https://github.com/wakepy/wakepy/pull/72))
 - It's now possible to check the active and used method from the Mode instance using the {attr}`Mode.active_method <wakepy.Mode.active_method>` and  {attr}`Mode.used_method <wakepy.Mode.used_method>` ([#268](https://github.com/wakepy/wakepy/pull/268))
 - Added possibility to use any dbus python implementation through the {class}`DBusAdapter <wakepy.DBusAdapter>`. By default uses jeepney through {class}`JeepneyDBusAdapter <wakepy.JeepneyDBusAdapter>`  (See: [#45](https://github.com/wakepy/wakepy/issues/45))
+
 ### 🚨 Backwards incompatible
 - Removed `set_keepawake` and `unset_keepawake functions` and the `keepawake` context manager. These were deprecated in 0.7.0 and are replaced with the new api: {func}`keep.running() <wakepy.keep.running>` and {func}`keep.presenting() <wakepy.keep.presenting>` context managers. ([#85](https://github.com/wakepy/wakepy/pull/85))
 - Renamed the CLI argument `-s, --keep-screen-awake` to `-p, --presentation`. The old ones were deprecated in 0.7.0. ([#179](https://github.com/wakepy/wakepy/pull/179/))
 - If Mode activation fails, raise {class}`ActivationError <wakepy.ActivationError>` by default. Previously there was no "on fail" action, but users needed to check the `result.success` to make sure the activation was successful.
 - The org.freedesktop.ScreenSaver based method is not used on keep.running mode. Systems supporting org.freedesktop.ScreenSaver which are not running Gnome will have no keep.running method until it gets implemented. By default wakepy will raise a wakepy.ActivationError if keep.running is used on such system. Either use keep.preseting mode, or wait or provide a PR.
 - The [WAKEPY_FAKE_SUCCESS](#WAKEPY_FAKE_SUCCESS) check is done *before* trying any wakepy Methods (previously, it was used when all the tried methods have failed)
-- Add [WAKEPY_FORCE_FAILURE](#WAKEPY_FORCE_FAILURE) environment variable which can be used to force activation failure (for testing/development) ([#542](https://github.com/wakepy/wakepy/pull/542))
 
 ### 🐞 Bug fixes
 - The org.freedesktop.ScreenSaver based method is only used in keep.presenting mode. Previously, it was used on keep.running mode on Linux. ([#46](https://github.com/wakepy/wakepy/issues/46), [#136](https://github.com/wakepy/wakepy/issues/136))
