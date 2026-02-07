@@ -10,7 +10,7 @@ from wakepy import keep
 
 #  Old way (wakepy < 1.0.0): only context-manager syntax
 def long_running_function():
-   with keep.presenting():
+    with keep.presenting():
         do_something()
 
 
