@@ -3,7 +3,7 @@
 
 ### New decorator syntax
 
-Wakepy 1.0.0 adds support for using `keep.running()` and `keep.presenting()` as [decorators](https://wakepy.readthedocs.io/latest/user-guide.html#decorator-syntax):
+Wakepy 1.0.0 adds support for using `keep.running()` and `keep.presenting()` as [decorators](#decorator-syntax):
 
 ```{code-block} python
 from wakepy import keep
@@ -20,7 +20,7 @@ def another_long_running_function():
     do_something()
 ```
 
-The existing context manager syntax continues to work as before, but the decorator syntax gives the possibility save one indentation level. If you need to access the current `Mode` when using the decorator syntax, use [`current_mode()`](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.current_mode).
+The existing context manager syntax continues to work as before, but the decorator syntax gives the possibility save one indentation level. If you need to access the current `Mode` when using the decorator syntax, use [`current_mode()`](#wakepy.current_mode).
 
 
 
