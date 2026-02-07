@@ -14,7 +14,6 @@ from wakepy.__main__ import (
     CliApp,
     DisplayTheme,
     MultipleModesSelectedError,
-    get_deprecations,
     get_logging_level,
     get_mode_name,
     get_should_use_ascii_only,
@@ -106,18 +105,6 @@ class TestGetModeName:
             get_mode_name(parse_args(sysargs))
 
 
-@pytest.mark.parametrize(
-    "sysargs",
-    [
-        ["--presentation"],
-        ["-k"],
-    ],
-)
-def test_deprecations(sysargs):
-    deprecations = get_deprecations(parse_args(sysargs))
-    assert f"Using {sysargs[0]} is deprecated in wakepy 0.10.0" in deprecations
-
-
 def test_wait_for_interrupt_handles_keyboard_interrupt(capsys):
     """Test that UI.wait_for_interrupt handles KeyboardInterrupt gracefully."""
     ui = UI()
@@ -167,19 +154,6 @@ class TestCliAppRunWakepy:
             # the method2_broken enter_mode raises this:
             assert mode.result.query()[0].failure_reason == "RuntimeError('foo')"
             assert "Wakepy could not activate" in capsys.readouterr().out
-
-    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
-    def test_working_mode_with_deprecations(self, capsys):
-        with patch(
-            "wakepy.__main__.get_deprecations",
-            return_value="Using -k is deprecated",
-        ), patch.object(UI, "wait_for_interrupt"):
-            app = CliApp()
-            args = parse_args([])
-            mode = app.run_wakepy(args)
-            assert mode.result.success is True
-            output = capsys.readouterr().out
-            assert "DEPRECATION NOTICE" in output
 
 
 class TestCliAppRunWakepyVerbose:
@@ -234,9 +208,7 @@ class TestCliAppRunWakepyMethods:
     def test_non_verbose_output(self, probe_result: ProbingResults, capsys):
         args = argparse.Namespace(
             keep_running=True,
-            k=False,
             keep_presenting=False,
-            presentation=False,
             verbose=0,
         )
 
@@ -260,9 +232,7 @@ class TestCliAppRunWakepyMethods:
     def test_verbose_output(self, probe_result: ProbingResults, capsys):
         args = argparse.Namespace(
             keep_running=True,
-            k=False,
             keep_presenting=False,
-            presentation=False,
             verbose=1,
         )
 
@@ -289,9 +259,7 @@ class TestCliAppRunWakepyMethods:
     def test_default_probe_runner_prints_output(self, probe_result, capsys):
         args = argparse.Namespace(
             keep_running=False,
-            k=False,
             keep_presenting=False,
-            presentation=False,
             verbose=0,
         )
 
@@ -307,9 +275,7 @@ class TestCliAppRunWakepyMethods:
     def test_probe_runner_overrides_default(self, probe_result, capsys):
         args = argparse.Namespace(
             keep_running=False,
-            k=False,
             keep_presenting=False,
-            presentation=False,
             verbose=0,
         )
 
@@ -411,14 +377,6 @@ class TestRendering:
             is_presentation_mode=False,
         )
         assert output_box == expected_info_box
-
-    def test_render_deprecations(self):
-        ui = UI()
-        deprecations = "This feature is deprecated"
-        formatted = ui.render_deprecations(deprecations)
-
-        assert "DEPRECATION NOTICE" in formatted
-        assert deprecations in formatted
 
     def test_render_fake_success_warning(self):
         ui = UI()
