@@ -20,7 +20,7 @@ def another_long_running_function():
     do_something()
 ```
 
-The existing context manager syntax continues to work as before, but the decorator syntax gives the possibility save one indentation level. If you need to access the current `Mode` when using the decorator syntax, use [`current_mode()`](#wakepy.current_mode).
+The existing context manager syntax continues to work as before, but the decorator syntax makes it possible to save one indentation level. If you need to access the current `Mode` when using the decorator syntax, use [`current_mode()`](#wakepy.current_mode).
 
 
 
