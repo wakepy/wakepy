@@ -39,6 +39,11 @@ if typing.TYPE_CHECKING:
     from wakepy import ActivationResult
 
 
+class MultipleModesSelectedError(Exception):
+    """Raised when more than a single wakepy mode is selected in the CLI
+    arguments."""
+
+
 WAKEPY_LOGO = r"""                         _
                         | |
         __      __ __ _ | | __ ___  _ __   _   _
@@ -260,7 +265,7 @@ class CliApp:
         keepawake = Mode(
             create_mode_params(
                 mode_name=mode_name,
-                on_fail=self.handle_activation_error,
+                on_fail="pass",
             )
         )
 
@@ -269,15 +274,27 @@ class CliApp:
             method_name = (
                 mode.active_method.name if mode.active_method else "(no method)"
             )
+            rendered_logo = self.ui.render_logo(self.system_info["wakepy_version"])
 
-            if res.success and args.verbose >= 1:
-                txt = res.get_detailed_summary_text(max_width=80)
-                print(f"\nWakepy Methods (in the order of attempt):\n\n{txt}")
+            if res.success:
+                if args.verbose >= 1:
+                    txt = res.get_detailed_summary_text(max_width=80)
+                    print(f"\nWakepy Methods (in the order of attempt):\n\n{txt}")
+                print(rendered_logo)
+            else:
+                print(rendered_logo)
+                method_results = res.query()
+                if method_results:
+                    methods_txt = res.get_detailed_summary_text(max_width=80)
+                    print(
+                        f"\nTried Methods (in the order of attempt):\n\n{methods_txt}\n"
+                    )
+                else:
+                    print("\nDid not try any methods!\n")
 
-            print(self.ui.render_logo(self.system_info["wakepy_version"]))
-
-            if res.success is False:
-                print("\n" + res.get_failure_text(style="block"))
+                print(
+                    self.ui.render_activation_error(res, system_info=self.system_info)
+                )
 
             if not mode.active:
                 raise ModeExit
@@ -321,20 +338,14 @@ class CliApp:
         )
         print(output)
 
-    def handle_activation_error(
-        self,
-        result: ActivationResult,
-    ) -> None:
-        print(self.ui.render_activation_error(result, system_info=self.system_info))
-
 
 def get_mode_name(args: Namespace) -> ModeName:
     keep_running = args.keep_running or args.k
     keep_presenting = args.keep_presenting or args.presentation
 
     if keep_running and keep_presenting:
-        raise ValueError(
-            "Cannot use both --keep-running and --keep-presenting. " "See: wakepy -h"
+        raise MultipleModesSelectedError(
+            "Cannot use both --keep-running and --keep-presenting.\nSee: wakepy -h"
         )
 
     if keep_running:
@@ -442,8 +453,7 @@ def parse_args(args: list[str]) -> Namespace:
     methods_parser = subparsers.add_parser(
         "methods",
         help=(
-            "List all available wakepy Methods for the selected mode in "
-            "priority order"
+            "List all available wakepy Methods for the selected mode in priority order"
         ),
         formatter_class=_create_help_formatter,
     )
@@ -521,10 +531,17 @@ def main(argv: list[str] | None = None, app: CliApp | None = None) -> None:
     args = parse_args(argv)
     setup_logging(args.verbose, args.command)
 
-    if args.command == "methods":
-        app.run_wakepy_methods(args)
-    else:
-        app.run_wakepy(args)
+    try:
+        if args.command == "methods":
+            app.run_wakepy_methods(args)
+        else:
+            app.run_wakepy(args)
+    except MultipleModesSelectedError as exc:
+        print(
+            str(exc),
+            file=sys.stderr,
+        )
+        sys.exit(2)
 
 
 if __name__ == "__main__":
