@@ -490,8 +490,8 @@ def _add_mode_arguments(parser: argparse.ArgumentParser) -> None:
         "-p",
         "--keep-presenting",
         help=(
-            "Presentation mode (DEFAULT); inhibit automatic idle timer based sleep, screensaver, "
-            "screenlock and display power management."
+            "Presentation mode (DEFAULT); inhibit automatic idle timer based sleep, "
+            "screensaver, screenlock and display power management."
         ),
         action="store_true",
         default=False,
