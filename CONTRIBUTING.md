@@ -98,7 +98,7 @@ You can develop wakepy in two ways:
 - **Zero local setup** - no need to install Python, uv, just, or other dependencies on your machine
 
 **Quick Start:**
-1. Open the repository in VS Code
+1. Open the repository a supported editor
 2. When prompted, click "Reopen in Container" (or use Command Palette: "Dev Containers: Reopen in Container")
 3. Wait for the container to build and start
 4. Run `just test` to verify
