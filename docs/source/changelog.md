@@ -1,33 +1,136 @@
 # Changelog
 
 ## wakepy 1.0.0
-🗓️ Unreleased
+🗓️ 2026-02-07
+
+### 🏆 Highlights
+
+#### Python API
+
+**Decorator Syntax**: You can now use [`keep.running`](#keep-running-mode) and [`keep.presenting`](#keep-presenting-mode) as [decorators](https://wakepy.readthedocs.io/latest/user-guide.html#decorator-syntax) to prevent system sleep during function execution:
+
+```python
+from wakepy import keep
+
+@keep.running
+def long_running_task():
+    process_large_dataset()
+
+@keep.presenting
+def slideshow():
+    display_presentation()
+```
+
+**MethodInfo**: Most references to a "method", like
+- {attr}`Mode.method <wakepy.Mode.method>`
+- {attr}`Mode.active_method <wakepy.Mode.active_method>`
+- {attr}`ActivationResult.method <wakepy.ActivationResult.method>`
+- {attr}`MethodActivationResult.method <wakepy.MethodActivationResult.method>`
+
+are instances of {class}`~wakepy.MethodInfo` instead of `str`.
+
+#### Enhanced CLI Experience
+
+**wakepy -p**: Make [`keep.presenting`](#keep-presenting-mode) as the default mode. Can type simply `wakepy` instead of `wakepy -p`. 
+
+**CLI banner update**: The CLI now shows which [Method](#wakepy-methods) and [Mode](#wakepy-modes) are being used, making it easier to understand what's happening:
+
+```
+                         _
+                        | |
+        __      __ __ _ | | __ ___  _ __   _   _
+        \ \ /\ / // _` || |/ // _ \| '_ \ | | | |
+         \ V  V /| (_| ||   <|  __/| |_) || |_| |
+          \_/\_/  \__,_||_|\_\\___|| .__/  \__, |
+         v.1.0.0                   | |      __/ |
+                                   |_|     |___/ 
+ ┏━━ Mode: keep.presenting ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+ ┃                                                      ┃
+ ┃  [✔] Programs keep running                           ┃
+ ┃  [✔] Display kept on, screenlock disabled            ┃
+ ┃                                                      ┃
+ ┃   Method: org.freedesktop.ScreenSaver                ┃
+ ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+```
+
+**Verbosity Flags**: Get detailed insights into what wakepy is doing. You can for example see which [Method](#wakepy-methods) wakepy tried in which order, and what were the outcomes
+
+```bash
+# Show detailed output
+wakepy -v
+
+# Even more details
+wakepy -vv
+```
+
+**New [wakepy methods](https://wakepy.readthedocs.io/latest/cli-api.html#wakepy-methods) Command**: for testing which [Method](#wakepy-methods) work on your system:
+
+```bash
+# List all available methods for the default keep.presenting mode
+$ wakepy methods
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                    keep.presenting
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. org.freedesktop.ScreenSaver              SUCCESS   
+  2. org.gnome.SessionManager                 SUCCESS   
+  3. caffeinate                               *         
+  4. SetThreadExecutionState                  *         
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# List all available methods for the keep.running mode
+$ wakepy methods -r
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                      keep.running
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. org.freedesktop.PowerManagement          FAIL      
+  2. org.gnome.SessionManager                 SUCCESS   
+  3. caffeinate                               *         
+  4. SetThreadExecutionState                  *         
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+
+
+For a complete list of changes, including minor enhancements, bug fixes, documentation updates, and maintenance improvements, see the detailed changelog below.
 
 ### ✨ Features
-- [Decorator syntax](https://wakepy.readthedocs.io/latest/user-guide.html#decorator-syntax): `@keep.running` and `@keep.presenting` and the helper functions [current_mode()](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.current_mode), [global_modes()](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.global_modes) and [modecount()](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.modecount) ([#477](https://github.com/wakepy/wakepy/pull/477))
+
+#### ✨ Python API
+- [Decorator syntax](#decorator-syntax): `@keep.running` and `@keep.presenting` and the helper functions {func}`~wakepy.current_mode`, {func}`~wakepy.global_modes` and {func}`~wakepy.modecount` ([#477](https://github.com/wakepy/wakepy/pull/477))
+- Make {attr}`~wakepy.Mode.active_method` a {class}`~wakepy.MethodInfo` instance (was a string) ([#459](https://github.com/wakepy/wakepy/pull/459))
+- Add {attr}`Mode.method <wakepy.Mode.method>`, {attr}`ActivationResult.method <wakepy.ActivationResult.method>` and {attr}`MethodActivationResult.method <wakepy.MethodActivationResult.method>` attributes, which are instances of {class}`~wakepy.MethodInfo` ([#459](https://github.com/wakepy/wakepy/pull/459), [#460](https://github.com/wakepy/wakepy/pull/460), [#464](https://github.com/wakepy/wakepy/pull/464))
+- 🚨 Deprecate {attr}`Mode.used_method <wakepy.Mode.used_method>`. Use {attr}`Mode.method <wakepy.Mode.method>`, instead ([464](https://github.com/wakepy/wakepy/pull/464))
+- 🚨 Deprecate {attr}`Mode.activation_result <wakepy.Mode.activation_result>`. Use {attr}`Mode.result <wakepy.Mode.result>`, instead ([464](https://github.com/wakepy/wakepy/pull/464))
+- 🚨 Deprecate {attr}`ActivationResult.active_method <wakepy.ActivationResult.active_method>`. Use {attr}`ActivationResult.method <wakepy.ActivationResult.method>`, instead ([464](https://github.com/wakepy/wakepy/pull/464))
+- 🚨 Make the `Mode._from_name()` and `Mode._method_classes` private; Not part of the public API anymore ([#458](https://github.com/wakepy/wakepy/pull/458))
+- 🚨 The {attr}`Mode.active_method <wakepy.Mode.active_method>`, {attr}`Mode.used_method <wakepy.Mode.used_method>`, are now instances of the new {class}`~wakepy.MethodInfo` (previously strings) ([#460](https://github.com/wakepy/wakepy/pull/460))
+- 🚨 The {attr}`ActivationResult.mode_name <wakepy.ActivationResult.mode_name>` is now always a string (instead of being a {class}`~wakepy.ModeName`) ([#462](https://github.com/wakepy/wakepy/pull/462))
+- 🚨 The {meth}`ActivationResult.list_methods <wakepy.ActivationResult.list_methods>` arguments are now keyword only ([#547](https://github.com/wakepy/wakepy/pull/547))
+
+#### ✨ wakepy CLI
+- 🚨 Make `keep.presenting` mode the default for the wakepy CLI. Previously the default was `keep.running` mode ([#576](https://github.com/wakepy/wakepy/pull/576))
 - Update the wakepy CLI printout: Adds the used Method and activated Mode to the printout ([#434](https://github.com/wakepy/wakepy/pull/434))
+- Add [`wakepy methods`](https://wakepy.readthedocs.io/latest/cli-api.html#wakepy-methods) CLI subcommand for listing all available Methods for a mode in priority order, showing which ones work on the current system ([#566](https://github.com/wakepy/wakepy/pull/566))
+- 🚨 Remove deprecated CLI flags `-k` and `--presentation` (deprecated in 0.10.0). Use `-r`/`--keep-running` and `-p`/`--keep-presenting` instead
+
+#### ✨ Improve observability
 - Added `-v` (INFO) and `-vv` (DEBUG) verbosity flags for the [wakepy CLI command](https://wakepy.readthedocs.io/stable/cli-api.html). ([#439](https://github.com/wakepy/wakepy/pull/439))
 - Show summary of used and unused Methods with `wakepy -v`; Previously it was possible to see the list of associated wakepy Methods only in case of failure ([#567](https://github.com/wakepy/wakepy/pull/567))
-- Add [`wakepy methods`](https://wakepy.readthedocs.io/latest/cli-api.html#wakepy-methods) CLI subcommand for listing all available Methods for a mode in priority order, showing which ones work on the current system ([#566](https://github.com/wakepy/wakepy/pull/566))
-- Add [Mode.method](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.Mode.method), [ActivationResult.method](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.ActivationResult.method) and [MethodActivationResult.method](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.MethodActivationResult.method) attributes, which are instances of [MethodInfo](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.MethodInfo) ([#459](https://github.com/wakepy/wakepy/pull/459), [#460](https://github.com/wakepy/wakepy/pull/460), [#464](https://github.com/wakepy/wakepy/pull/464))
-- Make [Mode.active_method](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.Mode.active_method) a [MethodInfo](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.MethodInfo) instance (was a string) ([#459](https://github.com/wakepy/wakepy/pull/459))
-- Add [Mode.probe_all_methods()](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.Mode.probe_all_methods) method and [ProbingResults](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.ProbingResults) class for testing which Methods work on the current system without keeping them active ([#564](https://github.com/wakepy/wakepy/pull/564))
-
-### 🌱 Minor Enhancements
 - Better error messages: When selected Method is not part of the selected Mode ([#427](https://github.com/wakepy/wakepy/pull/427)) and when a D-Bus -based method fails ([#438](https://github.com/wakepy/wakepy/pull/438)).
-- More human-readable output (ActivationWarning, ActivationError) if activation fails. Internally using [`ActivationResult.get_failure_text()`](https://wakepy.readthedocs.io/stable/api-reference.html#wakepy.ActivationResult.get_failure_text) ([#547](https://github.com/wakepy/wakepy/pull/547), [#430](https://github.com/wakepy/wakepy/pull/430)).
-- Enhance Mode Activation Observability. Add logging (DEBUG and INFO level) for different parts in the Mode activation process. Show which methods are to be tried, and log any success and failure of activating a Mode. Improved the `ActivationResult.get_failure_text()` output. Added `NoMethodsWarning` which is issued if trying to activate a Mode with an empty list of methods. ([#411](https://github.com/wakepy/wakepy/pull/411))
+- More human-readable output (ActivationWarning, ActivationError) if activation fails. Internally using {meth}`~wakepy.ActivationResult.get_failure_text` ([#547](https://github.com/wakepy/wakepy/pull/547), [#430](https://github.com/wakepy/wakepy/pull/430)).
+- Enhance Mode Activation Observability. Add logging (DEBUG and INFO level) for different parts in the Mode activation process. Show which methods are to be tried, and log any success and failure of activating a Mode. Improved the `ActivationResult.get_failure_text()` output. Added `NoMethodsWarning` which is issued if trying to activate a {class}`~wakepy.Mode` with an empty list of methods. ([#411](https://github.com/wakepy/wakepy/pull/411))
 - Add logging to every Method activation and deactivation step ([#469](https://github.com/wakepy/wakepy/pull/469))
 - Improve logging: org.gnome.Sessionmanager and freedesktop methods ([#474](https://github.com/wakepy/wakepy/pull/474))
 - Make ActivationWarning use proper stacklevel, so that issued warnings point to user code, and not into wakepy source code. ([#432](https://github.com/wakepy/wakepy/pull/432))
-- Add helper methods for formatting activation results: [`ActivationResult.get_summary_text()`](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.ActivationResult.get_summary_text), [`ActivationResult.get_detailed_summary_text()`](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.ActivationResult.get_detailed_summary_text), [`MethodActivationResult.get_status_string()`](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.MethodActivationResult.get_status_string), and [`MethodActivationResult.get_status_line()`](https://wakepy.readthedocs.io/latest/api-reference.html#wakepy.MethodActivationResult.get_status_line) ([#564](https://github.com/wakepy/wakepy/pull/564), [#568](https://github.com/wakepy/wakepy/pull/568))
+- Add helper methods for formatting activation results: {meth}`~wakepy.ActivationResult.get_summary_text`, {meth}`~wakepy.ActivationResult.get_detailed_summary_text`, {meth}`~wakepy.MethodActivationResult.get_status_string`, and {meth}`~wakepy.MethodActivationResult.get_status_line` ([#564](https://github.com/wakepy/wakepy/pull/564), [#568](https://github.com/wakepy/wakepy/pull/568))
 - Improve CLI error messages ([#577](https://github.com/wakepy/wakepy/pull/577))
+- Add {meth}`Mode.probe_all_methods() <wakepy.Mode.probe_all_methods>` method and {class}`~wakepy.ProbingResults` class for testing which Methods work on the current system without keeping them active ([#564](https://github.com/wakepy/wakepy/pull/564))
 
 ### 🐞 Bug fixes
+- Terminate caffeinate process even if python process is killed abruptly (Thanks to [basilevs](https://github.com/basilevs) for [#572](https://github.com/wakepy/wakepy/pull/572))
 - Fix ResourceWarning with caffeinate Method on macOS ([#479](https://github.com/wakepy/wakepy/pull/479))
 - Fix prioritized order of Methods ([#429](https://github.com/wakepy/wakepy/pull/429)).
-- Raise ContextAlreadyEnteredError (subclass of RuntimeError) if trying to use context manager twice without exiting first ([#476](https://github.com/wakepy/wakepy/pull/476))
-- Terminate caffeinate process even if python process is killed abruptly (Thanks to [basilevs](https://github.com/basilevs) for [#572](https://github.com/wakepy/wakepy/pull/572))
+- Raise {class}`~wakepy.ContextAlreadyEnteredError` (subclass of RuntimeError) if trying to use context manager twice without exiting first ([#476](https://github.com/wakepy/wakepy/pull/476))
 
 ### 📖 Documentation
 - Add [CONTRIBUTING.md](https://github.com/wakepy/wakepy/blob/main/CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](https://github.com/wakepy/wakepy/blob/main/CODE_OF_CONDUCT.md) ([#513](https://github.com/wakepy/wakepy/pull/513), [#515](https://github.com/wakepy/wakepy/pull/515))
@@ -36,29 +139,18 @@
 - Update [Wakepy Mode Lifecycle](https://wakepy.readthedocs.io/stable/wakepy-mode-lifecycle.html) docs ([#555](https://github.com/wakepy/wakepy/pull/555))
 - Add spacing to paragraphs in the API Reference ([#557](https://github.com/wakepy/wakepy/pull/557))
 
-### 🚨 Backwards incompatible changes
-- Remove deprecated CLI flags `-k` and `--presentation` (deprecated in 0.10.0). Use `-r`/`--keep-running` and `-p`/`--keep-presenting` instead
-- Make `keep.presenting` mode the default for the wakepy CLI. Previously the default was `keep.running` mode ([#576](https://github.com/wakepy/wakepy/pull/576))
-- Deprecate `Mode.used_method`. Use `Mode.method`, instead ([464](https://github.com/wakepy/wakepy/pull/464))
-- Deprecate `Mode.activation_result`. Use `Mode.result`, instead ([464](https://github.com/wakepy/wakepy/pull/464))
-- Deprecate `ActivationResult.active_method`. Use `ActivationResult.method`, instead ([464](https://github.com/wakepy/wakepy/pull/464))
-- Make the `Mode._from_name()` and `Mode._method_classes` private; Not part of the public API anymore ([#458](https://github.com/wakepy/wakepy/pull/458))
-- The `Mode.active_method`, `Mode.used_method`, are now instances of the new MethodInfo (previously strings) ([#460](https://github.com/wakepy/wakepy/pull/460))
-- The `ActivationResult.mode_name` is now always a string (instead of being a ModeName) ([#462](https://github.com/wakepy/wakepy/pull/462))
-- The `ActivationResult.list_methods()` arguments are now keyword only ([#547](https://github.com/wakepy/wakepy/pull/547))
 
-### 👷 Maintenance
-- Add basic spellchecking using [codespell](https://github.com/codespell-project/codespell) ([#539](https://github.com/wakepy/wakepy/pull/539))
-- Add more ruff checks ([#524](https://github.com/wakepy/wakepy/pull/524), [#525](https://github.com/wakepy/wakepy/pull/525), [#526](https://github.com/wakepy/wakepy/pull/526))
-- Switch from isort to ruff (Thanks to [@honerop](https://github.com/honerop) for [#531](https://github.com/wakepy/wakepy/issues/531))
+### 👷 Development Experience & Tooling
+- Switch to uv and remove tox ([#499](https://github.com/wakepy/wakepy/pull/499))
+- Replace invoke (tasks.py) with just (.justfile) ([#509](https://github.com/wakepy/wakepy/pull/509))
 - Switch from black to ruff ([#523](https://github.com/wakepy/wakepy/pull/523))
+- Switch from isort to ruff (Thanks to [@honerop](https://github.com/honerop) for [#531](https://github.com/wakepy/wakepy/issues/531))
+- Add more ruff checks ([#524](https://github.com/wakepy/wakepy/pull/524), [#525](https://github.com/wakepy/wakepy/pull/525), [#526](https://github.com/wakepy/wakepy/pull/526))
+- Add basic spellchecking using [codespell](https://github.com/codespell-project/codespell) ([#539](https://github.com/wakepy/wakepy/pull/539))
+- Split testing pipelines into [Fast Tests 🚀](https://github.com/wakepy/wakepy/actions/workflows/fast-tests.yml) and [Full Tests 🔬](https://github.com/wakepy/wakepy/actions/workflows/full-tests.yml). Fast tests run on every push to PR, and Full tests run after merging to main and before creating a release. ([#530](https://github.com/wakepy/wakepy/pull/530))
 - Add AGENTS.md for AI coding assistants ([#508](https://github.com/wakepy/wakepy/pull/508))
 - Add devcontainer ([#574](https://github.com/wakepy/wakepy/pull/574))
-- Replace invoke (tasks.py) with just (.justfile) ([#509](https://github.com/wakepy/wakepy/pull/509))
-- Switch to uv and remove tox ([#499](https://github.com/wakepy/wakepy/pull/499))
-- Split testing pipelines into [Fast Tests 🚀](https://github.com/wakepy/wakepy/actions/workflows/fast-tests.yml) and [Full Tests 🔬](https://github.com/wakepy/wakepy/actions/workflows/full-tests.yml). Fast tests run on every push to PR, and Full tests run after merging to main and before creating a release. ([#530](https://github.com/wakepy/wakepy/pull/530))
 - Fix development environment setup instructions and requirements on Windows ([#445](https://github.com/wakepy/wakepy/pull/445))
-- Make Run Tox fail on Windows pipelines if pytest fails ([#442](https://github.com/wakepy/wakepy/pull/442)). There was a bug in the workflow file which could make the tests pass on Windows even if pytest fails.
 - Fix flaky tests on pypy+windows ([#447](https://github.com/wakepy/wakepy/pull/447))
 - Remove the AttributeError traceback when building docs on Windows/MacOS ([#449](https://github.com/wakepy/wakepy/pull/449))
 - PyPy3.11, CPython 3.14, CPython 3.14t, CPython 3.15 and CPython 3.15t (free-threaded) tests in pipelines ([#482](https://github.com/wakepy/wakepy/pull/482), [#501](https://github.com/wakepy/wakepy/pull/501))
