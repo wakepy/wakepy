@@ -46,6 +46,10 @@ options:
 If you just installed `wakepy`, you might need to restart shell / terminal application to add it to the PATH.
 ````
 
+```{versionchanged} 1.0.0
+Changed the default mode to `keep.presenting` ([wakepy/#488](https://github.com/wakepy/wakepy/pull/488)).
+```
+
 ```{versionchanged} 0.10.0
 Renamed `-k` to `-r` and `--presentation` to `--keep-presenting` ([wakepy/#355](https://github.com/wakepy/wakepy/issues/355)).
 ```

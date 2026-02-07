@@ -36,6 +36,7 @@
 - Add spacing to paragraphs in the API Reference ([#557](https://github.com/wakepy/wakepy/pull/557))
 
 ### 🚨 Backwards incompatible changes
+- Make `keep.presenting` mode the default for the wakepy CLI. Previously the default was `keep.running` mode ([#576](https://github.com/wakepy/wakepy/pull/576))
 - Deprecate `Mode.used_method`. Use `Mode.method`, instead ([464](https://github.com/wakepy/wakepy/pull/464))
 - Deprecate `Mode.activation_result`. Use `Mode.result`, instead ([464](https://github.com/wakepy/wakepy/pull/464))
 - Deprecate `ActivationResult.active_method`. Use `ActivationResult.method`, instead ([464](https://github.com/wakepy/wakepy/pull/464))
