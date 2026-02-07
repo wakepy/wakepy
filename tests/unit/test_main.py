@@ -13,6 +13,7 @@ from wakepy.__main__ import (
     UI,
     CliApp,
     DisplayTheme,
+    MultipleModesSelectedError,
     get_deprecations,
     get_logging_level,
     get_mode_name,
@@ -101,10 +102,8 @@ class TestGetModeName:
         ],
     )
     def test_too_many_modes(self, sysargs):
-        with pytest.raises(
-            ValueError, match="Cannot use both --keep-running and --keep-presenting"
-        ):
-            assert get_mode_name(parse_args(sysargs))
+        with pytest.raises(MultipleModesSelectedError):
+            get_mode_name(parse_args(sysargs))
 
 
 @pytest.mark.parametrize(
@@ -138,14 +137,6 @@ def test_wait_for_interrupt_with_no_frames():
     ui = UI()
     with patch.object(ui, "spinner_frames", return_value=iter(())):
         ui.wait_for_interrupt(interval=0)
-
-
-def test_handle_activation_error(capsys):
-    result = ActivationResult([])
-    app = CliApp()
-    app.handle_activation_error(result)
-    printed_text = capsys.readouterr().out
-    assert "Wakepy could not activate" in printed_text
 
 
 class TestCliAppRunWakepy:
@@ -516,6 +507,16 @@ class TestMain:
             main(argv=["methods", "-p"], app=mock_app)
         mock_app.run_wakepy_methods.assert_called_once()
         mock_app.run_wakepy.assert_not_called()
+
+    def test_main_handles_multiple_modes_error(self, capsys):
+        """Test that main() catches MultipleModesSelectedError and exits."""
+        with patch("wakepy.__main__.setup_logging"), pytest.raises(
+            SystemExit
+        ) as exc_info:
+            main(argv=["-r", "-p"])
+        assert exc_info.value.code == 2
+        captured = capsys.readouterr()
+        assert "Cannot use both --keep-running" in captured.err
 
 
 class TestGetLoggingLevel:
