@@ -1,5 +1,11 @@
 # Changelog
 
+## wakepy x.x.x
+🗓️ unreleased
+
+### 📖 Documentation
+- Document Cinnamon support ([#587](https://github.com/wakepy/wakepy/pull/587))
+
 ## wakepy 1.0.0
 🗓️ 2026-02-07
 
