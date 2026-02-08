@@ -35,7 +35,7 @@ Wakepy may keep the following systems awake. ⌛: <a href="https://wakepy.readth
   <tbody>
     <tr>
       <td>Windows<sup>[1]</sup></td>
-      <td><a href="https://wakepy.readthedocs.io/stable/methods-reference.html#setthreadexecutionstate">SetThreadExecutionState</a></td>
+      <td><a href="https://wakepy.readthedocs.io/stable/methods-reference.html#setthreadexecutionstate">SetThreadExecutionState </a></td>
       <td>⌛ 🖥️</td>
     </tr>
     <tr>
@@ -47,13 +47,19 @@ Wakepy may keep the following systems awake. ⌛: <a href="https://wakepy.readth
       <td>Unix + <a href="https://en.wikipedia.org/wiki/GNOME">GNOME</a><sup>[3]</sup></td>
       <td><a href="https://wakepy.readthedocs.io/stable/methods-reference.html#org-gnome-sessionmanager">org.gnome.SessionManager</a><br>
       <a href="https://wakepy.readthedocs.io/stable/methods-reference.html#org-freedesktop-screensaver">org.freedesktop.ScreenSaver</a></td>
-      <td>⌛ 🖥️</td>
+      <td>⌛ 🖥️<br/>🖥️</td>
     </tr>
     <tr>
       <td>Unix + <a href="https://en.wikipedia.org/wiki/KDE_Plasma">KDE Plasma</a><sup>[4]</sup></td>
       <td><a href="https://wakepy.readthedocs.io/stable/methods-reference.html#org-freedesktop-powermanagement">org.freedesktop.PowerManagement</a><br>
       <a href="https://wakepy.readthedocs.io/stable/methods-reference.html#org-freedesktop-screensaver">org.freedesktop.ScreenSaver</a></td>
-      <td>⌛ 🖥️</td>
+      <td>⌛<br/>🖥️</td>
+    </tr>
+    <tr>
+      <td>Unix + <a href="https://projects.linuxmint.com/cinnamon/">Cinnamon</a></td>
+      <td><a href="https://wakepy.readthedocs.io/stable/methods-reference.html#org-gnome-sessionmanager">org.gnome.SessionManager</a><br>
+      <a href="https://wakepy.readthedocs.io/stable/methods-reference.html#org-freedesktop-screensaver">org.freedesktop.ScreenSaver</a></td>
+      <td>⌛ 🖥️<br/>🖥️</td>
     </tr>
     <tr>
       <td>Unix + <a href="https://en.wikipedia.org/wiki/Freedesktop.org">Freedesktop.org</a> DE<sup>[5]</sup></td>
@@ -61,7 +67,7 @@ Wakepy may keep the following systems awake. ⌛: <a href="https://wakepy.readth
       <a href="https://wakepy.readthedocs.io/stable/methods-reference.html#org-freedesktop-powermanagement">org.freedesktop.PowerManagement</a><br>
       <a href="https://wakepy.readthedocs.io/stable/methods-reference.html#org-freedesktop-screensaver">org.freedesktop.ScreenSaver</a>
       </td>
-      <td>⌛ 🖥️</td>
+      <td>⌛<br/>🖥️</td>
     </tr>
   </tbody>
 </table>
