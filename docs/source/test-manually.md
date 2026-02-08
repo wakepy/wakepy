@@ -59,6 +59,17 @@ Dec 25 12:29:20 | elapsed 0:00:45.485045 | delta: 2.000198s
 
 In the above example, the delta (time between two prints) was 2 seconds, until 16 seconds elapsed. After that, CPU was sleeping for 19 seconds.
 
+
+````{admonition} There is also a script
+:class: tip
+
+This script is also available in the wakepy git repository at [scripts/example-test.py](https://github.com/wakepy/wakepy/blob/main/scripts/example-test.py). If you have the repo checked out locally, you can simply run:
+
+```python
+uv run scripts/example-test.py
+```
+````
+
 ## Entering in wakepy modes for tests
 
 (enter-keep-running-script)=
