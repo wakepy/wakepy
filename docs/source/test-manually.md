@@ -59,6 +59,17 @@ Dec 25 12:29:20 | elapsed 0:00:45.485045 | delta: 2.000198s
 
 In the above example, the delta (time between two prints) was 2 seconds, until 16 seconds elapsed. After that, CPU was sleeping for 19 seconds.
 
+
+````{admonition} There is also a script
+:class: tip
+
+This script is also available in the wakepy git repository at [scripts/example-test.py](https://github.com/wakepy/wakepy/blob/main/scripts/example-test.py). If you have the repo checked out locally, you can simply run:
+
+```python
+uv run scripts/example-test.py
+```
+````
+
 ## Entering in wakepy modes for tests
 
 (enter-keep-running-script)=
@@ -139,6 +150,44 @@ gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-tim
 
 Follow the [same steps as in with keep.running](#gnome-keep-running-manual-test), but enter the [keep.presenting](#enter-keep-presenting-script) mode
 
+
+## Cinnamon
+
+- Homepage: [projects.linuxmint.com/cinnamon](https://projects.linuxmint.com/cinnamon/)
+
+(cinnamon-keep-running-manual-test)=
+### keep.running (Cinnamon)
+
+Before you start. Check the current timeout values (seconds), and write the number down somewhere. 
+
+```{code-block} text
+gsettings get org.cinnamon.settings-daemon.plugins.power sleep-display-ac
+gsettings get org.cinnamon.settings-daemon.plugins.power sleep-inactive-ac-timeout
+gsettings get org.cinnamon.settings-daemon.plugins.power sleep-display-battery
+gsettings get org.cinnamon.settings-daemon.plugins.power sleep-inactive-battery-timeout
+```
+
+Then, set a low value to the timeouts (here, 15 seconds):
+
+```{code-block} text
+gsettings set org.cinnamon.settings-daemon.plugins.power sleep-display-ac 15
+gsettings set org.cinnamon.settings-daemon.plugins.power sleep-inactive-ac-timeout 15
+gsettings set org.cinnamon.settings-daemon.plugins.power sleep-display-battery 15
+gsettings set org.cinnamon.settings-daemon.plugins.power sleep-inactive-battery-timeout 15
+```
+
+Test that your system sleeps automatically and blanks the screen after 15 seconds. Then, run the [wakepy test script](#code-wakepy-test-script) on one terminal window, and enter in the [keep.running](#enter-keep-running-script) in another. After you're done, reset the timeout values to what they were. For example:
+
+```{code-block} text
+gsettings set org.cinnamon.settings-daemon.plugins.power sleep-display-ac 1800
+gsettings set org.cinnamon.settings-daemon.plugins.power sleep-inactive-ac-timeout 900
+gsettings set org.cinnamon.settings-daemon.plugins.power sleep-display-battery 1800
+gsettings set org.cinnamon.settings-daemon.plugins.power sleep-inactive-battery-timeout 900
+```
+
+### keep.presenting (Cinnamon)
+
+Follow the [same steps as in with keep.running](#cinnamon-keep-running-manual-test), but enter the [keep.presenting](#enter-keep-presenting-script) mode
 
 ## Xfce
 
