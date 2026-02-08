@@ -230,10 +230,6 @@ Wakepy vision is to support *any*<sup>†</sup> environment which runs Python. T
       <td><a href="https://github.com/wakepy/wakepy/issues/363">wakepy/#363</a></td>
     </tr>
     <tr>
-      <td>Unix + <a href="https://en.wikipedia.org/wiki/Cinnamon_(desktop_environment)">Cinnamon</a></td>
-      <td><a href="https://github.com/wakepy/wakepy/issues/312">wakepy/#312</a></td>
-    </tr>
-    <tr>
       <td>Unix + <a href="https://en.wikipedia.org/wiki/Xfce">Xfce</a></td>
       <td><a href="https://github.com/wakepy/wakepy/issues/311">wakepy/#311</a></td>
     </tr>
