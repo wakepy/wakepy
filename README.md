@@ -7,8 +7,8 @@
 <a href="https://devguide.python.org/versions/"><img src="https://img.shields.io/badge/Python-3.7_to_3.15+-blue?logo=python&amp;logoColor=white" alt="pyversions"></a>&nbsp;
 <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>&nbsp;
 <a href="https://github.com/python/mypy"><img src="https://img.shields.io/badge/mypy-checked-blue" alt="mypy"></a>&nbsp;
-<img src="https://img.shields.io/badge/coverage-100%25-32bb13" alt="coverage">
-<img src="https://img.shields.io/github/license/wakepy/wakepy" alt="License">
+<a href="https://github.com/wakepy/wakepy/blob/7b758485c2e44855cd181f25d98c25ed37961f73/.github/actions/run-tests/action.yml#L72"><img src="https://img.shields.io/badge/coverage-100%25-32bb13" alt="coverage"></a>
+<a href="https://github.com/wakepy/wakepy/blob/main/LICENSE.txt"><img src="https://img.shields.io/github/license/wakepy/wakepy" alt="License"></a>
 <br/>
 <img src="./docs/source/img/wakepy-banner.svg" alt="Wakepy Banner">
 </div>
