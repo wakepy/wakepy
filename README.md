@@ -1,5 +1,15 @@
-![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/wakepy/wakepy)&nbsp;![PyPI](https://img.shields.io/pypi/v/wakepy)&nbsp;![PyPI - Downloads](https://img.shields.io/pypi/dm/wakepy)&nbsp;[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)&nbsp;![mypy](https://img.shields.io/badge/mypy-checked-blue)&nbsp;![coverage](https://img.shields.io/badge/coverage-100%25-32bb13)
-[![pyversions](https://img.shields.io/pypi/pyversions/wakepy.svg)](https://pypi.python.org/pypi/wakepy)&nbsp;![License](https://img.shields.io/github/license/wakepy/wakepy)
+<div align="center">
+
+![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/wakepy/wakepy)&nbsp;
+![PyPI](https://img.shields.io/pypi/v/wakepy)&nbsp;
+![PyPI - Downloads](https://img.shields.io/pypi/dw/wakepy)&nbsp;
+[![pyversions](https://img.shields.io/badge/Python-3.7_to_3.15+-blue?logo=python&logoColor=white)](https://pypi.python.org/pypi/wakepy)&nbsp;
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)&nbsp;
+![mypy](https://img.shields.io/badge/mypy-checked-blue)&nbsp;
+![coverage](https://img.shields.io/badge/coverage-100%25-32bb13)
+![License](https://img.shields.io/github/license/wakepy/wakepy)
+
+</div>
 
 ![](./docs/source/img/wakepy-banner.svg)
 
