@@ -1,7 +1,15 @@
-![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/wakepy/wakepy)&nbsp;![PyPI](https://img.shields.io/pypi/v/wakepy)&nbsp;![PyPI - Downloads](https://img.shields.io/pypi/dm/wakepy)&nbsp;[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)&nbsp;![mypy](https://img.shields.io/badge/mypy-checked-blue)&nbsp;![coverage](https://img.shields.io/badge/coverage-100%25-32bb13)
-[![pyversions](https://img.shields.io/pypi/pyversions/wakepy.svg)](https://pypi.python.org/pypi/wakepy)&nbsp;![License](https://img.shields.io/github/license/wakepy/wakepy)
-
-![](./docs/source/img/wakepy-banner.svg)
+<div align="center">
+<img src="https://img.shields.io/github/v/tag/wakepy/wakepy" alt="GitHub tag (latest by date)">&nbsp;
+<img src="https://img.shields.io/pypi/v/wakepy" alt="PyPI">&nbsp;
+<img src="https://img.shields.io/pypi/dw/wakepy" alt="PyPI - Downloads">&nbsp;
+<a href="https://pypi.python.org/pypi/wakepy"><img src="https://img.shields.io/badge/Python-3.7_to_3.15+-blue?logo=python&amp;logoColor=white" alt="pyversions"></a>&nbsp;
+<a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>&nbsp;
+<img src="https://img.shields.io/badge/mypy-checked-blue" alt="mypy">&nbsp;
+<img src="https://img.shields.io/badge/coverage-100%25-32bb13" alt="coverage">
+<img src="https://img.shields.io/github/license/wakepy/wakepy" alt="License">
+<br/>
+<img src="./docs/source/img/wakepy-banner.svg" alt="Wakepy Banner">
+</div>
 
 Cross-platform wakelock / keep-awake / stay-awake written in Python.
 
