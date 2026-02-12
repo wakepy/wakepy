@@ -1,6 +1,6 @@
 <div align="center">
 <a href="https://github.com/wakepy/wakepy"><img src="https://img.shields.io/github/v/tag/wakepy/wakepy" alt="GitHub tag (latest by date)"></a>&nbsp;
-<a href="https://pypi.org/project/wakepy/"><img src="https://img.shields.io/pypi/v/wakepy" alt="PyPI"></a>&nbsp;
+<a href="https://pypi.org/project/wakepy/"><img src="https://img.shields.io/pypi/v/wakepy" alt="PyPI version"></a>&nbsp;
 <a href="https://anaconda.org/conda-forge/wakepy"><img src="https://img.shields.io/conda/vn/conda-forge/wakepy
 " alt="conda-forge version"></a>&nbsp;
 <img src="https://img.shields.io/pypi/dw/wakepy" alt="PyPI - Downloads">&nbsp;
