@@ -33,8 +33,9 @@
 
 <br/>
 
-<img src="./docs/source/img/wakepy-banner.svg" alt="Wakepy Banner">
-
+<a href="https://github.com/wakepy/wakepy">
+ <img src="./docs/source/img/wakepy-banner.svg" alt="Wakepy Banner">
+</a>
 </div>
 
 Cross-platform wakelock / keep-awake / stay-awake written in Python.
