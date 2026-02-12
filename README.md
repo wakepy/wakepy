@@ -6,7 +6,7 @@
 <a href="https://pypistats.org/packages/wakepy"><img src="https://img.shields.io/pypi/dw/wakepy" alt="PyPI - Downloads"></a>&nbsp;
 <a href="https://devguide.python.org/versions/"><img src="https://img.shields.io/badge/Python-3.7_to_3.15+-blue?logo=python&amp;logoColor=white" alt="pyversions"></a>&nbsp;
 <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>&nbsp;
-<img src="https://img.shields.io/badge/mypy-checked-blue" alt="mypy">&nbsp;
+<a href="https://github.com/python/mypy"><img src="https://img.shields.io/badge/mypy-checked-blue" alt="mypy"></a>&nbsp;
 <img src="https://img.shields.io/badge/coverage-100%25-32bb13" alt="coverage">
 <img src="https://img.shields.io/github/license/wakepy/wakepy" alt="License">
 <br/>
