@@ -22,10 +22,10 @@
   <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff">
 </a>
 <a href="https://github.com/python/mypy">
-  <img src="https://img.shields.io/badge/mypy-checked-blue" alt="mypy">
+  <img src="https://img.shields.io/static/v1?label=&amp;message=mypy&amp;color=1f5082&amp;labelColor=grey&amp;logo=python&amp;logoColor=white" alt="mypy">
 </a>
 <a href="https://github.com/wakepy/wakepy/blob/7b758485c2e44855cd181f25d98c25ed37961f73/.github/actions/run-tests/action.yml#L72">
-  <img src="https://img.shields.io/badge/coverage-100%25-32bb13" alt="100% test coverage">
+  <img src="https://img.shields.io/badge/100%25-coverage-%230A9EDC?logo=pytest&amp;logoColor=white" alt="100% test coverage">
 </a>
 <a href="https://github.com/wakepy/wakepy/blob/main/LICENSE.txt">
   <img src="https://img.shields.io/github/license/wakepy/wakepy" alt="License">
