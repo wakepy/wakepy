@@ -1,4 +1,4 @@
-<div align="center">
+
 <a href="https://github.com/wakepy/wakepy"><img src="https://img.shields.io/github/v/tag/wakepy/wakepy" alt="GitHub tag (latest by date)"></a>
 <a href="https://pypi.org/project/wakepy/"><img src="https://img.shields.io/pypi/v/wakepy" alt="PyPI version"></a>
 <a href="https://anaconda.org/conda-forge/wakepy"><img src="https://img.shields.io/conda/vn/conda-forge/wakepy" alt="conda-forge version"></a>
@@ -9,11 +9,7 @@
 <a href="https://github.com/python/mypy"><img src="https://img.shields.io/static/v1?label=&amp;message=mypy&amp;color=1f5082&amp;labelColor=grey&amp;logo=python&amp;logoColor=white" alt="mypy"></a>
 <a href="https://github.com/wakepy/wakepy/blob/7b758485c2e44855cd181f25d98c25ed37961f73/.github/actions/run-tests/action.yml#L72"><img src="https://img.shields.io/badge/100%25-coverage-%230A9EDC?logo=pytest&amp;logoColor=white" alt="100% test coverage"></a>
 <a href="https://github.com/wakepy/wakepy/blob/main/LICENSE.txt"><img src="https://img.shields.io/github/license/wakepy/wakepy" alt="License"></a><br/>
-
-<a href="https://github.com/wakepy/wakepy">
- <img src="./docs/source/img/wakepy-banner.svg" alt="Wakepy Banner">
-</a>
-</div>
+<div align="center"><a href="https://github.com/wakepy/wakepy"><img src="./docs/source/img/wakepy-banner.svg" alt="Wakepy Banner"></a></div>
 
 Cross-platform wakelock / keep-awake / stay-awake written in Python.
 
