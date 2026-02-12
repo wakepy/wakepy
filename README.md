@@ -1,5 +1,5 @@
 <div align="center">
-<img src="https://img.shields.io/github/v/tag/wakepy/wakepy" alt="GitHub tag (latest by date)">&nbsp;
+<a href="https://github.com/wakepy/wakepy"><img src="https://img.shields.io/github/v/tag/wakepy/wakepy" alt="GitHub tag (latest by date)"></a>&nbsp;
 <a href="https://pypi.org/project/wakepy/"><img src="https://img.shields.io/pypi/v/wakepy" alt="PyPI"></a>&nbsp;
 <img src="https://img.shields.io/conda/vn/conda-forge/wakepy
 " alt="PyPI">&nbsp;
