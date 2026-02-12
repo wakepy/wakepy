@@ -188,13 +188,29 @@ class TestModeContextManager:
         # reached the end of the with block
         assert flag_end_of_with_block
 
-        # After exiting the mode, Mode.active is set to False
-        assert m.active is False
+        # After exiting the mode, Mode.active is set to None
+        assert m.active is None
         # The active_method is set to None
         assert m.active_method is None
         # The activation result is still there (not removed during
         # deactivation)
         assert activation_result == m.result
+
+    def test_active_is_none_before_activation(self, mode0: Mode):
+        """Mode.active is None before entering the context manager"""
+        assert mode0.active is None
+
+    def test_active_is_false_on_failed_activation(self):
+        """Mode.active is False when activation is attempted but fails"""
+        params = _ModeParams(method_classes=[], on_fail="pass")
+        mode = Mode(params)
+
+        assert mode.active is None
+
+        with mode as m:
+            assert m.active is False
+
+        assert m.active is None
 
     @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
     def test_no_methods_succeeds_when_using_fake_success(

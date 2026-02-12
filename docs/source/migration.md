@@ -1,4 +1,32 @@
 # Migration Guide
+## Migration Guide: 2.0.0
+
+### Mode.active type change
+
+{attr}`Mode.active <wakepy.Mode.active>` changed from `bool` to `bool | None`. The initial value and the value after deactivation is now `None` instead of `False`:
+
+| State | Before | After |
+|---|---|---|
+| Not yet activated | `False` | `None` |
+| Activated successfully | `True` | `True` |
+| Activation failed | `False` | `False` |
+| Deactivated | `False` | `None` |
+
+Inside the `with` block, `mode.active` is always `True` or `False`, never `None`. This is only a breaking change if your code checks `mode.active` outside the context manager *and* compares with `is False` or `== False`.
+
+```{code-block} python
+from wakepy import keep
+
+mode = keep.running()
+
+mode.active    # None (not yet activated)
+
+with mode:
+    mode.active  # True (success) or False (failure)
+
+mode.active    # None (deactivated)
+```
+
 ## Migration Guide: 1.0.0
 
 ### New decorator syntax

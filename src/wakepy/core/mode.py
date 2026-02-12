@@ -375,9 +375,24 @@ class Mode:
     for the :func:`keep.presenting <wakepy.keep.presenting>` mode.
     """
 
-    active: bool
-    """``True`` if the mode is active. Otherwise, ``False``. See also:
-    :attr:`active_method`."""
+    active: bool | None
+    """Tells whether the mode is active.
+
+    - ``None``: The Mode has not been activated yet, or has been deactivated.
+    - ``True``: The Mode was activated successfully.
+    - ``False``: The Mode was activated, but activation failed (no Method
+      succeeded).
+
+    When using the context manager or decorator syntax, this is always
+    ``True`` or ``False`` during the active scope (inside the ``with``
+    block or the decorated function).
+
+    See also: :attr:`active_method`.
+
+    .. versionchanged:: 2.0.0
+        Changed from ``bool`` to ``bool | None``. The initial value and the
+        value after deactivation is now ``None`` instead of ``False``.
+    """
 
     result: ActivationResult
     """The activation result which tells more about the activation process
@@ -441,7 +456,7 @@ class Mode:
         )
 
         self._init_params = params
-        self.active: bool = False
+        self.active: bool | None = None
         self.result = ActivationResult([])
         self.name = params.name
 
@@ -847,7 +862,7 @@ class Mode:
         self._active_method = None
         self.active_method = None
         self.heartbeat = None
-        self.active = False
+        self.active = None
         self._has_entered_context = False
         return deactivated
 
