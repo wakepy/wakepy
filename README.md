@@ -3,7 +3,7 @@
 <a href="https://pypi.org/project/wakepy/"><img src="https://img.shields.io/pypi/v/wakepy" alt="PyPI version"></a>&nbsp;
 <a href="https://anaconda.org/conda-forge/wakepy"><img src="https://img.shields.io/conda/vn/conda-forge/wakepy
 " alt="conda-forge version"></a>&nbsp;
-<img src="https://img.shields.io/pypi/dw/wakepy" alt="PyPI - Downloads">&nbsp;
+<a href="https://pypistats.org/packages/wakepy"><img src="https://img.shields.io/pypi/dw/wakepy" alt="PyPI - Downloads"></a>&nbsp;
 <a href="https://devguide.python.org/versions/"><img src="https://img.shields.io/badge/Python-3.7_to_3.15+-blue?logo=python&amp;logoColor=white" alt="pyversions"></a>&nbsp;
 <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>&nbsp;
 <img src="https://img.shields.io/badge/mypy-checked-blue" alt="mypy">&nbsp;
