@@ -82,7 +82,7 @@ def otherfunc():
 
 The Mode has following important attributes:
 
-- {attr}`m.active <wakepy.Mode.active>`: `True`, if activating mode was successful, and mode is not yet deactivated. Will be set to `False` when deactivating the mode. Can be [faked in CI](./tests-and-ci.md#wakepy_fake_success).
+- {attr}`m.active <wakepy.Mode.active>`: `True` if activating mode was successful. `False` if activation was attempted but failed. When using the context manager or decorator syntax, this is always `True` or `False` during the active scope (inside the `with` block or the decorated function). Before activation or after deactivation, the value is `None`. Can be [faked in CI](./tests-and-ci.md#wakepy_fake_success).
 - {attr}`m.method <wakepy.Mode.method>`: Information about the used method. Unlike the `active_method`, will be available *also* after the deactivating the mode. (Type: {class}`~wakepy.MethodInfo`)
 - {attr}`m.active_method <wakepy.Mode.active_method>`: Information about the *active* method. Will be `None` after deactivating the mode. (Type: {class}`~wakepy.MethodInfo`)
 - {attr}`m.result <wakepy.Mode.result>`: An {class}`~wakepy.ActivationResult` instance which gives more detailed information about the activation process.

@@ -1,7 +1,12 @@
 # Changelog
 
-## wakepy x.x.x
+## wakepy 2.0.0
 🗓️ unreleased
+
+### ✨ Features
+
+#### ✨ Python API
+- 🚨 {attr}`Mode.active <wakepy.Mode.active>` changed from `bool` to `bool | None`. The value is now `None` when the Mode has not been activated yet or has been deactivated, `True` when activated successfully, and `False` when activation was attempted but failed. Inside the `with` block, the value is always `True` or `False`. Previously, both "not yet activated" and "activation failed" were represented as `False`. This is a breaking change only if code checks `mode.active` outside the context manager *and* compares with `is False` or `== False`. Unlikely, but possible. Hence, this major version bump.
 
 ### 📖 Documentation
 - Document Cinnamon support ([#587](https://github.com/wakepy/wakepy/pull/587))

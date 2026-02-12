@@ -109,14 +109,14 @@ def test_keep_running_with_fake_success(monkeypatch, fake_dbus_adapter):
     """Simple smoke test for keep.running()"""
     monkeypatch.setenv("WAKEPY_FAKE_SUCCESS", "1")
     mode = keep.running(dbus_adapter=fake_dbus_adapter)
-    assert mode.active is False
+    assert mode.active is None
 
     with mode as m:
         assert mode is m
         assert m.active is True
         assert m.result.success is True
 
-    assert m.active is False
+    assert m.active is None
     assert isinstance(m.result, ActivationResult)
 
 
