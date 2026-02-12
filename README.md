@@ -1,10 +1,10 @@
 <div align="center">
 <img src="https://img.shields.io/github/v/tag/wakepy/wakepy" alt="GitHub tag (latest by date)">&nbsp;
-<img src="https://img.shields.io/pypi/v/wakepy" alt="PyPI">&nbsp;
+<a href="https://pypi.org/project/wakepy/"><img src="https://img.shields.io/pypi/v/wakepy" alt="PyPI"></a>&nbsp;
 <img src="https://img.shields.io/conda/vn/conda-forge/wakepy
 " alt="PyPI">&nbsp;
 <img src="https://img.shields.io/pypi/dw/wakepy" alt="PyPI - Downloads">&nbsp;
-<a href="https://pypi.python.org/pypi/wakepy"><img src="https://img.shields.io/badge/Python-3.7_to_3.15+-blue?logo=python&amp;logoColor=white" alt="pyversions"></a>&nbsp;
+<a href="https://pypi.org/project/wakepy/"><img src="https://img.shields.io/badge/Python-3.7_to_3.15+-blue?logo=python&amp;logoColor=white" alt="pyversions"></a>&nbsp;
 <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>&nbsp;
 <img src="https://img.shields.io/badge/mypy-checked-blue" alt="mypy">&nbsp;
 <img src="https://img.shields.io/badge/coverage-100%25-32bb13" alt="coverage">
