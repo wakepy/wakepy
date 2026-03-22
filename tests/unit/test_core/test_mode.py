@@ -123,33 +123,35 @@ def mode1_with_dbus(
     return testmode_cls(params)
 
 
+class SyncButton:
+    def __init__(self) -> None:
+        self.on_click: typing.Optional[typing.Callable[[object], None]] = None
+
+    def click(self, e: object = None) -> None:
+        if self.on_click is not None:
+            self.on_click(e)
+
+
+class AsyncButton:
+    def __init__(self) -> None:
+        self.on_click: typing.Optional[
+            typing.Callable[[object], typing.Coroutine[None, None, None]]
+        ] = None
+
+    def click(self, e: object = None) -> None:
+        if self.on_click is not None:
+            asyncio.run(self.on_click(e))
+
+
 @pytest.fixture
-def sync_event_button():
+def sync_event_button() -> SyncButton:
     """Simulates a UI button that dispatches only sync on_click handlers."""
-
-    class SyncButton:
-        def __init__(self) -> None:
-            self.on_click = None
-
-        def click(self, e: object = None) -> None:
-            if self.on_click is not None:
-                self.on_click(e)
-
     return SyncButton()
 
 
 @pytest.fixture
-def async_event_button():
+def async_event_button() -> AsyncButton:
     """Simulates a UI button that dispatches async on_click handlers."""
-
-    class AsyncButton:
-        def __init__(self) -> None:
-            self.on_click = None
-
-        def click(self, e: object = None) -> None:
-            if self.on_click is not None:
-                asyncio.run(self.on_click(e))
-
     return AsyncButton()
 
 
@@ -454,7 +456,7 @@ class TestModeEnterExit:
     def test_event_driven_sync_handler_pattern(
         self,
         mode0: Mode,
-        sync_event_button: object,
+        sync_event_button: SyncButton,
     ) -> None:
         """Sync on_click handlers can enter/exit a mode.
 
@@ -468,17 +470,17 @@ class TestModeEnterExit:
         def sync_deactivate(e: object) -> None:
             mode0.exit()
 
-        sync_event_button.on_click = sync_activate  # type: ignore[union-attr]
-        sync_event_button.click()  # type: ignore[union-attr]
+        sync_event_button.on_click = sync_activate
+        sync_event_button.click()
         assert mode0.active is True
 
-        sync_event_button.on_click = sync_deactivate  # type: ignore[union-attr]
-        sync_event_button.click()  # type: ignore[union-attr]
+        sync_event_button.on_click = sync_deactivate
+        sync_event_button.click()
         assert mode0.active is None
 
         # Toggle again to confirm repeated use works
-        sync_event_button.on_click = sync_activate  # type: ignore[union-attr]
-        sync_event_button.click()  # type: ignore[union-attr]
+        sync_event_button.on_click = sync_activate
+        sync_event_button.click()
         assert mode0.active is True
         mode0.exit()
 
@@ -486,7 +488,7 @@ class TestModeEnterExit:
     def test_event_driven_async_handler_pattern(
         self,
         mode0: Mode,
-        async_event_button: object,
+        async_event_button: AsyncButton,
     ) -> None:
         """Async on_click handlers can enter/exit a mode.
 
@@ -500,17 +502,17 @@ class TestModeEnterExit:
         async def async_deactivate(e: object) -> None:
             mode0.exit()
 
-        async_event_button.on_click = async_activate  # type: ignore[union-attr]
-        async_event_button.click()  # type: ignore[union-attr]
+        async_event_button.on_click = async_activate
+        async_event_button.click()
         assert mode0.active is True
 
-        async_event_button.on_click = async_deactivate  # type: ignore[union-attr]
-        async_event_button.click()  # type: ignore[union-attr]
+        async_event_button.on_click = async_deactivate
+        async_event_button.click()
         assert mode0.active is None
 
         # Toggle again to confirm repeated use works
-        async_event_button.on_click = async_activate  # type: ignore[union-attr]
-        async_event_button.click()  # type: ignore[union-attr]
+        async_event_button.on_click = async_activate
+        async_event_button.click()
         assert mode0.active is True
         mode0.exit()
 
