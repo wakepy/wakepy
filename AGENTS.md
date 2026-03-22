@@ -1,48 +1,26 @@
 You MUST be concise in all messages. You SHOULD prefer brevity over grammatical correctness.
 
-wakepy: Cross-platform Python tool for preventing system suspend via native OS/DE APIs. No persistent settings modified.
+wakepy: Cross-platform Python library/CLI preventing system suspend via native OS/DE APIs.
 
-ARCHITECTURE:
-- Modes (user API): keep.running (sleep prevention), keep.presenting (sleep+screen lock prevention)
-- Methods: Platform implementations (Windows SetThreadExecutionState, macOS caffeinate, GNOME/Freedesktop D-Bus)
-- Modes use context managers/decorators
-
-KEY FILES:
-src/wakepy/__init__.py - Public API exports
-src/wakepy/__main__.py - CLI (375 lines)
-src/wakepy/modes/keep.py - User API (273 lines)
-src/wakepy/core/constants.py - Enums: IdentifiedPlatformType, PlatformType, ModeName, BusType, StageName
-src/wakepy/core/mode.py - Mode logic (925 lines)
-src/wakepy/core/method.py - Method base (703 lines)
-src/wakepy/core/activationresult.py - ActivationResult, MethodActivationResult dataclasses
-src/wakepy/core/registry.py - Method discovery/registration
-src/wakepy/core/prioritization.py - Method selection logic
-src/wakepy/core/platform.py - Platform detection
-src/wakepy/core/dbus.py - D-Bus abstractions (370 lines)
-src/wakepy/methods/{windows,macos,gnome,freedesktop}.py - Platform methods
-src/wakepy/dbus_adapters/jeepney.py - Linux/BSD D-Bus adapter
-docs/source/changelog.md - Project changelog
-pyproject.toml - Build config, dependencies, tool settings
-.justfile - Just commands: format, check, docs, test, build
-tests/conftest.py - Global pytest fixtures
-tests/unit/ - Mocked unit tests
-tests/integration/ - Platform integration tests
+See `.planning/codebase/` for detailed docs:
+- `ARCHITECTURE.md` — layers, data flow, key abstractions
+- `STRUCTURE.md` — directory layout, key files, where to add new code
+- `CONVENTIONS.md` — naming, imports, error handling, type hints
+- `TESTING.md` — fixtures, mocking, coverage, test patterns
+- `STACK.md` — dependencies, tools, platform requirements
 
 REQUIREMENTS:
-- Python 3.7+
 - mypy strict mode (fully typed)
 - 100% test coverage
 - pytest with classes
 - Top-level functions before subfunctions
-- Test specific functions first, not full suite
 
 ALWAYS:
 - Instead of "python ARGS" run "uv run python ARGS". Instead of "python3 ARGS" run "uv run python ARGS"
-- If changing a file, in the end, format file and run tests (or other command to VERIFY the outcome). Does not apply to .md files.
-- Code should be easily READABLE
+- If changing a file, format and run tests to VERIFY. Does not apply to .md files.
 - Prefer writing code that is easily TESTABLE (not requiring patching)
-- Prefer using FIXTURES in tests where possible
-- When asserting the same attribute twice with different expected values (e.g. after a state change), use the `do_assert` fixture instead of `assert` to avoid mypy [unreachable] errors caused by type narrowing. Within a single test, do not mix `assert` and `do_assert` for the same kind of assertions.
-- Use "just test-cli ARGUMENTS" instead of "python -m pytest ARGUMENTS" or "just test ARGUMENTS" or "pytest ARGUMENTS" for running tests
-- imports to top of the file and not inside functions
-- To build docs, use "uv run sphinx-build -b html docs/source docs/build". Do NOT use "just docs" as it never returns!
+- Prefer using FIXTURES in tests
+- When asserting the same attribute twice with different expected values (e.g. after a state change), use the `do_assert` fixture instead of `assert` to avoid mypy [unreachable] errors. Within a single test, do not mix `assert` and `do_assert`.
+- Use "just test-cli ARGUMENTS" to run tests (not pytest directly)
+- imports at top of file, not inside functions
+- To build docs: "uv run sphinx-build -b html docs/source docs/build". Do NOT use "just docs" as it never returns!
