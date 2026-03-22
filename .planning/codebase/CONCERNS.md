@@ -1,6 +1,6 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-02-19
+**Analysis Date:** 2026-03-22 (updated from 2026-02-19)
 
 ## Tech Debt
 
@@ -24,13 +24,6 @@
 
 ## Known Issues with Mitigations
 
-**Thread Safety Warning Not Enforced:**
-- Issue: ThreadSafetyWarning is issued if Mode is used across threads (line 931 in mode.py), but usage is still allowed to proceed. No hard safety guarantees.
-- Files: `src/wakepy/core/mode.py` (lines 923-932)
-- Impact: Users can accidentally share Mode instances across threads, causing undefined behavior. ContextVar assumes thread-safety but actual locking may not be sufficient.
-- Current mitigation: Warning is logged and printed. Context separation via ContextVar reduces cross-thread contamination.
-- Recommendations: Consider making this a hard error instead of warning, or provide thread-safe Mode wrapper class. Document thread requirements clearly in user API.
-
 **Windows Thread Timeout Edge Case:**
 - Issue: If SetThreadExecutionState worker thread timeout is too small, queue may contain multiple responses, triggering warning (line 85-92 in windows.py).
 - Files: `src/wakepy/methods/windows.py` (lines 85-92)
@@ -47,13 +40,13 @@
 ## Performance Bottlenecks
 
 **Lock Contention in Global Mode Registry:**
-- Problem: All threads acquiring/releasing `_mode_lock` for appending/removing modes (lines 719-756 in mode.py). Uses manual acquire/release pattern instead of context manager.
-- Files: `src/wakepy/core/mode.py` (lines 319-345, 728-756)
-- Cause: Manual lock management with try/finally, repeated lock/unlock for multiple operations
-- Improvement path:
-  1. Convert to `with _mode_lock:` context manager syntax (cleaner, less error-prone)
-  2. Batch operations: combine _set_current_mode and _unset_current_mode operations to reduce lock acquisitions
-  3. Consider RWLock (read-write lock) if read operations (global_modes, modecount) are more frequent than writes
+- Problem: All threads acquiring `_mode_lock` for appending/removing modes in `_enter()` and `exit()`.
+- Files: `src/wakepy/core/mode.py`
+- Cause: `_all_modes` is a global list accessed under lock on every enter/exit
+- Note: Now uses `with _mode_lock:` context manager (fixed from manual acquire/release in v2.0.0)
+- Remaining improvement path:
+  1. Consider RWLock (read-write lock) if `global_modes()`/`modecount()` reads are more frequent than writes
+  2. Per-instance `_lock` and global `_mode_lock` held sequentially — review for deadlock risk if usage grows
 
 **D-Bus Connection Reuse Not Optimized:**
 - Problem: DBusAdapter caches connection per instance, but new connections opened/closed frequently

@@ -1,6 +1,6 @@
 # Architecture
 
-**Analysis Date:** 2026-02-19
+**Analysis Date:** 2026-03-22 (updated from 2026-02-19)
 
 ## Pattern Overview
 
@@ -85,17 +85,27 @@
 1. User calls keep.running() or keep.presenting() factory function
 2. Factory creates _ModeParams via create_mode_params()
 3. Mode.__init__() receives params, gets methods for mode from registry
-4. Mode.__enter__() (or decorator call) triggers activate()
-5. activate() calls:
+4. Mode.__enter__() (or decorator call, or explicit `mode.enter()`) triggers `enter()`
+5. `enter()` acquires `self._lock`, then calls `_enter()`:
    - get_selected_methods() → filters by use_only/omit
    - order_methods_by_priority() → sorts by platform + user priority
-   - For each Method: activate_method() which calls enter_mode()
+   - For each Method: `_activate()` calls activate_method() / enter_mode()
 6. First successful Method activation stops iteration
 7. ActivationResult created with all MethodActivationResult records
 8. on_fail handler triggered if activation fails
-9. Mode.active set to True/False, result populated
-10. Mode.__exit__() calls deactivate() on successful methods
+9. Mode.active set to True/False/None (None = not yet entered or already exited)
+10. Mode.__exit__() (or explicit `mode.exit()`) calls `exit()` → deactivate_method()
 11. Deactivate calls exit_mode() on active Method
+
+**Explicit enter/exit pattern (v2.0.0+):**
+```python
+mode = keep.running()
+try:
+    mode.enter()          # also accepts if_already_entered="warn"|"pass"|"error"
+    # event loop / GUI mainloop
+finally:
+    mode.exit()           # always safe, even if enter() was never called or failed
+```
 
 **State Management:**
 
@@ -117,8 +127,8 @@
 **Mode:**
 - Purpose: Represents a user-requested system state (sleep prevention with/without screen)
 - Examples: `src/wakepy/core/mode.py` Mode class
-- Pattern: Context manager + decorator, wraps Method activation lifecycle
-- State: active (bool|None), result (ActivationResult), method (MethodInfo)
+- Pattern: Context manager + decorator + explicit `enter()`/`exit()` API
+- State: `active` is three-state: `True` (active), `False` (activation failed), `None` (not yet entered or already exited)
 
 **Method:**
 - Purpose: Implements a mode on a specific platform or with specific technology
@@ -191,12 +201,13 @@
 
 **Thread Safety:**
 - ContextVar for per-thread current mode tracking
-- Lock (_mode_lock) protecting _all_modes global list
-- Thread ID stored at Mode creation time for safety warnings
+- Lock (`_mode_lock`) protecting `_all_modes` global list (accessed via `with _mode_lock:`)
+- Per-instance `_lock = threading.Lock()` guards `enter()`/`exit()` against concurrent calls
+- `ThreadSafetyWarning` and `_thread_check()` removed in v2.0.0 (no longer warn on cross-thread use)
 - Windows methods use separate inhibitor threads to isolate SetThreadExecutionState flags
 
 **Multi-threading Support:**
 - Context managers create new Mode instance per thread (decorator pattern)
 - Each thread has independent ContextVar, preventing cross-thread contamination
-- global_modes() safe for multi-thread query
-- Threading warnings issued if Mode entered/exited on different thread
+- `global_modes()` safe for multi-thread query
+- `_all_modes` managed by `enter()`/`exit()` (not `_set_current_mode`/`_unset_current_mode`)

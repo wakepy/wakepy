@@ -320,7 +320,7 @@ exclude_lines = [
 "platform_system != 'Darwin'" = "**/wakepy/methods/macos.py"
 
 [tool.coverage.coverage_conditional_plugin.rules]
-no-cover-if-no-dbus = "platform_system != 'Linux'"
+no-cover-if-no-dbus = "platform_system != 'Linux' or not __import__('shutil').which('dbus-daemon')"
 no-cover-if-py-gte-38 = "sys_version_info >= (3, 8)"
 no-cover-if-py-lt-38 = "sys_version_info < (3, 8)"
 no-cover-if-py-gte-310 = "sys_version_info >= (3, 10)"
@@ -339,7 +339,7 @@ uv run pytest --cov=wakepy --cov-report=term-missing
 - `# pragma: no-cover-if-py-lt-38` - Code only executed on Python >= 3.8
 - `# pragma: no-cover-if-py-gte-310` - Code only executed on Python < 3.10
 - `# pragma: no-cover-if-py-lt-310` - Code only executed on Python >= 3.10
-- `# pragma: no-cover-if-no-dbus` - D-Bus code (Linux only)
+- `# pragma: no-cover-if-no-dbus` - D-Bus code (Linux + dbus-daemon installed)
 
 These allow 100% coverage on each platform without false gaps.
 
