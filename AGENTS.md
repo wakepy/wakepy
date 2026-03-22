@@ -42,6 +42,7 @@ ALWAYS:
 - Code should be easily READABLE
 - Prefer writing code that is easily TESTABLE (not requiring patching)
 - Prefer using FIXTURES in tests where possible
+- When asserting the same attribute twice with different expected values (e.g. after a state change), use the `do_assert` fixture instead of `assert` to avoid mypy [unreachable] errors caused by type narrowing. Within a single test, do not mix `assert` and `do_assert` for the same kind of assertions.
 - Use "just test-cli ARGUMENTS" instead of "python -m pytest ARGUMENTS" or "just test ARGUMENTS" or "pytest ARGUMENTS" for running tests
 - imports to top of the file and not inside functions
 - To build docs, use "uv run sphinx-build -b html docs/source docs/build". Do NOT use "just docs" as it never returns!

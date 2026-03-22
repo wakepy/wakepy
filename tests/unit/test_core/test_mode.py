@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import copy
+import queue
 import re
 import threading
 import typing
@@ -9,14 +11,18 @@ from unittest.mock import Mock
 
 import pytest
 
+import wakepy.core.mode as _mode_module
 from tests.unit.test_core.testmethods import get_test_method_class
 from wakepy import (
     ActivationError,
     ActivationResult,
+    ActivationWarning,
     ContextAlreadyEnteredError,
     Method,
     MethodInfo,
     Mode,
+    global_modes,
+    modecount,
 )
 from wakepy.core import PlatformType
 from wakepy.core.activationresult import MethodActivationResult
@@ -25,7 +31,6 @@ from wakepy.core.dbus import DBusAdapter
 from wakepy.core.heartbeat import Heartbeat
 from wakepy.core.mode import (
     ModeExit,
-    ThreadSafetyWarning,
     UnrecognizedMethodNames,
     _ModeParams,
     handle_activation_fail,
@@ -90,14 +95,16 @@ def mode0(
     methods_abc: List[Type[Method]],
     testmode_cls: Type[Mode],
     methods_priority0: List[str],
-) -> Mode:
+) -> typing.Generator[Mode, None, None]:
     params = _ModeParams(
         name="TestMode",
         method_classes=methods_abc,
         dbus_adapter=None,
         methods_priority=methods_priority0,
     )
-    return testmode_cls(params)
+    mode = testmode_cls(params)
+    yield mode
+    mode.exit()  # safe no-op if never entered
 
 
 @pytest.fixture
@@ -114,6 +121,38 @@ def mode1_with_dbus(
         dbus_adapter=dbus_adapter_cls,
     )
     return testmode_cls(params)
+
+
+class SyncButton:
+    def __init__(self) -> None:
+        self.on_click: typing.Optional[typing.Callable[[object], None]] = None
+
+    def click(self, e: object = None) -> None:
+        if self.on_click is not None:
+            self.on_click(e)
+
+
+class AsyncButton:
+    def __init__(self) -> None:
+        self.on_click: typing.Optional[
+            typing.Callable[[object], typing.Coroutine[None, None, None]]
+        ] = None
+
+    def click(self, e: object = None) -> None:
+        if self.on_click is not None:
+            asyncio.run(self.on_click(e))
+
+
+@pytest.fixture
+def sync_event_button() -> SyncButton:
+    """Simulates a UI button that dispatches only sync on_click handlers."""
+    return SyncButton()
+
+
+@pytest.fixture
+def async_event_button() -> AsyncButton:
+    """Simulates a UI button that dispatches async on_click handlers."""
+    return AsyncButton()
 
 
 class TestProbeAllMethods:
@@ -222,11 +261,9 @@ class TestModeContextManager:
         with Mode(params):
             ...
 
+    def test_active_method_and_method(self, methods_abc):
+        """Test the .active_method and .method attributes"""
 
-class TestModeActiveAndUsedMethod:
-    """Test the .active_method and .method attributes"""
-
-    def test_simple(self, methods_abc):
         [MethodA, MethodB, _] = methods_abc
         params = _ModeParams(method_classes=[MethodA, MethodB])
         mode = Mode(params)
@@ -249,21 +286,8 @@ class TestModeActiveAndUsedMethod:
 
 
 @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
-class TestModeActivateDeactivate:
-    """Tests for Mode._activate and Mode._deactivate"""
-
-    def test_activate_twice(
-        self,
-        mode1_with_dbus: Mode,
-    ):
-        # Run twice. The dbus adapter instance is created on the first time
-        # and reused the second time.
-        with mode1_with_dbus:
-            ...
-        with mode1_with_dbus:
-            ...
-
-    def test_runtime_error_if_deactivating_without_active_mode(
+class TestUnsetCurrentMode:
+    def test_runtime_error_if_exiting_without_active_mode(
         self,
         mode0: Mode,
     ):
@@ -271,7 +295,7 @@ class TestModeActivateDeactivate:
         # test coverage. A situation like this is unlikely to happen ever.
         with pytest.raises(
             RuntimeError,
-            match="Cannot deactivate mode: TestMode. The active_method is None! This should never happen",  # noqa: E501
+            match="Cannot exit mode: TestMode. The active_method is None! This should never happen",  # noqa: E501
         ):
             with mode0:
                 # Setting active method
@@ -281,8 +305,10 @@ class TestModeActivateDeactivate:
         # state will not be correct. As said, this should never ever happen
         # in a real life situation.
         mode0._unset_current_mode()
+        _mode_module._all_modes.remove(mode0)
+        mode0._has_entered_context = False
 
-    def test_unset_before_activate(
+    def test_unset_before_enter(
         self,
         mode0: Mode,
     ):
@@ -292,19 +318,292 @@ class TestModeActivateDeactivate:
         ):
             mode0._unset_current_mode()
 
-    def test_activate_twice_without_deactivation(
+
+class TestModeEnterExit:
+    """Tests for Mode.enter and Mode.exit (public API)"""
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_enter_exit_explicit_syntax(
+        self,
+        mode0: Mode,
+        do_assert: typing.Callable[[bool], None],
+    ):
+        do_assert(mode0.active is None)
+        mode0.enter()
+        do_assert(mode0.active is True)
+        mode0.exit()
+        do_assert(mode0.active is None)
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_enter_returns_activation_result(
         self,
         mode0: Mode,
     ):
-        # It should not be possible to activate a mode twice without
-        # deactivating it first.
-        with mode0 as m:
-            with pytest.raises(
-                ContextAlreadyEnteredError,
-                match="A Mode can only be activated once!.*",
-            ):
-                with m:
-                    ...
+        result = mode0.enter()
+        assert isinstance(result, ActivationResult)
+        mode0.exit()
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_enter_twice_warns_by_default(
+        self,
+        mode0: Mode,
+    ):
+        # Default if_already_entered="warn": second enter() emits UserWarning
+        mode0.enter()
+        with pytest.warns(UserWarning, match="already active"):
+            mode0.enter()
+        mode0.exit()
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_enter_twice_warn(
+        self,
+        mode0: Mode,
+    ):
+        # Explicit "warn"
+        mode0.enter()
+        with pytest.warns(UserWarning, match="already active"):
+            mode0.enter(if_already_entered="warn")
+        mode0.exit()
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_enter_twice_raises_when_error(
+        self,
+        mode0: Mode,
+    ):
+        # if_already_entered="error": second enter() raises
+        # ContextAlreadyEnteredError
+        mode0.enter()
+        with pytest.raises(
+            ContextAlreadyEnteredError,
+            match="A Mode can only be entered once!.*",
+        ):
+            mode0.enter(if_already_entered="error")
+        mode0.exit()
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_enter_twice_pass_is_silent(
+        self,
+        mode0: Mode,
+    ):
+        # if_already_entered="pass": second enter() is a silent no-op
+        mode0.enter()
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")  # raise error on any warnings
+            mode0.enter(if_already_entered="pass")  # must not raise or warn
+        mode0.exit()
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_reenter_after_exit(
+        self,
+        mode0: Mode,
+    ):
+        """After exit, it should be possible to enter again."""
+        mode0.enter()
+        mode0.exit()
+
+        mode0.enter()
+        assert mode0.active is True
+        mode0.exit()
+        assert mode0.active is None
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_event_driven_ui_pattern(
+        self,
+        mode0: Mode,
+    ):
+        """Test the event-driven UI pattern where enter/exit are
+        called from separate callbacks (e.g. button clicks in a GUI app)."""
+
+        # Simulates the state of a UI app
+        status_text = ""
+
+        def update_status() -> None:
+            nonlocal status_text
+            status_text = f"Wakelock enabled: {mode0.active}"
+
+        def enable_lock() -> None:
+            if mode0.active:
+                return
+            mode0.enter()
+            update_status()
+
+        def disable_lock() -> None:
+            mode0.exit()
+            update_status()
+
+        # Initial state
+        update_status()
+        assert status_text == "Wakelock enabled: None"
+
+        # Simulate "Enable" button click
+        enable_lock()
+        assert status_text == "Wakelock enabled: True"
+
+        # Clicking "Enable" again should be a no-op
+        enable_lock()
+        assert status_text == "Wakelock enabled: True"
+
+        # Simulate "Disable" button click
+        disable_lock()
+        assert status_text == "Wakelock enabled: None"
+
+        # Re-enabling after disable should work
+        enable_lock()
+        assert status_text == "Wakelock enabled: True"
+        disable_lock()
+        assert status_text == "Wakelock enabled: None"
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_event_driven_sync_handler_pattern(
+        self,
+        mode0: Mode,
+        sync_event_button: SyncButton,
+        do_assert: typing.Callable[[bool], None],
+    ) -> None:
+        """Sync on_click handlers can enter/exit a mode.
+
+        Simulates a GUI framework (e.g. flet) where handlers are plain
+        functions.
+        """
+
+        def sync_activate(e: object) -> None:
+            mode0.enter()
+
+        def sync_deactivate(e: object) -> None:
+            mode0.exit()
+
+        sync_event_button.on_click = sync_activate
+        sync_event_button.click()
+        do_assert(mode0.active is True)
+
+        sync_event_button.on_click = sync_deactivate
+        sync_event_button.click()
+        do_assert(mode0.active is None)
+
+        # Toggle again to confirm repeated use works
+        sync_event_button.on_click = sync_activate
+        sync_event_button.click()
+        do_assert(mode0.active is True)
+        mode0.exit()
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_event_driven_async_handler_pattern(
+        self,
+        mode0: Mode,
+        async_event_button: AsyncButton,
+        do_assert: typing.Callable[[bool], None],
+    ) -> None:
+        """Async on_click handlers can enter/exit a mode.
+
+        Simulates a GUI framework (e.g. flet) where handlers are async
+        functions.
+        """
+
+        async def async_activate(e: object) -> None:
+            mode0.enter()
+
+        async def async_deactivate(e: object) -> None:
+            mode0.exit()
+
+        async_event_button.on_click = async_activate
+        async_event_button.click()
+        do_assert(mode0.active is True)
+
+        async_event_button.on_click = async_deactivate
+        async_event_button.click()
+        do_assert(mode0.active is None)
+
+        # Toggle again to confirm repeated use works
+        async_event_button.on_click = async_activate
+        async_event_button.click()
+        do_assert(mode0.active is True)
+        mode0.exit()
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_enter_returns_same_result_instance_when_already_active(
+        self,
+        mode0: Mode,
+    ) -> None:
+        """enter() returns the exact same ActivationResult object each time
+        while the mode is active; a new instance is created after exit."""
+        res1 = mode0.enter()
+        res2 = mode0.enter(if_already_entered="pass")
+        assert res2 is res1  # same ActivationResult instance, not a copy
+
+        mode0.exit()
+        res3 = mode0.enter()
+        assert res3 is not res1  # new ActivationResult after re-activation
+        mode0.exit()
+
+    def test_exit_when_never_entered(self, mode0: Mode):
+        """exit() is a safe no-op when enter() was never called."""
+        assert mode0.active is None
+        mode0.exit()
+        assert mode0.active is None
+
+    def test_exit_after_failed_enter(self, mode0: Mode, monkeypatch):
+        """exit() is a safe no-op after a failed enter()."""
+        monkeypatch.setenv("WAKEPY_FORCE_FAILURE", "1")
+        with pytest.warns(ActivationWarning):
+            mode0.enter()
+
+        assert mode0.active is False
+
+        mode0.exit()  # must not raise
+        assert mode0.active is None
+
+    def test_exit_twice(self, mode0: Mode):
+        """Second exit() is a safe no-op."""
+        mode0.enter()
+        mode0.exit()
+        mode0.exit()  # must not raise
+        assert mode0.active is None
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_try_finally_pattern(self, mode0: Mode):
+        """The documented try/finally pattern works correctly."""
+        try:
+            mode0.enter()
+            raise RuntimeError("simulated error")
+        except RuntimeError:
+            pass
+        finally:
+            mode0.exit()
+
+        assert mode0.active is None
+
+    def test_enter_on_fail_error_succeeds(self):
+        params = _ModeParams(method_classes=[], on_fail="error")
+        mode = Mode(params)
+
+        with pytest.raises(ActivationError):
+            mode.enter()
+
+        assert mode.active is False
+        assert mode._has_entered_context
+        mode.exit()
+
+    def test_enter_on_fail_warn_succeeds(self):
+        params = _ModeParams(method_classes=[], on_fail="warn")
+        mode = Mode(params)
+
+        with pytest.warns(ActivationWarning):
+            mode.enter()
+
+        assert mode.active is False
+        assert mode._has_entered_context
+        mode.exit()
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_exit_when_not_in_all_modes(self, mode0: Mode) -> None:
+        """exit() is safe if mode was removed from _all_modes."""
+
+        mode0.enter()
+        # Simulate an external removal from _all_modes (concurrent cleanup)
+        _mode_module._all_modes.remove(mode0)
+        # exit() must not raise even if self is not in _all_modes
+        mode0.exit()
+        assert mode0.active is None
 
 
 @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
@@ -429,7 +728,7 @@ class TestSelectMethods:
 
 
 class TestActivateFirstSuccessfulMethod:
-    def test_activate_without_methods(self):
+    def test_no_methods(self):
         # Act
         res, active_method, heartbeat = Mode._activate_first_successful_method(
             [], dbus_adapter=None
@@ -440,7 +739,7 @@ class TestActivateFirstSuccessfulMethod:
         assert active_method is None
         assert heartbeat is None
 
-    def test_activate_function_success(self):
+    def test_success(self):
         # Setup
         methodcls_fail = get_test_method_class(enter_mode=Exception("error"))
         methodcls_success = get_test_method_class(enter_mode=None)
@@ -464,7 +763,7 @@ class TestActivateFirstSuccessfulMethod:
         assert isinstance(active_method, methodcls_success)
         assert heartbeat is None
 
-    def test_activate_function_success_with_heartbeat(self):
+    def test_success_with_heartbeat(self):
         # Setup
         methodcls_success_with_hb = get_test_method_class(
             enter_mode=None, heartbeat=None
@@ -487,7 +786,7 @@ class TestActivateFirstSuccessfulMethod:
         assert isinstance(active_method, methodcls_success_with_hb)
         assert isinstance(heartbeat, Heartbeat)
 
-    def test_activate_function_failure(self):
+    def test_failure(self):
         # Setup
         exc = Exception("error")
         methodcls_fail = get_test_method_class(enter_mode=exc)
@@ -512,23 +811,142 @@ class TestActivateFirstSuccessfulMethod:
         assert heartbeat is None
 
 
-def test_use_mode_in_separate_thread(mode0: Mode):
-    """Modes should be only used in the thread they were created in.
-    Test that using a Mode in a different thread issues a Warning."""
+class TestModeThreadSafety:
+    """Tests for thread-safe enter/exit behavior."""
 
-    # Setup
-    def func():
-        with pytest.warns(ThreadSafetyWarning):
-            with mode0:
-                ...
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_concurrent_enter_exactly_one_succeeds(self, mode0: Mode) -> None:
+        """Multiple threads calling enter() simultaneously: exactly one
+        proceeds, the other gets a UserWarning and returns the existing
+        result."""
 
-    t = threading.Thread(target=func)
+        n_threads = 6
+        barrier = threading.Barrier(n_threads)
 
-    # Act and Assert
-    t.start()
+        def worker() -> None:
+            barrier.wait()
+            mode0.enter(if_already_entered="warn")
 
-    # Cleanup
-    t.join()
+        threads = [threading.Thread(target=worker) for _ in range(n_threads)]
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+
+        user_warnings = [w for w in caught if issubclass(w.category, UserWarning)]
+
+        # First one to enter had no warnings, and all the rest saw a warning.
+        assert len(user_warnings) == n_threads - 1
+        for w in user_warnings:
+            assert "already active" in str(w.message)
+
+        mode0.exit()
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_concurrent_enter_pass_no_warning(self, mode0: Mode) -> None:
+        """Multiple threads, if_already_entered='pass': no warnings, no
+        errors."""
+        n_threads = 6
+        barrier = threading.Barrier(n_threads)
+
+        def worker() -> None:
+            barrier.wait()
+            mode0.enter(if_already_entered="pass")
+
+        threads = [threading.Thread(target=worker) for _ in range(n_threads)]
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+
+        user_warnings = [w for w in caught if issubclass(w.category, UserWarning)]
+
+        # No warning
+        assert len(user_warnings) == 0
+
+        mode0.exit()
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_cross_thread_exit_does_not_crash(self, mode0: Mode) -> None:
+        """enter() on thread A, exit() on thread B: no exception."""
+        mode0.enter()
+        assert mode0.active is True
+
+        def deactivate_in_thread() -> None:
+            mode0.exit()
+
+        t = threading.Thread(target=deactivate_in_thread)
+        t.start()
+        t.join()
+
+        assert mode0.active is None
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_global_modes_reflects_manual_enter(self, mode0: Mode) -> None:
+        """global_modes() and modecount() include manually-activated modes."""
+
+        assert modecount() == 0
+        mode0.enter()
+        assert mode0 in global_modes()
+        assert modecount() == 1
+        mode0.exit()
+        assert mode0 not in global_modes()
+        assert modecount() == 0
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_concurrent_enter_and_exit_no_crash(self, mode0: Mode) -> None:
+        """Multiple threads calling enter() and exit() simultaneously
+        must never crash or corrupt state — only clean exceptions allowed."""
+        errors: list[Exception] = []
+        barrier = threading.Barrier(6)
+
+        def activator() -> None:
+            barrier.wait()
+            try:
+                mode0.enter(if_already_entered="pass")
+            except Exception as e:
+                errors.append(e)
+
+        def deactivator() -> None:
+            barrier.wait()
+            try:
+                mode0.exit()
+            except Exception as e:
+                errors.append(e)
+
+        threads = [threading.Thread(target=activator) for _ in range(3)] + [
+            threading.Thread(target=deactivator) for _ in range(3)
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert errors == [], f"Unexpected errors from threads: {errors}"
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_global_modes_visible_from_other_thread(self, mode0: Mode) -> None:
+        """global_modes() from another thread returns the same result."""
+
+        mode0.enter()
+
+        results: queue.Queue[bool] = queue.Queue()
+
+        def check_from_thread() -> None:
+            results.put(mode0 in global_modes())
+
+        t = threading.Thread(target=check_from_thread)
+        t.start()
+        t.join()
+
+        assert results.get() is True
+        mode0.exit()
 
 
 class TestWakepyForceFailure:

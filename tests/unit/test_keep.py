@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import threading
 import typing
 from itertools import count
@@ -238,23 +237,17 @@ def test_decorator_syntax_without_parenthesis(monkeypatch):
     long_running_function()
 
 
-def test_unset_current_mode(caplog):
-    """This is pretty much a hypothetical situation; this test exists merely
-    for test coverage."""
+def test_unset_current_mode():
+    """__exit__ does not raise even if mode was removed from _all_modes before
+    deactivate() runs (defensive: deactivate uses except ValueError to handle
+    the case where the mode was already removed externally)."""
 
     # Setup
     mode = keep.running(methods=["MethodA"])
     mode.__enter__()
-    # Manually remove the mode. Just to create the warning.
+    # Manually remove the mode to simulate an external removal, so that
+    # deactivate() inside __exit__ hits the except ValueError branch.
     _all_modes.remove(mode)
 
-    # Act
-    with caplog.at_level(logging.WARNING):
-        mode.__exit__(None, None, None)
-
-    # Assert
-    assert caplog.text.startswith("WARNING ")
-    assert (
-        "was not found in _all_modes. This can happen if the Mode was not entered "
-        "in the current thread or context, or if it was already removed." in caplog.text
-    )
+    # Act: __exit__ must not raise even though mode is not in _all_modes
+    mode.__exit__(None, None, None)
