@@ -217,15 +217,15 @@ exclude_lines = [
 ]
 
 [tool.coverage.coverage_conditional_plugin.omit]
-# Dbus adapters are only available on linux
-"platform_system != 'Linux'" = "**/wakepy/dbus_adapters/*.py"
+# Dbus adapters are only available on linux with dbus-daemon installed
+"platform_system != 'Linux' or not __import__('shutil').which('dbus-daemon')" = "**/wakepy/dbus_adapters/*.py"
 # Windows methods only need to be tested on Windows
 "platform_system != 'Windows'" = "**/wakepy/methods/windows.py"
 # MacOS methods only need to be tested on MacOS
 "platform_system != 'Darwin'" = "**/wakepy/methods/macos.py"
 
 [tool.coverage.coverage_conditional_plugin.rules]
-no-cover-if-no-dbus = "platform_system != 'Linux'"
+no-cover-if-no-dbus = "platform_system != 'Linux' or not __import__('shutil').which('dbus-daemon')"
 no-cover-if-py-gte-38 = "sys_version_info >= (3, 8)"
 no-cover-if-py-lt-38 = "sys_version_info < (3, 8)"
 no-cover-if-py-gte-310 = "sys_version_info >= (3, 10)"

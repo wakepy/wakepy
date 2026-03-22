@@ -6,11 +6,12 @@
 ### ✨ Features
 
 #### ✨ Python API
-
 - {func}`Mode.enter() <wakepy.Mode.enter>` and {func}`Mode.exit() <wakepy.Mode.exit>`  are now part of the public API. ([#600](https://github.com/wakepy/wakepy/pull/600))
 - 🚨 {attr}`Mode.active <wakepy.Mode.active>` changed from `bool` to `bool | None`. The value is now `None` when the Mode has not been activated yet or has been deactivated, `True` when activated successfully, and `False` when activation was attempted but failed. Inside the `with` block, the value is always `True` or `False`. Previously, both "not yet activated" and "activation failed" were represented as `False`. This is a breaking change only if code checks `mode.active` outside the context manager *and* compares with `is False` or `== False`. Unlikely, but possible. Hence, this major version bump. ([#595](https://github.com/wakepy/wakepy/pull/595))
 - 🚨 `ThreadSafetyWarning` is **removed** in 2.0.0. wakepy no longer issues this warning, entering and exiting on different threads is explicitly supported.
 
+### 👷 Development Experience & Tooling
+- Fix code coverage on devcontainers ([#601](https://github.com/wakepy/wakepy/pull/601))
 
 ### 📖 Documentation
 - Document Cinnamon support ([#587](https://github.com/wakepy/wakepy/pull/587))
