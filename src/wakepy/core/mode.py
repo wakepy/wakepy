@@ -687,6 +687,9 @@ class Mode:
                 return self.result
             self._enter()
 
+        if not self.active:
+            handle_activation_fail(self.on_fail, self.result)
+
         return self.result
 
     def _enter(self) -> None:
@@ -713,6 +716,8 @@ class Mode:
         )
 
         if self.active:
+            with _mode_lock:
+                _all_modes.append(self)
             logger.info(
                 'Activated wakepy mode "%s" with method: %s',
                 self.name,
@@ -720,12 +725,6 @@ class Mode:
             )
         else:
             logger.info(self.result.get_failure_text(style="inline"))
-
-        if not self.active:
-            handle_activation_fail(self.on_fail, self.result)
-
-        with _mode_lock:
-            _all_modes.append(self)
 
     def _activate(self, methods: List[Type[Method]]) -> List[MethodActivationResult]:
         """Try methods in order until the first success. Sets method state.
