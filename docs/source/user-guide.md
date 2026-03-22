@@ -6,7 +6,7 @@ The core concept of wakepy are different keepawake [Modes](#wakepy-modes). The M
 
 # Basic Usage
 
-The [Wakepy Modes](#wakepy-modes) are available as factory functions {func}`keep.running() <wakepy.keep.running>` and {func}`keep.presenting() <wakepy.keep.presenting>`, which may be used as both [decorators](#decorator-syntax) and as [context manager factories](#context-manager-syntax). These are the main functions that you interact with when you use wakepy.
+{func}`keep.running() <wakepy.keep.running>` and {func}`keep.presenting() <wakepy.keep.presenting>` return {class}`Mode <wakepy.Mode>` instances which can be used as [decorators](#decorator-syntax), as [context managers](#context-manager-syntax), or with the [explicit enter/exit syntax](#explicit-enter-exit-syntax).
 
 
 (decorator-syntax)=
@@ -30,10 +30,11 @@ def long_running_function():
 syntax, you should use {func}`current_mode() <wakepy.current_mode>`, as that is
 the [multi-threading safe](#multithreading-multiprocessing) way for doing it.
 - Using the [decorator syntax](#decorator-syntax)  is functionally equivalent of using the [context managers](#context-manager-syntax); the decorated function will create a new {class}`Mode <wakepy.Mode>` instance under the hood every time you call the decorated function, and will use it as a context manager automatically.
+
 (context-manager-syntax)=
 ## Context Managers
 
-Because [`keep.running()`](#keep-running-mode) or [`keep.presenting()`](#keep-presenting-mode)  return Mode instances which are context managers, they can be used with the `with` statement:
+Because [`keep.running()`](#keep-running-mode) or [`keep.presenting()`](#keep-presenting-mode)  return Mode instances which are [context managers](https://peps.python.org/pep-0343/), they can be used with the `with` statement:
 
 ```{code-block} python
 from wakepy import keep
@@ -53,6 +54,37 @@ with keep.running() as m:
 [Mode instances](#mode-instances) and the API reference for {class}`~wakepy.Mode`
 ```
 
+
+(explicit-enter-exit-syntax)=
+## Explicit enter/exit syntax
+```{versionadded} 2.0.0
+```
+
+In event-driven applications or GUI frameworks where activation and deactivation happen in separate callbacks (e.g. button clicks), the context manager is impractical. In these cases, use {meth}`Mode.enter() <wakepy.Mode.enter>` and {meth}`Mode.exit() <wakepy.Mode.exit>` explicitly:
+
+```{code-block} python
+from wakepy import keep
+
+mode = keep.running()
+try:
+    mode.enter()
+    # your event loop, GUI mainloop, etc.
+finally:
+    mode.exit()  # safe even if enter() failed or was never called
+```
+
+```{warning}
+When using the explicit enter syntax, the caller is responsible for ensuring `exit()` is called. Always call `exit()` in a `finally` block (or equivalent cleanup handler) to guarantee the mode is deactivated even if an exception occurs.
+```
+
+**Notes**:
+- `exit()` is always safe to call — even if `enter()` was never called, failed, or was already called once before. No guard like `if mode.active: mode.exit()` is needed.
+- For most use cases, the [context manager](#context-manager-syntax) or [decorator](#decorator-syntax) syntax are preferred, as they handle cleanup automatically.
+- If `enter()` is accidentally called twice on the same Mode instance, a `UserWarning` is issued by default. Pass `if_already_entered="pass"` to silence it or `if_already_entered="error"` to raise {class}`~wakepy.ContextAlreadyEnteredError`.
+
+```{seealso}
+{meth}`Mode.enter() <wakepy.Mode.enter>` and {meth}`Mode.exit() <wakepy.Mode.exit>`
+```
 
 
 (mode-instances)=

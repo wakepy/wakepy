@@ -60,6 +60,8 @@ if typing.TYPE_CHECKING:
 
     OnFail = Union[Literal["error", "warn", "pass"], Callable[[ActivationResult], None]]
 
+    IfAlreadyEntered = Literal["warn", "pass", "error"]
+
     MethodClsCollection = Collection[MethodCls]
 
 
@@ -88,13 +90,6 @@ class NoMethodsWarning(UserWarning):
     `UserWarning <https://docs.python.org/3/library/exceptions.html#UserWarning>`_."""
 
 
-class ThreadSafetyWarning(UserWarning):
-    """Issued if entering or exiting a Mode in a different thread than the one
-    it was created in. This is a subclass of `UserWarning \\
-    <https://docs.python.org/3/library/exceptions.html#UserWarning>`_.
-    """
-
-
 class ModeExit(Exception):
     """This can be used to exit from any wakepy mode with block. Just raise it
     within any with block which is a wakepy mode, and no code below it will
@@ -119,10 +114,18 @@ class ModeExit(Exception):
 
 
 class ContextAlreadyEnteredError(RuntimeError):
-    """Raised if the context of a :class:`Mode` is already entered. This is a
-    subclass of `RuntimeError <https://docs.python.org/3/library/exceptions.html#RuntimeError>`_.
+    """Raised when :meth:`Mode.enter() <wakepy.Mode.enter>` is called on a
+    Mode that is already active and ``if_already_entered="error"`` is passed.
+    This is a subclass of `RuntimeError <https://docs.python.org/3/library/exceptions.html#RuntimeError>`_.
 
     .. versionadded:: 1.0.0
+
+    .. versionchanged:: 2.0.0
+        Previously raised unconditionally on double entry. Now only raised when
+        ``if_already_entered="error"`` is explicitly passed to
+        :meth:`Mode.enter() <wakepy.Mode.enter>`.
+
+    .. seealso:: :meth:`Mode.enter() <wakepy.Mode.enter>`
     """
 
 
@@ -289,7 +292,6 @@ def current_mode() -> Mode:
       :func:`modecount()  <wakepy.modecount>`,
       :ref:`multithreading-multiprocessing`
     """
-
     try:
         return _current_mode.get()
     except LookupError:
@@ -345,25 +347,56 @@ def modecount() -> int:
         _mode_lock.release()
 
 
+def _handle_already_entered(
+    if_already_entered: IfAlreadyEntered,
+) -> None:
+    """Handle the case when enter() is called on an already-entered Mode."""
+    if if_already_entered == "pass":
+        return
+    elif if_already_entered == "warn":
+        warnings.warn(
+            "Mode is already active. Ignoring second enter() call. "
+            "Pass if_already_entered='pass' to silence this warning.",
+            UserWarning,
+            stacklevel=3,
+        )
+    else:
+        raise ContextAlreadyEnteredError(
+            "A Mode can only be entered once! Use a separate Mode instance "
+            "for each activation."
+        )
+
+
 class Mode:
     """Mode instances are the most important objects, and they provide the main
     API of wakepy for the user. Typically, :class:`Mode` instances are created
     with the factory functions like :func:`keep.presenting() \\
     <wakepy.keep.presenting>` and :func:`keep.running() <wakepy.keep.running>`
 
-    The Mode instances are `context managers \\
-    <https://peps.python.org/pep-0343/>`_, which means that they can be used
-    with the `with` statement, like this::
+    There are three ways to use Mode instances:
+
+    1. As :ref:`context managers <context-manager-syntax>`::
 
         with keep.running() as m:
             type(m) # <class 'wakepy.Mode'>
+            # do something that takes a long time
 
-    The factory functions (and the Mode instances) are also decorators, which
-    means you can also use them like this::
+    2. As :ref:`decorators <decorator-syntax>`::
 
         @keep.running
         def long_running_function():
-            # do something
+            # do something that takes a long time
+
+    3. With :ref:`explicit enter/exit <explicit-enter-exit-syntax>` — useful
+       in event-driven apps or GUI frameworks where activation and deactivation
+       happen in separate callbacks::
+
+        mode = keep.running()
+        try:
+            mode.enter()
+            # event loop, GUI mainloop, etc. (takes a long time)
+        finally:
+            mode.exit()  # safe even if enter() failed
 
     For more information about how to use the Mode instances, see the
     :ref:`user-guide-page`.
@@ -492,7 +525,7 @@ class Mode:
 
         self.on_fail = params.on_fail
         self.methods_priority = params.methods_priority
-        self._thread_id = threading.get_ident()
+        self._lock = threading.Lock()
         self._context_token: Optional[Token[Mode]] = None
 
         self._has_entered_context: bool = False
@@ -519,7 +552,7 @@ class Mode:
 
     def __enter__(self) -> Mode:
         """Called automatically when entering a with block and a instance of
-        Mode is used as the context expression. This tries to activate the
+        Mode is used as the context expression. This tries to enter the
         Mode using :attr:`~wakepy.Mode.method_classes`.
         """
         logger.debug(
@@ -528,7 +561,7 @@ class Mode:
             id(self),
             threading.get_ident(),
         )
-        self._activate()
+        self.enter()
         self._set_current_mode()
         return self
 
@@ -549,7 +582,7 @@ class Mode:
         """
 
         # These are not used but are part of context manager protocol.
-        #  make linters happy
+        # Make linters happy
         _ = exc_type
         _ = traceback
 
@@ -559,7 +592,7 @@ class Mode:
             id(self),
             threading.get_ident(),
         )
-        self._deactivate()
+        self.exit()
         self._unset_current_mode()
 
         if exception is None or isinstance(exception, ModeExit):
@@ -574,6 +607,187 @@ class Mode:
         # unreachable.
 
         return False
+
+    def enter(self, if_already_entered: IfAlreadyEntered = "warn") -> ActivationResult:
+        """Enter the mode and try to activate it.
+
+        Use this when a context manager is impractical — for example in
+        event-driven applications or GUI frameworks where the activation and
+        deactivation happen in separate callbacks (e.g. button clicks).
+
+        For most use cases, the :ref:`context manager <context-manager-syntax>`
+        or :ref:`decorator <decorator-syntax>` syntax are
+        preferred::
+
+            with keep.running():
+                # your long-running work here
+
+            @keep.running
+            def long_running_task():
+                # your long-running work here
+
+        When ``enter()`` is used directly, user is responsible for ensuring
+        that :meth:`exit` is guaranteed to run. Since :meth:`exit` is always a
+        safe no-op (even if ``enter()`` was never called or failed), it can
+        be called unconditionally in a ``finally`` block or cleanup handler.
+
+        .. seealso:: :meth:`exit` — the counterpart that deactivates the mode.
+
+        .. versionadded:: 2.0.0
+
+        Parameters
+        ----------
+        if_already_entered : "warn", "pass" or "error". Defaults to "warn".
+            Controls behavior when enter() is called on a Mode that is
+            already entered. ``"warn"`` emits a UserWarning and returns the
+            existing result (no-op). ``"pass"`` silently returns the existing
+            result (no-op). ``"error"`` raises
+            :class:`ContextAlreadyEnteredError`.
+
+        Returns
+        -------
+        :class:`ActivationResult`
+            The result of the activation. Check
+            :attr:`ActivationResult.success` (or :attr:`active`) to see if
+            activation succeeded.
+
+        Warns
+        -----
+        UserWarning
+            If the mode is already entered and ``if_already_entered="warn"``
+            (the default). Pass ``if_already_entered="pass"`` to silence, or
+            ``if_already_entered="error"`` to raise
+            :class:`ContextAlreadyEnteredError` instead.
+
+        Raises
+        ------
+        ContextAlreadyEnteredError
+            If the mode has already been entered and
+            ``if_already_entered="error"`` is passed.
+
+
+
+        Examples
+        --------
+        Typical try/finally pattern for reliable cleanup::
+
+            mode = keep.running()
+            try:
+                mode.enter()
+                # your event loop, GUI mainloop, etc.
+            finally:
+                mode.exit()  # safe even if enter() failed
+
+        The ``mode.exit()`` in the finally block guarantees that the mode is
+        exited properly.
+        """
+        with self._lock:
+            if self._has_entered_context:
+                _handle_already_entered(if_already_entered)
+                return self.result
+            self._enter()
+
+        return self.result
+
+    def _enter(self) -> None:
+        """Orchestrate full mode entry. Called with self._lock held."""
+        self._has_entered_context = True
+        possibly_supported, unsupported = self._get_supported_and_unsupported_methods()
+
+        logger.info(
+            'The full list of prioritized wakepy Methods for Mode "%s" is: %s',
+            self.name,
+            [m.name for m in possibly_supported],
+        )
+        logger.info(
+            'Unsupported wakepy Methods on %s, "%s" Mode: %s',
+            CURRENT_PLATFORM,
+            self.name,
+            [m.name for m in unsupported],
+        )
+
+        method_results = self._activate(possibly_supported)
+        unsupported_results = self._create_unsupported_results(unsupported)
+        self.result = ActivationResult(
+            method_results + unsupported_results, mode_name=self.name
+        )
+
+        if self.active:
+            logger.info(
+                'Activated wakepy mode "%s" with method: %s',
+                self.name,
+                self.active_method,
+            )
+        else:
+            logger.info(self.result.get_failure_text(style="inline"))
+
+        if not self.active:
+            handle_activation_fail(self.on_fail, self.result)
+
+        with _mode_lock:
+            _all_modes.append(self)
+
+    def _activate(self, methods: List[Type[Method]]) -> List[MethodActivationResult]:
+        """Try methods in order until the first success. Sets method state.
+
+        Returns the list of :class:`MethodActivationResult` for all tried
+        (and untried) methods. Does not include unsupported methods.
+        """
+        method_kwargs = self._get_method_kwargs()
+        methodresults, self._active_method, self.heartbeat = (
+            self._activate_first_successful_method(
+                method_classes=methods, **method_kwargs
+            )
+        )
+        self.active_method = (
+            MethodInfo._from_method(self._active_method)
+            if self._active_method
+            else None
+        )
+        self.active = self._active_method is not None
+        self._method = self._active_method
+        self.method = self.active_method
+        return methodresults
+
+    def exit(self) -> None:
+        """Exit the mode, and deactivates if it is active.
+
+        This is the counterpart of :meth:`enter`. It is always safe to
+        call — even if :meth:`enter` was never called, failed, or was
+        already called once before. No guard like ``if mode.active:
+        mode.exit()`` is needed.
+
+        Put ``exit()`` unconditionally in a ``finally`` block or cleanup
+        handler. See the try/finally pattern in :meth:`enter` for the
+        recommended usage.
+
+        .. seealso:: :meth:`enter` — the counterpart that enters the mode.
+
+        .. versionadded:: 2.0.0
+
+
+        """
+        if not self._has_entered_context:
+            return
+
+        with self._lock:
+            if self.active:
+                if self._active_method is None:
+                    raise RuntimeError(
+                        f"Cannot exit mode: {str(self.name)}. "
+                        "The active_method is None! This should never happen."
+                    )
+                deactivate_method(self._active_method, self.heartbeat)
+            self._active_method = None
+            self.active_method = None
+            self.heartbeat = None
+            self.active = None
+            self._has_entered_context = False
+            with _mode_lock:
+                try:
+                    _all_modes.remove(self)
+                except ValueError:
+                    pass  # defensive: already removed
 
     def probe_all_methods(self) -> ProbingResults:
         """Probe all methods for a mode.
@@ -593,8 +807,6 @@ class Mode:
             Result containing activation outcomes for each tested Method. Tells
             which Methods would work on the current system and which would not.
         """
-        self._thread_check()
-
         possibly_supported, unsupported = self._get_supported_and_unsupported_methods()
 
         method_kwargs = self._get_method_kwargs()
@@ -607,73 +819,6 @@ class Mode:
         results.extend(platform_unsupported_results)
         return ProbingResults(results, mode_name=str(self.name))
 
-    def _activate(self) -> ActivationResult:
-        """Activates the mode with one of the methods which belong to the mode.
-        The methods are used with descending priority; highest priority first,
-        and the priority is determined with the mode.methods_priority.
-
-        The activation may be faked as to be successful by using the
-        WAKEPY_FAKE_SUCCESS environment variable, or forced to fail by using
-        the WAKEPY_FORCE_FAILURE environment variable.
-        """
-        self._thread_check()
-        if self._has_entered_context:
-            raise ContextAlreadyEnteredError(
-                "A Mode can only be activated once! If "
-                "you need to activate two Modes, you need to use two separate Mode "
-                "instances."
-            )
-
-        possibly_supported, unsupported = self._get_supported_and_unsupported_methods()
-        method_kwargs = self._get_method_kwargs()
-
-        logger.info(
-            'The full list of prioritized wakepy Methods for Mode "%s" is: %s',
-            self.name,
-            [m.name for m in possibly_supported],
-        )
-        logger.info(
-            'Unsupported wakepy Methods on %s, "%s" Mode: %s',
-            CURRENT_PLATFORM,
-            self.name,
-            [m.name for m in unsupported],
-        )
-        methodresults, self._active_method, self.heartbeat = (
-            self._activate_first_successful_method(
-                method_classes=possibly_supported, **method_kwargs
-            )
-        )
-        platform_unsupported_results = self._create_unsupported_results(unsupported)
-        methodresults.extend(platform_unsupported_results)
-
-        self.result = ActivationResult(methodresults, mode_name=self.name)
-
-        self.active_method = (
-            MethodInfo._from_method(self._active_method)
-            if self._active_method
-            else None
-        )
-        self.active = self.result.success
-        self._method = self._active_method
-        self.method = self.active_method
-
-        if self.active:
-            logger.info(
-                'Activated wakepy mode "%s" with method: %s',
-                self.name,
-                self.active_method,
-            )
-        else:
-            logger.info(
-                self.result.get_failure_text(style="inline"),
-            )
-
-        if not self.active:
-            handle_activation_fail(self.on_fail, self.result)
-
-        self._has_entered_context = True
-        return self.result
-
     def _get_supported_and_unsupported_methods(
         self,
     ) -> Tuple[List[Type[Method]], List[Type[Method]]]:
@@ -683,34 +828,24 @@ class Mode:
         return possibly_supported, unsupported
 
     def _set_current_mode(self) -> None:
+        """Set this mode as current for the current thread and context.
+
+        Does NOT add to _all_modes; that is handled by enter() so that
+        manual enter()/exit() calls (without a context manager)
+        also register correctly without double-counting.
+        """
         self._context_token = _current_mode.set(self)
-        try:
-            _mode_lock.acquire()
-            _all_modes.append(self)
-        finally:
-            _mode_lock.release()
 
     def _unset_current_mode(self) -> None:
+        """Unset this mode as current for the current thread and context.
+
+        Does NOT remove from _all_modes; that is handled by exit().
+        """
         if self._context_token is None:
             raise RuntimeError(  # should never happen
                 "Cannot unset current mode, because it was never set! "
             )
         _current_mode.reset(self._context_token)
-        try:
-            _mode_lock.acquire()
-            try:
-                _all_modes.remove(self)
-            except ValueError:
-                # This should never happen in practice.
-                logger.warning(
-                    'Mode "%s" with id=%s was not found in _all_modes. '
-                    "This can happen if the Mode was not entered in the current "
-                    "thread or context, or if it was already removed.",
-                    self.name,
-                    id(self),
-                )
-        finally:
-            _mode_lock.release()
 
     def _add_fake_success_if_needed(
         self,
@@ -832,40 +967,6 @@ class Mode:
                 possibly_supported.append(cls)
         return possibly_supported, unsupported
 
-    def _deactivate(self) -> bool:
-        """Deactivates the active mode, defined by the active Method, if any.
-        If there was no active method, does nothing.
-
-        Returns
-        -------
-        deactivated:
-            If there was no active method, returns False (nothing was done).
-            If there was an active method, and it was deactivated, returns True
-
-        Raises
-        ------
-        RuntimeError, if there was active method but an error occurred when
-        trying to deactivate it."""
-
-        self._thread_check()
-
-        if self.active:
-            if self._active_method is None:
-                raise RuntimeError(
-                    f"Cannot deactivate mode: {str(self.name)}. The active_method is None! This should never happen."  # noqa E501
-                )
-            deactivate_method(self._active_method, self.heartbeat)
-            deactivated = True
-        else:
-            deactivated = False
-
-        self._active_method = None
-        self.active_method = None
-        self.heartbeat = None
-        self.active = None
-        self._has_entered_context = False
-        return deactivated
-
     @property
     def _dbus_adapter(self) -> DBusAdapter | None:
         """The DbusAdapter instance of the Mode, if any. Created on the first
@@ -876,17 +977,6 @@ class Mode:
             self._dbus_adapter_instance = get_dbus_adapter(self._dbus_adapter_cls)
             self._dbus_adapter_created = True
         return self._dbus_adapter_instance
-
-    def _thread_check(self) -> None:
-        current_thread_id = threading.get_ident()
-        if self._thread_id != current_thread_id:
-            warning_text = (
-                f"Using the Mode {self.name} with id ({id(self)}) in thread "
-                f"{current_thread_id} but it was created in thread {self._thread_id}. "
-                "Wakepy Modes are not thread-safe!"
-            )
-            warnings.warn(warning_text, ThreadSafetyWarning, stacklevel=2)
-            logger.warning(warning_text)
 
     def _get_method_kwargs(self) -> dict[str, object]:
         method_kwargs: dict[str, object] = {"dbus_adapter": self._dbus_adapter}

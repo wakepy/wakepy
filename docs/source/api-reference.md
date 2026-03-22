@@ -21,15 +21,17 @@ There are two different modes in wakepy: The ``keep.running`` and ``keep.present
 Wakepy Core
 ------------
 .. autoclass:: wakepy.Mode
-    :members: name,
+    :members: enter,
+              exit,
+              name,
               result,
               method,
+              active_method,
               used_method,
               active,
               methods_priority,
               on_fail,
               activation_result,
-              active_method,
               probe_all_methods,
     :member-order: bysource
 
@@ -69,6 +71,9 @@ Wakepy Core
 
 .. autoclass:: wakepy.NoCurrentModeError
     :exclude-members: args, with_traceback
+
+.. autoclass:: wakepy.ContextAlreadyEnteredError
+    :members:
 
 .. autoclass:: wakepy.ModeExit
     :exclude-members: args, with_traceback
