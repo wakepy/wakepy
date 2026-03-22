@@ -16,7 +16,7 @@ Thank you for your interest in contributing to wakepy! We're excited to have you
 10. [FAQ](#10-faq)
 11. [Release Process](#11-release-process-for-maintainers)
 12. [Platform-Specific Setup Notes](#12-platform-specific-setup-notes)
-
+13. [AI Agents](#13-ai-agents)
 
 ## 1. How to Contribute
 
@@ -319,3 +319,9 @@ The release process is automated, but changelog creation takes a few manual step
 
 - To install ruff, you need a recent version of Rust. Recommended to use rustup. You'll also need gmake
 - You'll also need the Standard Python binding to the SQLite3 library (py3**-sqlite3)
+
+
+## 13. AI Agents
+- If you want to use AI Agents for coding, there is AGENTS.md for guiding the agents, as well as more specific instructions in `.planning/`. The planning older was generated and can be updated using [GSD](https://github.com/gsd-build/get-shit-done) `/gsd:map-codebase`. These files should (in theory) make the AI to produce better suited code.
+- Each contributor is expected to review their AI generated code themselves. Only provide code you have read, understood and reviewed yourself first.
+- Since the ".planning" was generated using GSD, GSD might be the best suited tool for this project currently. Also other SDD tools/frameworks can be suggested. Related discussion: [#602](https://github.com/wakepy/wakepy/discussions/602)
