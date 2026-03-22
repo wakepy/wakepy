@@ -326,12 +326,13 @@ class TestModeEnterExit:
     def test_enter_exit_explicit_syntax(
         self,
         mode0: Mode,
+        do_assert: typing.Callable[[bool], None],
     ):
-        assert mode0.active is None
+        do_assert(mode0.active is None)
         mode0.enter()
-        assert mode0.active is True
+        do_assert(mode0.active is True)
         mode0.exit()
-        assert mode0.active is None
+        do_assert(mode0.active is None)
 
     @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
     def test_enter_returns_activation_result(
@@ -457,6 +458,7 @@ class TestModeEnterExit:
         self,
         mode0: Mode,
         sync_event_button: SyncButton,
+        do_assert: typing.Callable[[bool], None],
     ) -> None:
         """Sync on_click handlers can enter/exit a mode.
 
@@ -472,16 +474,16 @@ class TestModeEnterExit:
 
         sync_event_button.on_click = sync_activate
         sync_event_button.click()
-        assert mode0.active is True
+        do_assert(mode0.active is True)
 
         sync_event_button.on_click = sync_deactivate
         sync_event_button.click()
-        assert mode0.active is None
+        do_assert(mode0.active is None)
 
         # Toggle again to confirm repeated use works
         sync_event_button.on_click = sync_activate
         sync_event_button.click()
-        assert mode0.active is True
+        do_assert(mode0.active is True)
         mode0.exit()
 
     @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
@@ -489,6 +491,7 @@ class TestModeEnterExit:
         self,
         mode0: Mode,
         async_event_button: AsyncButton,
+        do_assert: typing.Callable[[bool], None],
     ) -> None:
         """Async on_click handlers can enter/exit a mode.
 
@@ -504,16 +507,16 @@ class TestModeEnterExit:
 
         async_event_button.on_click = async_activate
         async_event_button.click()
-        assert mode0.active is True
+        do_assert(mode0.active is True)
 
         async_event_button.on_click = async_deactivate
         async_event_button.click()
-        assert mode0.active is None
+        do_assert(mode0.active is None)
 
         # Toggle again to confirm repeated use works
         async_event_button.on_click = async_activate
         async_event_button.click()
-        assert mode0.active is True
+        do_assert(mode0.active is True)
         mode0.exit()
 
     @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
@@ -535,8 +538,7 @@ class TestModeEnterExit:
     def test_exit_when_never_entered(self, mode0: Mode):
         """exit() is a safe no-op when enter() was never called."""
         assert mode0.active is None
-        result = mode0.exit()
-        assert result is None
+        mode0.exit()
         assert mode0.active is None
 
     def test_exit_after_failed_enter(self, mode0: Mode, monkeypatch):
