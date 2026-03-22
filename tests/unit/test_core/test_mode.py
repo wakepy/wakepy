@@ -7,7 +7,6 @@ import re
 import threading
 import typing
 import warnings
-from email.generator import Generator
 from unittest.mock import Mock
 
 import pytest
@@ -844,7 +843,8 @@ class TestModeThreadSafety:
 
     @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
     def test_concurrent_enter_pass_no_warning(self, mode0: Mode) -> None:
-        """Multiple threads, if_already_entered='pass': no warnings, no errors."""
+        """Multiple threads, if_already_entered='pass': no warnings, no
+        errors."""
         n_threads = 6
         barrier = threading.Barrier(n_threads)
 
