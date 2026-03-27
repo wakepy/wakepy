@@ -23,9 +23,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="0.35355339"
-     inkscape:cx="890.95454"
-     inkscape:cy="767.91796"
+     inkscape:zoom="1"
+     inkscape:cx="1539"
+     inkscape:cy="364.5"
      inkscape:window-width="1920"
      inkscape:window-height="1048"
      inkscape:window-x="0"
@@ -187,6 +187,44 @@
          d="M 5.77,0 -2.88,5 V -5 Z"
          id="path1-64-71-6-1-8-8" />
     </marker>
+    <marker
+       style="overflow:visible"
+       id="marker35_F-358274_S-818181-3-0-1-6"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:#818181;fill-rule:evenodd;stroke:#818181;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path1-64-71-6-15-7" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker35_F-358274_S-818181-3-0-1-6-3"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:#818181;fill-rule:evenodd;stroke:#818181;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path1-64-71-6-15-7-5" />
+    </marker>
   </defs>
   <g
      inkscape:groupmode="layer"
@@ -283,6 +321,16 @@
        id="path34-8-2-3-9"
        sodipodi:nodetypes="cc" />
     <path
+       style="font-variation-settings:normal;fill:#358274;fill-opacity:0.579625;stroke:#818181;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.415748;stroke-opacity:1;marker-end:url(#marker35_F-358274_S-818181-3-0-1-6);stop-color:#000000"
+       d="M 577.06051,57.667721 592.90117,45.376727"
+       id="path34-8-2-3-9-5"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="font-variation-settings:normal;fill:#358274;fill-opacity:0.579625;stroke:#818181;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.415748;stroke-opacity:1;marker-end:url(#marker35_F-358274_S-818181-3-0-1-6-3);stop-color:#000000"
+       d="m 577.18787,57.710012 0.0473,0.06165 15.7793,12.423102"
+       id="path34-8-2-3-9-5-6"
+       sodipodi:nodetypes="ccc" />
+    <path
        style="font-variation-settings:normal;fill:#358274;fill-opacity:0.579625;stroke:#818181;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.415748;stroke-opacity:1;marker-end:url(#marker35_F-358274_S-818181-3-0-3);stop-color:#000000"
        d="m 285.92928,68.777093 16.2355,0.002"
        id="path34-8-2-3-4"
@@ -350,7 +398,7 @@
        style="fill:#1870d8;fill-opacity:1;stroke:#6c87e0;stroke-width:0.449798;stroke-dasharray:none;stroke-dashoffset:0.415748;stroke-opacity:1"
        id="rect1-2-6-2-9-9-6-5-7-6"
        width="46.560265"
-       height="24.910807"
+       height="36.621273"
        x="359.39972"
        y="124.92667"
        rx="2"
@@ -358,9 +406,9 @@
     <rect
        style="fill:#1870d8;fill-opacity:1;stroke:#6c87e0;stroke-width:0.449799;stroke-dasharray:none;stroke-dashoffset:0.415748;stroke-opacity:1"
        id="rect1-2-6-2-9-9-6-5-7-6-1"
-       width="282.5629"
+       width="225.32327"
        height="9.6602821"
-       x="359.61673"
+       x="416.85635"
        y="153.86337"
        rx="2"
        ry="2" />
@@ -501,13 +549,13 @@
     <text
        xml:space="preserve"
        style="font-size:5.0321px;line-height:normal;font-family:FreeSans, Arial;-inkscape-font-specification:'FreeSans,Arial, Normal';text-align:center;text-decoration-color:#000000;text-anchor:middle;fill:#2749b8;fill-opacity:0.996078;stroke-width:0.35;stroke-dashoffset:0.415748"
-       x="382.12393"
-       y="139.64548"
+       x="382.56183"
+       y="145.14111"
        id="text1-9-2-2-6-1-4-5-5-9"><tspan
          sodipodi:role="line"
          style="fill:#ffffff;fill-opacity:0.996078;stroke:none;stroke-width:0.35;stroke-opacity:1"
-         x="382.12393"
-         y="139.64548"
+         x="382.56183"
+         y="145.14111"
          id="tspan5084-3-3">Platform Support</tspan></text>
     <text
        xml:space="preserve"
@@ -787,10 +835,10 @@
     <rect
        style="fill:#258b04;fill-opacity:1;stroke:none;stroke-width:0.390981;stroke-dasharray:none;stroke-dashoffset:0.415748;stroke-opacity:1"
        id="rect7748-6-2"
-       width="43.231136"
-       height="17.016277"
-       x="596.97778"
-       y="47.844498" />
+       width="43.476353"
+       height="17.002594"
+       x="596.73254"
+       y="47.858185" />
     <text
        xml:space="preserve"
        style="font-size:5.0321px;line-height:normal;font-family:FreeSans, Arial;-inkscape-font-specification:'FreeSans,Arial, Normal';text-align:center;text-decoration-color:#000000;text-anchor:middle;fill:#000000;fill-opacity:0.996078;stroke-width:0.35;stroke-dashoffset:0.415748"
@@ -945,7 +993,7 @@
          y="43.664715"
          id="tspan5084-0-3-6-0-4-6-5">For Method in Methods</tspan></text>
     <path
-       style="font-variation-settings:normal;fill:#358274;fill-opacity:0.579625;stroke:#818181;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.415748;stroke-opacity:1;marker-end:url(#marker35_F-358274_S-818181-3-0-3-4-4);stop-color:#000000"
+       style="font-variation-settings:normal;fill:#358274;fill-opacity:0.579625;stroke:#818181;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:4,2;stroke-dashoffset:0;stroke-opacity:1;marker-end:url(#marker35_F-358274_S-818181-3-0-3-4-4);stop-color:#000000"
        d="m 401.55025,90.262051 192.84528,0.0104"
        id="path34-8-2-3-4-1-1"
        sodipodi:nodetypes="cc" />
