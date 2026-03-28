@@ -28,9 +28,11 @@ from .core import MethodActivationResult as MethodActivationResult
 from .core import MethodInfo as MethodInfo
 from .core import Mode as Mode
 from .core import ModeExit as ModeExit
+from .core import ModeHook as ModeHook
 from .core import ModeName as ModeName
 from .core import NoCurrentModeError as NoCurrentModeError
 from .core import ProbingResults as ProbingResults
+from .core import ResultHook as ResultHook
 from .core import current_mode as current_mode
 from .core import global_modes as global_modes
 from .core import modecount as modecount

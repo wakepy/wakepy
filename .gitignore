@@ -24,3 +24,9 @@ venv/
 .vscode/*
 .idea/*
 .claude/*
+
+# GSD planning (workflow state — not shared; shared reference docs are tracked)
+.planning/*
+!.planning/config.json
+!.planning/codebase/**
+!.planning/PROJECT.md

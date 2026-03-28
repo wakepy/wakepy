@@ -30,7 +30,6 @@ Wakepy Core
               used_method,
               active,
               methods_priority,
-              on_fail,
               activation_result,
               probe_all_methods,
     :member-order: bysource
@@ -98,6 +97,31 @@ Wakepy Core
 
 .. autoclass:: wakepy.Method
     :members:
+
+Lifecycle Hooks
+---------------
+Lifecycle hooks are callables that execute at specific points in a Mode's lifecycle. There are two groups:
+
+- **Mode hooks** (``before_enter``, ``after_enter``, ``before_exit``, ``after_exit``) — receive the :class:`~wakepy.Mode` instance
+- **Result hooks** (``on_success``, ``on_fail``) — receive the :class:`~wakepy.ActivationResult` instance
+
+**Type Aliases:**
+
+.. class:: wakepy.ModeHook
+
+    Type alias for mode hooks: ``Callable[[Mode], Any]``
+
+    Used by: ``before_enter``, ``after_enter``, ``before_exit``, ``after_exit``
+
+.. class:: wakepy.ResultHook
+
+    Type alias for result hooks: ``Callable[[ActivationResult], Any]``
+
+    Used by: ``on_success`` and ``on_fail`` (when set to a callable).
+
+.. versionadded:: 2.0.0
+
+   Lifecycle hooks were added in version 2.0.0.
 
 DBus Adapter
 -------------

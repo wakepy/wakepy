@@ -22,7 +22,9 @@ from .mode import ActivationWarning as ActivationWarning
 from .mode import ContextAlreadyEnteredError as ContextAlreadyEnteredError
 from .mode import Mode as Mode
 from .mode import ModeExit as ModeExit
+from .mode import ModeHook as ModeHook
 from .mode import NoCurrentModeError as NoCurrentModeError
+from .mode import ResultHook as ResultHook
 from .mode import current_mode as current_mode
 from .mode import global_modes as global_modes
 from .mode import modecount as modecount

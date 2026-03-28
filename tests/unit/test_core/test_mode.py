@@ -5,9 +5,9 @@ import copy
 import queue
 import re
 import threading
+import time
 import typing
 import warnings
-from unittest.mock import Mock
 
 import pytest
 
@@ -33,7 +33,7 @@ from wakepy.core.mode import (
     ModeExit,
     UnrecognizedMethodNames,
     _ModeParams,
-    handle_activation_fail,
+    _resolve_on_fail,
     select_methods,
 )
 from wakepy.core.registry import get_methods
@@ -241,7 +241,7 @@ class TestModeContextManager:
 
     def test_active_is_false_on_failed_activation(self):
         """Mode.active is False when activation is attempted but fails"""
-        params = _ModeParams(method_classes=[], on_fail="pass")
+        params = _ModeParams(method_classes=[], on_fail=None)
         mode = Mode(params)
 
         assert mode.active is None
@@ -306,7 +306,7 @@ class TestUnsetCurrentMode:
         # in a real life situation.
         mode0._unset_current_mode()
         _mode_module._all_modes.remove(mode0)
-        mode0._has_entered_context = False
+        mode0._entered = False
 
     def test_unset_before_enter(
         self,
@@ -579,9 +579,8 @@ class TestModeEnterExit:
         with pytest.raises(ActivationError):
             mode.enter()
 
-        assert mode.active is False
-        assert mode._has_entered_context
-        mode.exit()
+        assert mode.active is None
+        assert mode._entered is False
 
     def test_enter_on_fail_warn_succeeds(self):
         params = _ModeParams(method_classes=[], on_fail="warn")
@@ -591,7 +590,7 @@ class TestModeEnterExit:
             mode.enter()
 
         assert mode.active is False
-        assert mode._has_entered_context
+        assert mode._entered
         mode.exit()
 
     @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
@@ -639,44 +638,42 @@ class TestExitModeWithException:
         assert testval == 4
 
 
-class TestHandleActivationFail:
-    """Tests for handle_activation_fail"""
+class TestResolveOnFail:
+    """Tests for _resolve_on_fail: one test per valid/invalid input case."""
 
-    @staticmethod
-    @pytest.fixture
-    def result1():
-        return ActivationResult([], mode_name="testmode")
+    def test_none_returns_none(self):
+        assert _resolve_on_fail(None) is None
 
-    @staticmethod
-    @pytest.fixture
-    def error_text_match(result1):
-        return re.escape(result1.get_failure_text())
+    def test_warn_returns_callable_that_issues_activation_warning(self):
+        # The returned hook must be callable which accepts an ActivationResult
+        # and issues an ActivationWarning
+        result = ActivationResult([], mode_name="testmode")
+        hook = _resolve_on_fail("warn")
 
-    def test_pass(self, result1):
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            handle_activation_fail(on_fail="pass", result=result1)
+        assert callable(hook)
+        with pytest.warns(ActivationWarning):
+            hook(result)
 
-    def test_warn(self, result1, error_text_match):
-        with pytest.warns(UserWarning, match=error_text_match):
-            handle_activation_fail(on_fail="warn", result=result1)
+    def test_error_returns_callable_that_raises_activation_error(self):
+        # The returned hook must be callable which accepts an ActivationResult
+        # and raises an ActivationError
+        result = ActivationResult([], mode_name="testmode")
+        hook = _resolve_on_fail("error")
 
-    def test_error(self, result1, error_text_match):
-        with pytest.raises(ActivationError, match=error_text_match):
-            handle_activation_fail(on_fail="error", result=result1)
+        assert callable(hook)
+        with pytest.raises(ActivationError):
+            hook(result)
 
-    def test_callable(self, result1):
-        mock = Mock()
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            handle_activation_fail(on_fail=mock, result=result1)
-        mock.assert_called_once_with(result1)
+    def test_callable_which_accepts_activation_result(self):
+        def func(result: ActivationResult) -> None: ...
 
-    def test_bad_on_fail_value(self, result1):
-        with pytest.raises(ValueError, match="on_fail must be one of"):
-            handle_activation_fail(
-                on_fail="foo",  # type: ignore
-                result=result1,
+        hook = _resolve_on_fail(func)
+        assert hook is func
+
+    def test_invalid_string_raises_value_error(self):
+        with pytest.raises(ValueError, match="on_fail must be"):
+            _resolve_on_fail(
+                "foo",  # type: ignore
             )
 
 
@@ -948,6 +945,113 @@ class TestModeThreadSafety:
         assert results.get() is True
         mode0.exit()
 
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_concurrent_enter_waits_instead_of_raising(
+        self,
+        methods_abc: List[Type[Method]],
+    ) -> None:
+        """When thread A is inside enter() (holding the lock), thread B
+        calling enter() must block until A finishes, then see the mode as
+        already entered — NOT raise RuntimeError."""
+        entered_event = threading.Event()
+        continue_event = threading.Event()
+
+        def slow_before_enter(m: Mode) -> None:
+            entered_event.set()
+            continue_event.wait()
+
+        params = _ModeParams(
+            name="TestMode",
+            method_classes=methods_abc,
+            dbus_adapter=None,
+            methods_priority=["*"],
+            before_enter=slow_before_enter,
+        )
+        mode = Mode(params)
+
+        errors: list[BaseException] = []
+        thread_b_result: list[ActivationResult] = []
+
+        def thread_a_worker() -> None:
+            try:
+                mode.enter()
+            except BaseException as e:
+                errors.append(e)
+
+        def thread_b_worker() -> None:
+            entered_event.wait()  # wait until thread A is inside enter()
+            try:
+                result = mode.enter(if_already_entered="pass")
+                thread_b_result.append(result)
+            except BaseException as e:
+                errors.append(e)
+
+        ta = threading.Thread(target=thread_a_worker)
+        tb = threading.Thread(target=thread_b_worker)
+        ta.start()
+        tb.start()
+
+        # Wait for thread A to be inside the before_enter hook
+        entered_event.wait()
+        # Give thread B time to hit the lock
+        time.sleep(0.05)
+        # Let thread A finish
+        continue_event.set()
+
+        ta.join(timeout=5)
+        tb.join(timeout=5)
+
+        # Thread B must NOT have raised RuntimeError
+        assert errors == [], f"Unexpected errors: {errors}"
+        # Thread B should have gotten the result (as already-entered)
+        assert len(thread_b_result) == 1
+        mode.exit()
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_concurrent_exit_calls_before_exit_hook_only_once(
+        self,
+        methods_abc: List[Type[Method]],
+    ) -> None:
+        """When two threads call exit() simultaneously, the before_exit
+        hook must fire exactly once — the second thread should see
+        entered=False and no-op."""
+        call_count = 0
+        call_count_lock = threading.Lock()
+        exit_barrier = threading.Barrier(2)
+
+        def counting_before_exit(m: Mode) -> None:
+            nonlocal call_count
+            with call_count_lock:
+                call_count += 1
+
+        params = _ModeParams(
+            name="TestMode",
+            method_classes=methods_abc,
+            dbus_adapter=None,
+            methods_priority=["*"],
+            before_exit=counting_before_exit,
+        )
+        mode = Mode(params)
+        mode.enter()
+
+        errors: list[BaseException] = []
+
+        def exit_worker() -> None:
+            exit_barrier.wait()
+            try:
+                mode.exit()
+            except BaseException as e:
+                errors.append(e)
+
+        threads = [threading.Thread(target=exit_worker) for _ in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=5)
+
+        assert errors == [], f"Unexpected errors: {errors}"
+        assert call_count == 1, f"before_exit called {call_count} times, expected 1"
+
 
 class TestWakepyForceFailure:
     """Test WAKEPY_FORCE_FAILURE environment variable"""
@@ -967,7 +1071,7 @@ class TestWakepyForceFailure:
             method_classes=methods_abc,
             dbus_adapter=dbus_adapter_cls,
             methods_priority=["*"],
-            on_fail="pass",
+            on_fail=None,
         )
         mode = testmode_cls(params)
 
@@ -994,7 +1098,7 @@ class TestWakepyForceFailure:
             method_classes=methods_abc,
             dbus_adapter=dbus_adapter_cls,
             methods_priority=["*"],
-            on_fail="pass",
+            on_fail=None,
         )
         mode = testmode_cls(params)
 

@@ -235,3 +235,100 @@ This is handled automatically by the context manager. What actually gets called 
 When using the `with` statement or the decorator syntax, the context manager takes care of calling `Mode._deactivate()` even if `USER_CODE` raises an exception.
 ```
 
+## Lifecycle Hooks
+
+```{versionadded} 2.0.0
+```
+
+Lifecycle hooks allow you to execute custom callbacks at specific lifecycle points. When hooks are registered, they are invoked automatically at the appropriate stages:
+
+```{code-block} python
+:lineno-start: 1
+from wakepy import keep
+
+def before_activation(mode):
+    print(f"About to activate: {mode.name}")
+
+def after_activation(mode):
+    print(f"Activated with: {mode.active_method}")
+
+def before_deactivation(mode):
+    print(f"About to deactivate: {mode.name}")
+
+def after_deactivation(mode):
+    print(f"Deactivated: {mode.name}")
+
+def on_success(result):
+    print(f"Success! Method: {result.method}")
+
+with keep.running(
+    before_enter=before_activation,
+    after_enter=after_activation,
+    before_exit=before_deactivation,
+    after_exit=after_deactivation,
+    on_success=on_success
+):
+    USER_CODE
+```
+
+### Hook Execution Timeline
+
+The hooks are invoked at these points in the Mode lifecycle:
+
+```
+  ●  before_enter(mode)
+  │
+  │  try Method 1 … Method N
+  │
+  ├─[success]── on_success(result)
+  ├─[fail]───── on_fail(result)
+  │
+  ●  after_enter(mode)
+  │
+  │  [ USER CODE ]
+  │
+  ●  before_exit(mode)
+  │
+  │  deactivate the used Method
+  │
+  ●  after_exit(mode)
+```
+
+There are two groups of lifecycle hooks:
+
+- **Mode hooks** (`before_enter`, `after_enter`, `before_exit`, `after_exit`) — receive the `Mode` instance
+- **Result hooks** (`on_success`, `on_fail`) — receive the `ActivationResult` instance
+
+**Detailed timeline:**
+
+1. **before_enter(mode)** - Called at the start of `Mode.__enter__()` / `Mode.enter()`, before any activation logic
+2. **Activation process** - Methods are tried, one succeeds (or all fail)
+3. **on_success(result)** or **on_fail(result)** - Called based on activation outcome:
+   - `on_success` if activation succeeded (receives {class}`~wakepy.ActivationResult`)
+   - `on_fail` if activation failed (receives {class}`~wakepy.ActivationResult` when callable; `"error"` raises {class}`~wakepy.ActivationError`; `"warn"` issues {class}`~wakepy.ActivationWarning`; `None` does nothing)
+4. **after_enter(mode)** - Called at the end of `Mode.__enter__()` / `Mode.enter()`, after activation completes (called whether activation succeeded or failed)
+5. **USER_CODE runs** - Your application code executes
+6. **before_exit(mode)** - Called at the start of `Mode.__exit__()` / `Mode.exit()`, before deactivation
+7. **Deactivation process** - Active method is deactivated
+8. **after_exit(mode)** - Called at the end of `Mode.__exit__()` / `Mode.exit()`, after deactivation completes
+
+### Thread Safety and Recursion Detection
+
+Lifecycle hooks are thread-safe. However, to prevent deadlocks, wakepy detects and rejects recursive calls to `Mode.enter()` from within hook callbacks:
+
+```{code-block} python
+from wakepy import keep
+
+def bad_hook(mode):
+    mode.enter()  # Raises RuntimeError!
+
+with keep.running(before_enter=bad_hook):
+    pass  # RuntimeError: Recursive Mode.enter() detected within lifecycle hook callback
+```
+
+```{seealso}
+- [Lifecycle Hooks](lifecycle-hooks-section) in the User Guide
+- {func}`keep.running() <wakepy.keep.running>` API reference
+- {class}`~wakepy.Mode` class documentation
+```
+
