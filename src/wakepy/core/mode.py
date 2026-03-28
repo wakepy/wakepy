@@ -397,6 +397,36 @@ def _handle_already_entered(
         )
 
 
+class ReentrantGuard:
+    """A lock that tracks its owning thread and rejects re-entrant acquisition.
+
+    Prevents the same thread from acquiring the lock twice (e.g. a hook calling
+    back into enter()/exit() while the lock is already held by that thread).
+    Use :meth:`check_not_reentrant` *before* :meth:`held` to get a clear error
+    rather than a deadlock.
+    """
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._owner: int | None = None
+
+    @contextlib.contextmanager
+    def held(self) -> Generator[None, None, None]:
+        """Acquire the lock and record the owning thread."""
+        self._lock.acquire()
+        self._owner = threading.get_ident()
+        try:
+            yield
+        finally:
+            self._owner = None
+            self._lock.release()
+
+    def check_not_reentrant(self, context: str) -> None:
+        """Raise RuntimeError if the current thread already holds the lock."""
+        if self._owner == threading.get_ident():
+            raise RuntimeError(f"{context} — re-entrant call is not allowed.")
+
+
 class Mode:
     """Mode instances are the most important objects, and they provide the main
     API of wakepy for the user. Typically, :class:`Mode` instances are created
@@ -546,8 +576,7 @@ class Mode:
         blacklisting with "omit" parameter)."""
 
         self.methods_priority = params.methods_priority
-        self._lifecycle_lock = threading.Lock()
-        self._lifecycle_lock_owner: int | None = None
+        self._guard = ReentrantGuard()
         self._context_token: Optional[Token[Mode]] = None
 
         self._entered: bool = False
@@ -637,28 +666,6 @@ class Mode:
 
         return False
 
-    @contextlib.contextmanager
-    def _held_lifecycle_lock(self) -> Generator[None, None, None]:
-        """Context manager: acquires _lifecycle_lock and tracks owner."""
-        self._lifecycle_lock.acquire()
-        self._lifecycle_lock_owner = threading.get_ident()
-        try:
-            yield
-        finally:
-            self._lifecycle_lock_owner = None
-            self._lifecycle_lock.release()
-
-    def _check_not_in_hook(self, method: str) -> None:
-        """Raise if called re-entrantly from within a hook. Prevents infinite
-        recursion."""
-
-        # TODO: This should be probably called _check_not_called_within_enter_or_exit
-        # since it's not just about hooks, but any re-entrant call to enter() or exit().
-        if self._lifecycle_lock_owner == threading.get_ident():
-            raise RuntimeError(
-                f"Mode.{method}() called from within a hook. This is not allowed."
-            )
-
     def enter(self, if_already_entered: IfAlreadyEntered = "warn") -> ActivationResult:
         """Enter the mode and try to activate it.
 
@@ -732,8 +739,8 @@ class Mode:
         The ``mode.exit()`` in the finally block guarantees that the mode is
         exited properly.
         """
-        self._check_not_in_hook("enter")
-        with self._held_lifecycle_lock():
+        self._guard.check_not_reentrant("Mode.enter()")
+        with self._guard.held():
             if self._entered:
                 _handle_already_entered(if_already_entered)
                 return self.result
@@ -741,7 +748,7 @@ class Mode:
         return self.result
 
     def _enter(self) -> None:
-        """Orchestrate full mode entry. Called with _lifecycle_lock held."""
+        """Orchestrate full mode entry. Called with _guard held."""
         _invoke_hook(self._before_enter, self, name="before_enter")
 
         result, active_method, heartbeat = self._activate_mode()
@@ -762,7 +769,7 @@ class Mode:
         self,
     ) -> Tuple[ActivationResult, Optional[Method], Optional[Heartbeat]]:
         """Activate the method and commit all state. Core enter — no hooks.
-        Called with self._lifecycle_lock held."""
+        Called with self._guard held."""
 
         possibly_supported, unsupported = self._get_supported_and_unsupported_methods()
         method_kwargs = self._get_method_kwargs()
@@ -836,9 +843,9 @@ class Mode:
 
 
         """
-        self._check_not_in_hook("exit")
+        self._guard.check_not_reentrant("Mode.exit()")
 
-        with self._held_lifecycle_lock():
+        with self._guard.held():
             if not self._entered:
                 return
 
@@ -853,7 +860,7 @@ class Mode:
 
     def _deactivate_mode(self) -> None:
         """Deactivate the method and reset state. Core exit — no hooks.
-        Called with self._lifecycle_lock held."""
+        Called with self._guard held."""
         if self.active:
             if self._active_method is None:  # pragma: no cover
                 raise RuntimeError(

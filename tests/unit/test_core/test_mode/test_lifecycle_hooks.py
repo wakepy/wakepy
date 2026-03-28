@@ -134,7 +134,7 @@ class TestRecursionGuard:
 
         params = create_mode_params(WakepyFakeSuccess.mode_name, **{hook_name: hook})  # type: ignore[arg-type]
         mode = Mode(params)
-        expected_error = rf"Mode\.{called_method}\(\) called from within a hook\."
+        expected_error = rf"Mode\.{called_method}\(\) — re-entrant call is not allowed\."
         with pytest.raises(RuntimeError, match=expected_error):
             mode.enter()
 
@@ -152,7 +152,7 @@ class TestRecursionGuard:
         params = create_mode_params(WakepyFakeSuccess.mode_name, **{hook_name: hook})  # type: ignore[arg-type]
         mode = Mode(params)
         mode.enter()
-        expected_error = rf"Mode\.{called_method}\(\) called from within a hook\."
+        expected_error = rf"Mode\.{called_method}\(\) — re-entrant call is not allowed\."
         with pytest.raises(RuntimeError, match=expected_error):
             mode.exit()
 
