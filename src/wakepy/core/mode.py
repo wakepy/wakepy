@@ -755,7 +755,6 @@ class Mode:
             self._entered = True
             _invoke_hook(self._after_enter, self, name="after_enter")
         except BaseException:
-            self._entered = False
             self._deactivate_mode()
             raise
 
