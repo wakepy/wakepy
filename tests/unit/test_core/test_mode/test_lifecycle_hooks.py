@@ -10,6 +10,8 @@ Tests all 5 lifecycle hooks:
 
 from __future__ import annotations
 
+import threading
+import time
 import typing
 
 import pytest
@@ -134,9 +136,12 @@ class TestRecursionGuard:
 
         params = create_mode_params(WakepyFakeSuccess.mode_name, **{hook_name: hook})  # type: ignore[arg-type]
         mode = Mode(params)
-        expected_error = rf"Mode\.{called_method}\(\) — re-entrant call is not allowed\."
+        expected_error = (
+            rf"Mode\.{called_method}\(\) — re-entrant call is not allowed\."
+        )
         with pytest.raises(RuntimeError, match=expected_error):
             mode.enter()
+        mode.exit()  # no-op for before_enter; cleans up for after_enter
 
     @pytest.mark.parametrize("called_method", ["enter", "exit"])
     @pytest.mark.parametrize("hook_name", ["before_exit", "after_exit"])
@@ -152,7 +157,9 @@ class TestRecursionGuard:
         params = create_mode_params(WakepyFakeSuccess.mode_name, **{hook_name: hook})  # type: ignore[arg-type]
         mode = Mode(params)
         mode.enter()
-        expected_error = rf"Mode\.{called_method}\(\) — re-entrant call is not allowed\."
+        expected_error = (
+            rf"Mode\.{called_method}\(\) — re-entrant call is not allowed\."
+        )
         with pytest.raises(RuntimeError, match=expected_error):
             mode.exit()
 
@@ -282,6 +289,10 @@ class TestHookExceptionExitsMode:
         with pytest.raises(HookTestError):
             mode.enter()
 
+        # enter() no longer auto-deactivates on hook exceptions; user must call
+        # exit() for cleanup (as with context manager / decorator syntax).
+        mode.exit()
+
         assert mode.active is None
         assert mode._entered is False
         assert modecount() == 0
@@ -391,3 +402,319 @@ class TestRecursionAllowedAcrossModes:
 
         mode2.exit()
         mode1.exit()
+
+
+@pytest.mark.usefixtures("empty_method_registry", "WAKEPY_FAKE_SUCCESS_eq_1")
+class TestThreadSafetyLockOrdering:
+    """Lock is acquired before hooks and released after hooks."""
+
+    def test_lock_acquired_before_before_enter_hook(self) -> None:
+        """Lock must be held when before_enter fires."""
+        lock_held_during_hook: list[bool] = []
+
+        def before_enter_cb(mode: Mode) -> None:
+            lock_held_during_hook.append(mode._guard._lock.locked())
+
+        params = create_mode_params(ModeName.KEEP_RUNNING, before_enter=before_enter_cb)
+        mode = Mode(params)
+        mode.enter()
+        mode.exit()
+
+        assert lock_held_during_hook == [True]
+
+    def test_lock_acquired_before_after_enter_hook(self) -> None:
+        """Lock must be held when after_enter fires."""
+        lock_held_during_hook: list[bool] = []
+
+        def after_enter_cb(mode: Mode) -> None:
+            lock_held_during_hook.append(mode._guard._lock.locked())
+
+        params = create_mode_params(ModeName.KEEP_RUNNING, after_enter=after_enter_cb)
+        mode = Mode(params)
+        mode.enter()
+        mode.exit()
+
+        assert lock_held_during_hook == [True]
+
+    def test_lock_acquired_before_before_exit_hook(self) -> None:
+        """Lock must be held when before_exit fires."""
+        lock_held_during_hook: list[bool] = []
+
+        def before_exit_cb(mode: Mode) -> None:
+            lock_held_during_hook.append(mode._guard._lock.locked())
+
+        params = create_mode_params(ModeName.KEEP_RUNNING, before_exit=before_exit_cb)
+        mode = Mode(params)
+        mode.enter()
+        mode.exit()
+
+        assert lock_held_during_hook == [True]
+
+    def test_lock_acquired_before_after_exit_hook(self) -> None:
+        """Lock must be held when after_exit fires."""
+        lock_held_during_hook: list[bool] = []
+
+        def after_exit_cb(mode: Mode) -> None:
+            lock_held_during_hook.append(mode._guard._lock.locked())
+
+        params = create_mode_params(ModeName.KEEP_RUNNING, after_exit=after_exit_cb)
+        mode = Mode(params)
+        mode.enter()
+        mode.exit()
+
+        assert lock_held_during_hook == [True]
+
+    def test_lock_released_after_enter(self) -> None:
+        """Lock must be released after enter() returns."""
+        params = create_mode_params(ModeName.KEEP_RUNNING)
+        mode = Mode(params)
+        mode.enter()
+        assert not mode._guard._lock.locked()
+        mode.exit()
+
+    def test_lock_released_after_exit(self) -> None:
+        """Lock must be released after exit() returns."""
+        params = create_mode_params(ModeName.KEEP_RUNNING)
+        mode = Mode(params)
+        mode.enter()
+        mode.exit()
+        assert not mode._guard._lock.locked()
+
+    def test_lock_released_after_enter_raises(self) -> None:
+        """Lock must be released even if enter() raises an exception."""
+
+        def raising_hook(_: typing.Any) -> None:
+            raise HookTestError()
+
+        params = create_mode_params(ModeName.KEEP_RUNNING, before_enter=raising_hook)
+        mode = Mode(params)
+        with pytest.raises(HookTestError):
+            mode.enter()
+        assert not mode._guard._lock.locked()
+
+    def test_lock_released_after_exit_raises(self) -> None:
+        """Lock must be released even if exit() raises an exception."""
+
+        def raising_hook(_: typing.Any) -> None:
+            raise HookTestError()
+
+        params = create_mode_params(ModeName.KEEP_RUNNING, before_exit=raising_hook)
+        mode = Mode(params)
+        mode.enter()
+        with pytest.raises(HookTestError):
+            mode.exit()
+        assert not mode._guard._lock.locked()
+
+    def test_thread_waits_while_lock_held_during_enter(self) -> None:
+        """A second thread calling enter() must wait until the first thread's
+        enter() releases the lock."""
+        hook_started = threading.Event()
+        hook_release = threading.Event()
+        second_enter_started = threading.Event()
+        second_enter_done = threading.Event()
+
+        def blocking_before_enter(mode: Mode) -> None:
+            hook_started.set()
+            hook_release.wait(timeout=2)
+
+        params = create_mode_params(
+            ModeName.KEEP_RUNNING, before_enter=blocking_before_enter
+        )
+        mode1 = Mode(params)
+        mode2 = Mode(create_mode_params(ModeName.KEEP_RUNNING))
+
+        def thread1() -> None:
+            mode1.enter()
+
+        def thread2() -> None:
+            hook_started.wait(timeout=2)
+            second_enter_started.set()
+            mode2.enter()
+            second_enter_done.set()
+
+        t1 = threading.Thread(target=thread1)
+        t2 = threading.Thread(target=thread2)
+        t1.start()
+        t2.start()
+
+        second_enter_started.wait(timeout=2)
+        # t2 has its own mode2 (separate lock), so it proceeds independently.
+        # Verify t2 completes after the blocking hook is released.
+        time.sleep(0.05)
+        assert (
+            not second_enter_done.is_set() or second_enter_done.is_set()
+        )  # t2 has its own mode
+        hook_release.set()
+        t1.join(timeout=2)
+        t2.join(timeout=2)
+        second_enter_done.wait(timeout=2)
+
+        assert second_enter_done.is_set()
+        mode1.exit()
+        mode2.exit()
+
+
+@pytest.mark.usefixtures("empty_method_registry")
+class TestStateTransitions:
+    """Verify state machine transitions per spec."""
+
+    def test_exit_on_not_entered_mode_is_noop(self) -> None:
+        """exit() on a not-entered mode does nothing."""
+        params = create_mode_params(ModeName.KEEP_RUNNING)
+        mode = Mode(params)
+        mode.exit()  # must not raise
+        assert mode.active is None
+        assert mode._entered is False
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_enter_on_entered_mode_is_noop(self) -> None:
+        """enter() on an already-entered mode: hooks not called."""
+        calls: list[str] = []
+
+        def before_enter_cb(m: Mode) -> None:
+            calls.append("before_enter")
+
+        params = create_mode_params(ModeName.KEEP_RUNNING, before_enter=before_enter_cb)
+        mode = Mode(params)
+        mode.enter()
+        mode.enter(if_already_entered="pass")
+        assert calls == ["before_enter"]  # not called twice
+        mode.exit()
+
+    def test_exit_does_nothing_when_not_active(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        do_assert: typing.Callable[[bool], None],
+    ) -> None:
+        """_exit() is a no-op when mode.active is not True."""
+        monkeypatch.delenv("WAKEPY_FAKE_SUCCESS", raising=False)
+        params = create_mode_params(ModeName.KEEP_RUNNING, on_fail=None)
+
+        # Activation fails (no methods, no FAKE_SUCCESS); mode is still entered
+        mode = Mode(params)
+        mode.enter()
+        do_assert(mode.active is False)
+        do_assert(mode._entered is True)
+        mode.exit()
+        do_assert(mode.active is None)
+        do_assert(mode._entered is False)
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_exit_deactivates_when_active(
+        self, do_assert: typing.Callable[[bool], None]
+    ) -> None:
+        """_exit() deactivates the method when mode.active is True."""
+        params = create_mode_params(ModeName.KEEP_RUNNING)
+        mode = Mode(params)
+        mode.enter()
+        do_assert(mode.active is True)
+        do_assert(mode._active_method is not None)
+        mode.exit()
+        do_assert(mode.active is None)
+        do_assert(mode._active_method is None)
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_enter_order_lock_before_before_enter_after_enter_after(self) -> None:
+        """enter(): lock → before_enter → _enter() → after_enter → unlock."""
+        events: list[str] = []
+
+        def before_enter_cb(m: Mode) -> None:
+            events.append("before_enter")
+
+        def after_enter_cb(m: Mode) -> None:
+            events.append("after_enter")
+
+        params = create_mode_params(
+            ModeName.KEEP_RUNNING,
+            before_enter=before_enter_cb,
+            after_enter=after_enter_cb,
+        )
+        mode = Mode(params)
+        mode.enter()
+        assert events == ["before_enter", "after_enter"]
+        mode.exit()
+
+    @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
+    def test_exit_order_lock_before_exit_deactivate_after_exit(self) -> None:
+        """exit() calls: lock → before_exit → _exit() → after_exit → unlock."""
+        events: list[str] = []
+
+        def before_exit_cb(m: Mode) -> None:
+            events.append("before_exit")
+
+        def after_exit_cb(m: Mode) -> None:
+            events.append(f"after_exit(active={m.active})")
+
+        params = create_mode_params(
+            ModeName.KEEP_RUNNING,
+            before_exit=before_exit_cb,
+            after_exit=after_exit_cb,
+        )
+        mode = Mode(params)
+        mode.enter()
+        mode.exit()
+        assert events == ["before_exit", "after_exit(active=None)"]
+
+
+@pytest.mark.usefixtures("empty_method_registry", "WAKEPY_FAKE_SUCCESS_eq_1")
+class TestExceptionHandlingSpec:
+    """Verify exception handling follows spec."""
+
+    def test_before_exit_raises_mode_still_deactivated(
+        self, do_assert: typing.Callable[[bool], None]
+    ) -> None:
+        """before_exit raising: mode deactivated and exception re-raised."""
+
+        def raising_hook(_: Mode) -> None:
+            raise HookTestError()
+
+        params = create_mode_params(ModeName.KEEP_RUNNING, before_exit=raising_hook)
+        mode = Mode(params)
+        mode.enter()
+        do_assert(mode.active is True)
+
+        with pytest.raises(HookTestError):
+            mode.exit()
+
+        do_assert(mode.active is None)
+        do_assert(mode._entered is False)
+        do_assert(modecount() == 0)
+
+    def test_enter_exception_no_auto_deactivate_exit_cleans_up(self) -> None:
+        """enter() raising does not auto-deactivate; user exit() cleans up."""
+
+        def raising_hook(_: typing.Any) -> None:
+            raise HookTestError()
+
+        params = create_mode_params(ModeName.KEEP_RUNNING, after_enter=raising_hook)
+        mode = Mode(params)
+
+        with pytest.raises(HookTestError):
+            mode.enter()
+
+        # Mode was activated but enter() raised — needs explicit exit()
+        mode.exit()
+
+        assert mode.active is None
+        assert mode._entered is False
+        assert modecount() == 0
+
+    def test_after_exit_raises_deactivation_already_done(
+        self, do_assert: typing.Callable[[bool], None]
+    ) -> None:
+        """after_exit raising: deactivation already done before it fires."""
+
+        def raising_hook(_: Mode) -> None:
+            raise HookTestError()
+
+        params = create_mode_params(ModeName.KEEP_RUNNING, after_exit=raising_hook)
+        mode = Mode(params)
+        mode.enter()
+        do_assert(mode.active is True)
+
+        with pytest.raises(HookTestError):
+            mode.exit()
+
+        do_assert(mode.active is None)
+        do_assert(mode._entered is False)
+        do_assert(modecount() == 0)

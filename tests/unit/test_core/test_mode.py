@@ -579,6 +579,9 @@ class TestModeEnterExit:
         with pytest.raises(ActivationError):
             mode.enter()
 
+        # enter() no longer auto-deactivates; user must call exit() for cleanup
+        mode.exit()
+
         assert mode.active is None
         assert mode._entered is False
 

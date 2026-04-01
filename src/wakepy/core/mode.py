@@ -424,7 +424,12 @@ class ReentrantGuard:
     def check_not_reentrant(self, context: str) -> None:
         """Raise RuntimeError if the current thread already holds the lock."""
         if self._owner == threading.get_ident():
-            raise RuntimeError(f"{context} — re-entrant call is not allowed.")
+            raise RuntimeError(
+                (
+                    f"{context} — re-entrant call is not allowed. Note that hooks "
+                    "cannot call Mode.enter() or Mode.exit()."
+                )
+            )
 
 
 class Mode:
@@ -740,32 +745,33 @@ class Mode:
         exited properly.
         """
         self._guard.check_not_reentrant("Mode.enter()")
+
         with self._guard.held():
             if self._entered:
                 _handle_already_entered(if_already_entered)
                 return self.result
+
+            _invoke_hook(self._before_enter, self, name="before_enter")
             self._enter()
+            _invoke_hook(self._after_enter, self, name="after_enter")
+
         return self.result
 
     def _enter(self) -> None:
-        """Orchestrate full mode entry. Called with _guard held."""
-        _invoke_hook(self._before_enter, self, name="before_enter")
-
-        result, active_method, heartbeat = self._activate_mode()
+        """Activate mode and fire on_success/on_fail hook. Lock held."""
+        result, active_method, heartbeat = self._activate()
         self._apply_activation_result(result, active_method, heartbeat)
+        # Note: self._entered must be set before calling the hooks, since if
+        # the hooks raise an Exception, we want the .exit() call to cleanup
+        # properly (if ._entered is not set, .exit() would be a no-op
+        self._entered = True
 
-        try:
-            if self.active:
-                _invoke_hook(self._on_success, self.result, name="on_success")
-            else:
-                _invoke_hook(self._on_fail, self.result, name="on_fail")
-            self._entered = True
-            _invoke_hook(self._after_enter, self, name="after_enter")
-        except BaseException:
-            self._deactivate_mode()
-            raise
+        if self.active:
+            _invoke_hook(self._on_success, self.result, name="on_success")
+        else:
+            _invoke_hook(self._on_fail, self.result, name="on_fail")
 
-    def _activate_mode(
+    def _activate(
         self,
     ) -> Tuple[ActivationResult, Optional[Method], Optional[Heartbeat]]:
         """Activate the method and commit all state. Core enter — no hooks.
@@ -807,9 +813,9 @@ class Mode:
         """Commit activation result to mode state. Called with lock held."""
         self.result = result
         self.heartbeat = heartbeat
-        self.active = active_method is not None
 
-        if self.active:
+        if active_method is not None:
+            self.active = True
             self.active_method = MethodInfo._from_method(active_method)
             self.method = self.active_method
             self._active_method = active_method
@@ -822,6 +828,7 @@ class Mode:
             with _all_modes_lock:
                 _all_modes.append(self)
         else:
+            self.active = False
             self.active_method = None
             logger.info(result.get_failure_text(style="inline"))
 
@@ -854,21 +861,28 @@ class Mode:
                 # we still want to make sure that the mode is exited properly.
                 _invoke_hook(self._before_exit, self, name="before_exit")
             finally:
-                self._deactivate_mode()
+                self._exit()
+                self._reset_mode_state()
 
             _invoke_hook(self._after_exit, self, name="after_exit")
 
-    def _deactivate_mode(self) -> None:
-        """Deactivate the method and reset state. Core exit — no hooks.
-        Called with self._guard held."""
-        if self.active:
-            if self._active_method is None:  # pragma: no cover
-                raise RuntimeError(
-                    f"Cannot exit mode: {str(self.name)}. "
-                    "The active_method is None! This should never happen."
-                )
-            deactivate_method(self._active_method, self.heartbeat)
+    def _exit(self) -> None:
+        """Deactivate the method if active. Called with self._guard held."""
+        if self.active is not True:
+            return
+        self._deactivate()
 
+    def _deactivate(self) -> None:
+        """Call deactivate_method on the active method. Lock held."""
+        if self._active_method is None:  # pragma: no cover
+            raise RuntimeError(
+                f"Cannot exit mode: {str(self.name)}. "
+                "The active_method is None! This should never happen."
+            )
+        deactivate_method(self._active_method, self.heartbeat)
+
+    def _reset_mode_state(self) -> None:
+        """Reset mode state flags and remove from global list. Lock held."""
         self._active_method = None
         self.active_method = None
         self.heartbeat = None
@@ -1172,9 +1186,16 @@ def select_methods(
     return selected_methods
 
 
+@typing.overload
+def _invoke_hook(hook: ModeHook | None, arg: Mode, *, name: str) -> None: ...
+@typing.overload
 def _invoke_hook(
-    hook: typing.Callable[..., typing.Any] | None,
-    *args: typing.Any,
+    hook: ResultHook | None, arg: ActivationResult, *, name: str
+) -> None: ...
+def _invoke_hook(
+    hook: ModeHook | ResultHook | None,
+    arg: Mode | ActivationResult,
+    *,
     name: str,
 ) -> None:
     """Invoke a lifecycle hook callback, or do nothing if hook is None."""
@@ -1182,7 +1203,10 @@ def _invoke_hook(
         logger.debug("Hook %s is None, skipping.", name)
         return
     logger.debug("Calling hook %s.", name)
-    hook(*args)
+    if isinstance(arg, Mode):
+        typing.cast(ModeHook, hook)(arg)
+    else:
+        typing.cast(ResultHook, hook)(arg)
 
 
 def _resolve_on_fail(on_fail: OnFail) -> ResultHook | None:
