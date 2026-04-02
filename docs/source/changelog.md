@@ -6,8 +6,11 @@
 ### ✨ Features
 
 #### ✨ Python API
+- **Lifecycle Hooks**: Modes now support lifecycle callbacks that execute at specific points in a mode's lifecycle. Hooks are split into two groups: *mode hooks* (`before_enter`, `after_enter`, `before_exit`, `after_exit`) that receive the `Mode` instance, and *result hooks* (`on_success`, `on_fail`) that receive the `ActivationResult` instance. Provides programmatic access to mode state without using `current_mode()`. Works with all activation patterns (decorator, context manager, explicit enter/exit). Thread-safe with recursion detection to prevent deadlocks. ([#604](https://github.com/wakepy/wakepy/pull/604))
 - {func}`Mode.enter() <wakepy.Mode.enter>` and {func}`Mode.exit() <wakepy.Mode.exit>`  are now part of the public API. ([#600](https://github.com/wakepy/wakepy/pull/600))
 - 🚨 {attr}`Mode.active <wakepy.Mode.active>` changed from `bool` to `bool | None`. The value is now `None` when the Mode has not been activated yet or has been deactivated, `True` when activated successfully, and `False` when activation was attempted but failed. Inside the `with` block, the value is always `True` or `False`. Previously, both "not yet activated" and "activation failed" were represented as `False`. This is a breaking change only if code checks `mode.active` outside the context manager *and* compares with `is False` or `== False`. Unlikely, but possible. Hence, this major version bump. ([#595](https://github.com/wakepy/wakepy/pull/595))
+- 🚨 `Mode.on_fail` public attribute **removed**. The on-fail behavior is configured only at mode creation time via the `on_fail` parameter to `keep.running()` / `keep.presenting()`.
+- 🚨 `on_fail="pass"` is **no longer accepted**. Use `on_fail=None` instead.
 - 🚨 `ThreadSafetyWarning` is **removed** in 2.0.0. wakepy no longer issues this warning, entering and exiting on different threads is explicitly supported.
 
 ### 👷 Development Experience & Tooling

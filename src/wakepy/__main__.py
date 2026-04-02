@@ -253,7 +253,7 @@ class CliApp:
         keepawake = Mode(
             create_mode_params(
                 mode_name=mode_name,
-                on_fail="pass",
+                on_fail=None,
             )
         )
 

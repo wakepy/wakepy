@@ -11,13 +11,16 @@ Mode:
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import threading
 import typing
 import warnings
+from collections.abc import Generator
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from functools import wraps
+from typing import Any, Callable
 
 from wakepy.core.constants import WAKEPY_FAKE_SUCCESS_METHOD, StageName
 from wakepy.core.platform import CURRENT_PLATFORM, get_platform_supported
@@ -34,11 +37,23 @@ from .prioritization import order_methods_by_priority
 from .registry import get_method, get_methods_for_mode
 from .utils import is_env_var_truthy
 
+ModeHook = Callable[["Mode"], Any]
+"""Type alias for mode hooks: ``Callable[[Mode], Any]``
+
+Used by: ``before_enter``, ``after_enter``, ``before_exit``, ``after_exit``
+"""
+
+ResultHook = Callable[[ActivationResult], Any]
+"""Type alias for result hooks: ``Callable[[ActivationResult], Any]``
+
+Used by: ``on_success`` and ``on_fail`` (when set to a callable).
+"""
+
 if typing.TYPE_CHECKING:
     import sys
     from contextvars import Token
     from types import TracebackType
-    from typing import Callable, List, Optional, Tuple, Type, Union
+    from typing import List, Optional, Tuple, Type, Union
 
     from .constants import Collection, ModeName, StrCollection
     from .dbus import DBusAdapter, DBusAdapterTypeSeq
@@ -58,7 +73,7 @@ if typing.TYPE_CHECKING:
     P = ParamSpec("P")
     R = TypeVar("R")
 
-    OnFail = Union[Literal["error", "warn", "pass"], Callable[[ActivationResult], None]]
+    OnFail = Union[Literal["error", "warn"], ResultHook, None]
 
     IfAlreadyEntered = Literal["warn", "pass", "error"]
 
@@ -146,8 +161,13 @@ class _ModeParams:
     methods_priority: Optional[MethodsPriorityOrder] = None
     use_only: Optional[StrCollection] = None
     omit: Optional[StrCollection] = None
-    on_fail: OnFail = "warn"
     dbus_adapter: Type[DBusAdapter] | DBusAdapterTypeSeq | None = None
+    before_enter: ModeHook | None = None
+    after_enter: ModeHook | None = None
+    before_exit: ModeHook | None = None
+    after_exit: ModeHook | None = None
+    on_success: ResultHook | None = None
+    on_fail: OnFail = "warn"
 
 
 def create_mode_params(
@@ -155,8 +175,13 @@ def create_mode_params(
     methods: Optional[StrCollection] = None,
     omit: Optional[StrCollection] = None,
     methods_priority: Optional[MethodsPriorityOrder] = None,
-    on_fail: OnFail = "warn",
     dbus_adapter: Type[DBusAdapter] | DBusAdapterTypeSeq | None = None,
+    before_enter: ModeHook | None = None,
+    after_enter: ModeHook | None = None,
+    before_exit: ModeHook | None = None,
+    after_exit: ModeHook | None = None,
+    on_success: ResultHook | None = None,
+    on_fail: OnFail = "warn",
 ) -> _ModeParams:
     """Creates Mode parameters based on a mode name."""
     methods_for_mode = get_methods_for_mode(mode_name)
@@ -174,6 +199,11 @@ def create_mode_params(
         dbus_adapter=dbus_adapter,
         use_only=methods,
         omit=omit,
+        before_enter=before_enter,
+        after_enter=after_enter,
+        before_exit=before_exit,
+        after_exit=after_exit,
+        on_success=on_success,
     )
 
 
@@ -219,8 +249,8 @@ def get_selected_methods(
 # context.
 _current_mode: ContextVar[Mode] = ContextVar("wakepy._current_mode")
 
-# Lock for accessing the _all_modes
-_mode_lock = threading.Lock()
+# Lock for accessing the _all_modes list
+_all_modes_lock = threading.Lock()
 
 # Global storage for all modes from all threads and contexts.
 _all_modes: List[Mode] = []
@@ -318,11 +348,11 @@ def global_modes() -> List[Mode]:
        current Mode instance and :func:`modecount() <wakepy.modecount>` for
        getting the number of all Modes from all threads and contexts.
     """
-    _mode_lock.acquire()
+    _all_modes_lock.acquire()
     try:
         return _all_modes.copy()
     finally:
-        _mode_lock.release()
+        _all_modes_lock.release()
 
 
 def modecount() -> int:
@@ -340,11 +370,11 @@ def modecount() -> int:
         Mode instance and :func:`global_modes() <global_modes>` for getting all
         the Modes from all threads and contexts.
     """
-    _mode_lock.acquire()
+    _all_modes_lock.acquire()
     try:
         return len(_all_modes)
     finally:
-        _mode_lock.release()
+        _all_modes_lock.release()
 
 
 def _handle_already_entered(
@@ -454,14 +484,6 @@ class Mode:
         The ``active_method`` is now a ``MethodInfo`` instance instead of
         a ``str`` representing the method name. """
 
-    on_fail: OnFail
-    """Tells what the mode does in case the activation fails. This can be
-    "error", "warn", "pass" or a callable. If "error", raises
-    :class:`ActivationError`. If "warn", issues a :class:`ActivationWarning`.
-    If "pass", does nothing. If ``on_fail`` is a callable, it is called with
-    an instance of :class:`ActivationResult`. For mode information, refer to
-    the :ref:`on-fail-actions-section` in the user guide."""
-
     methods_priority: Optional[MethodsPriorityOrder]
     """The priority order for the methods to be used when entering the Mode.
     For more detailed explanation, see the ``methods_priority`` argument of the
@@ -523,19 +545,26 @@ class Mode:
         (either by whitelisting with "use_only" (="methods"), or by
         blacklisting with "omit" parameter)."""
 
-        self.on_fail = params.on_fail
         self.methods_priority = params.methods_priority
-        self._lock = threading.Lock()
+        self._lifecycle_lock = threading.Lock()
+        self._lifecycle_lock_owner: int | None = None
         self._context_token: Optional[Token[Mode]] = None
 
-        self._has_entered_context: bool = False
-        """This is used to track if the mode has been entered already. Set to
-        True when activated, and to False when deactivated. A bit different
-        from `active`, because you might be entered into a mode which fails,
-        so `active` can be False even if this is True. """
+        self._entered: bool = False
+        """True just before after_enter is called; False just after before_exit
+        (or after rollback). Gates exit(). A bit different from `active`:
+        active is False if activation failed, but entered is still True."""
+
+        # Lifecycle hooks
+        self._before_enter = params.before_enter
+        self._after_enter = params.after_enter
+        self._before_exit = params.before_exit
+        self._after_exit = params.after_exit
+        self._on_success = params.on_success
+        self._on_fail = _resolve_on_fail(params.on_fail)
 
     def __call__(self, func: Callable[P, R]) -> Callable[P, R]:
-        """Provides the decorator syntax for the KeepAwake instances."""
+        """Provides the decorator syntax for the Mode instances."""
 
         @wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
@@ -607,6 +636,28 @@ class Mode:
         # unreachable.
 
         return False
+
+    @contextlib.contextmanager
+    def _held_lifecycle_lock(self) -> Generator[None, None, None]:
+        """Context manager: acquires _lifecycle_lock and tracks owner."""
+        self._lifecycle_lock.acquire()
+        self._lifecycle_lock_owner = threading.get_ident()
+        try:
+            yield
+        finally:
+            self._lifecycle_lock_owner = None
+            self._lifecycle_lock.release()
+
+    def _check_not_in_hook(self, method: str) -> None:
+        """Raise if called re-entrantly from within a hook. Prevents infinite
+        recursion."""
+
+        # TODO: This should be probably called _check_not_called_within_enter_or_exit
+        # since it's not just about hooks, but any re-entrant call to enter() or exit().
+        if self._lifecycle_lock_owner == threading.get_ident():
+            raise RuntimeError(
+                f"Mode.{method}() called from within a hook. This is not allowed."
+            )
 
     def enter(self, if_already_entered: IfAlreadyEntered = "warn") -> ActivationResult:
         """Enter the mode and try to activate it.
@@ -681,21 +732,41 @@ class Mode:
         The ``mode.exit()`` in the finally block guarantees that the mode is
         exited properly.
         """
-        with self._lock:
-            if self._has_entered_context:
+        self._check_not_in_hook("enter")
+        with self._held_lifecycle_lock():
+            if self._entered:
                 _handle_already_entered(if_already_entered)
                 return self.result
             self._enter()
-
-        if not self.active:
-            handle_activation_fail(self.on_fail, self.result)
-
         return self.result
 
     def _enter(self) -> None:
-        """Orchestrate full mode entry. Called with self._lock held."""
-        self._has_entered_context = True
+        """Orchestrate full mode entry. Called with _lifecycle_lock held."""
+        _invoke_hook(self._before_enter, self, name="before_enter")
+
+        result, active_method, heartbeat = self._activate_mode()
+        self._apply_activation_result(result, active_method, heartbeat)
+
+        try:
+            if self.active:
+                _invoke_hook(self._on_success, self.result, name="on_success")
+            else:
+                _invoke_hook(self._on_fail, self.result, name="on_fail")
+            self._entered = True
+            _invoke_hook(self._after_enter, self, name="after_enter")
+        except BaseException:
+            self._entered = False
+            self._deactivate_mode()
+            raise
+
+    def _activate_mode(
+        self,
+    ) -> Tuple[ActivationResult, Optional[Method], Optional[Heartbeat]]:
+        """Activate the method and commit all state. Core enter — no hooks.
+        Called with self._lifecycle_lock held."""
+
         possibly_supported, unsupported = self._get_supported_and_unsupported_methods()
+        method_kwargs = self._get_method_kwargs()
 
         logger.info(
             'The full list of prioritized wakepy Methods for Mode "%s" is: %s',
@@ -709,44 +780,44 @@ class Mode:
             [m.name for m in unsupported],
         )
 
-        method_results = self._activate(possibly_supported)
-        unsupported_results = self._create_unsupported_results(unsupported)
-        self.result = ActivationResult(
-            method_results + unsupported_results, mode_name=self.name
+        method_results, active_method, heartbeat = (
+            self._activate_first_successful_method(
+                method_classes=possibly_supported, **method_kwargs
+            )
         )
 
+        unsupported_results = self._create_unsupported_results(unsupported)
+        result = ActivationResult(
+            method_results + unsupported_results, mode_name=self.name
+        )
+        return result, active_method, heartbeat
+
+    def _apply_activation_result(
+        self,
+        result: ActivationResult,
+        active_method: Optional[Method],
+        heartbeat: Optional[Heartbeat],
+    ) -> None:
+        """Commit activation result to mode state. Called with lock held."""
+        self.result = result
+        self.heartbeat = heartbeat
+        self.active = active_method is not None
+
         if self.active:
-            with _mode_lock:
-                _all_modes.append(self)
+            self.active_method = MethodInfo._from_method(active_method)
+            self.method = self.active_method
+            self._active_method = active_method
+            self._method = active_method
             logger.info(
                 'Activated wakepy mode "%s" with method: %s',
                 self.name,
                 self.active_method,
             )
+            with _all_modes_lock:
+                _all_modes.append(self)
         else:
-            logger.info(self.result.get_failure_text(style="inline"))
-
-    def _activate(self, methods: List[Type[Method]]) -> List[MethodActivationResult]:
-        """Try methods in order until the first success. Sets method state.
-
-        Returns the list of :class:`MethodActivationResult` for all tried
-        (and untried) methods. Does not include unsupported methods.
-        """
-        method_kwargs = self._get_method_kwargs()
-        methodresults, self._active_method, self.heartbeat = (
-            self._activate_first_successful_method(
-                method_classes=methods, **method_kwargs
-            )
-        )
-        self.active_method = (
-            MethodInfo._from_method(self._active_method)
-            if self._active_method
-            else None
-        )
-        self.active = self._active_method is not None
-        self._method = self._active_method
-        self.method = self.active_method
-        return methodresults
+            self.active_method = None
+            logger.info(result.get_failure_text(style="inline"))
 
     def exit(self) -> None:
         """Exit the mode, and deactivates if it is active.
@@ -766,27 +837,43 @@ class Mode:
 
 
         """
-        if not self._has_entered_context:
-            return
+        self._check_not_in_hook("exit")
 
-        with self._lock:
-            if self.active:
-                if self._active_method is None:
-                    raise RuntimeError(
-                        f"Cannot exit mode: {str(self.name)}. "
-                        "The active_method is None! This should never happen."
-                    )
-                deactivate_method(self._active_method, self.heartbeat)
-            self._active_method = None
-            self.active_method = None
-            self.heartbeat = None
-            self.active = None
-            self._has_entered_context = False
-            with _mode_lock:
-                try:
-                    _all_modes.remove(self)
-                except ValueError:
-                    pass  # defensive: already removed
+        with self._held_lifecycle_lock():
+            if not self._entered:
+                return
+
+            try:
+                # If the user-provided before_exit hook raises an exception,
+                # we still want to make sure that the mode is exited properly.
+                _invoke_hook(self._before_exit, self, name="before_exit")
+            finally:
+                self._deactivate_mode()
+
+            _invoke_hook(self._after_exit, self, name="after_exit")
+
+    def _deactivate_mode(self) -> None:
+        """Deactivate the method and reset state. Core exit — no hooks.
+        Called with self._lifecycle_lock held."""
+        if self.active:
+            if self._active_method is None:  # pragma: no cover
+                raise RuntimeError(
+                    f"Cannot exit mode: {str(self.name)}. "
+                    "The active_method is None! This should never happen."
+                )
+            deactivate_method(self._active_method, self.heartbeat)
+
+        self._active_method = None
+        self.active_method = None
+        self.heartbeat = None
+        self.active = None
+        self._entered = False
+
+        with _all_modes_lock:
+            try:
+                _all_modes.remove(self)
+            except ValueError:
+                pass  # defensive: already removed
 
     def probe_all_methods(self) -> ProbingResults:
         """Probe all methods for a mode.
@@ -846,8 +933,8 @@ class Mode:
             )
         _current_mode.reset(self._context_token)
 
+    @staticmethod
     def _add_fake_success_if_needed(
-        self,
         method_classes: list[Type[Method]],
     ) -> list[Type[Method]]:
         methods = list(method_classes)
@@ -1079,19 +1166,52 @@ def select_methods(
     return selected_methods
 
 
-def handle_activation_fail(on_fail: OnFail, result: ActivationResult) -> None:
-    if on_fail == "pass":
+def _invoke_hook(
+    hook: typing.Callable[..., typing.Any] | None,
+    *args: typing.Any,
+    name: str,
+) -> None:
+    """Invoke a lifecycle hook callback, or do nothing if hook is None."""
+    if hook is None:
+        logger.debug("Hook %s is None, skipping.", name)
         return
-    elif on_fail == "warn":
-        warnings.warn(
-            result.get_failure_text(style="block"), ActivationWarning, stacklevel=5
-        )
-        return
-    elif on_fail == "error":
-        raise ActivationError(result.get_failure_text(style="block"))
-    elif not callable(on_fail):
-        raise ValueError(
-            'on_fail must be one of "error", "warn", pass" or a callable which takes '
-            "single positional argument (ActivationResult)"
-        )
-    on_fail(result)
+    logger.debug("Calling hook %s.", name)
+    hook(*args)
+
+
+def _resolve_on_fail(on_fail: OnFail) -> ResultHook | None:
+    """Convert public OnFail value to an internal ResultHook or None.
+
+    Args:
+        on_fail: The on_fail parameter value as provided by the user.
+
+    Returns:
+        A callable taking ActivationResult, or None if on_fail is None.
+
+    Raises:
+        ValueError: If on_fail is not a recognized value.
+    """
+    if on_fail is None:
+        return None
+    if on_fail == "warn":
+
+        def _warn(result: ActivationResult) -> None:
+            warnings.warn(
+                result.get_failure_text(style="block"),
+                ActivationWarning,
+                stacklevel=7,
+            )
+
+        return _warn
+    if on_fail == "error":
+
+        def _error(result: ActivationResult) -> None:
+            raise ActivationError(result.get_failure_text(style="block"))
+
+        return _error
+    if callable(on_fail):
+        return on_fail
+    raise ValueError(
+        'on_fail must be "error", "warn", None, or a callable which takes '
+        "single positional argument (ActivationResult)"
+    )

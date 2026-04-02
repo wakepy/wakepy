@@ -143,15 +143,10 @@ with keep.running(on_fail="warn"):
 
 | `on_fail`                | What happens? |
 | ------------------------ | ------------ |
+| `None` | Does nothing |
 | "warn" (default) | Issues an {class}`~wakepy.ActivationWarning` |
 | "error" | Raises an {class}`~wakepy.ActivationError`        |
-| "pass"  | Does nothing |
 | Callable | The callable is called with one argument: the result of the activation which is <br> a instance of {class}`~wakepy.ActivationResult`. The call occurs before the with block is entered. |
-
-
-```{seealso}
-{class}`Mode.__init__() <wakepy.Mode>` `on_fail` argument.
-```
 
 #### Example: Notify user with a custom callable
 
@@ -286,6 +281,73 @@ with keep.running(methods_priority=[{"MethodA", "MethodB"}, "*", "MethodF"]):
 
 The `methods_priority` is still an experimental feature and may change or be removed without further notice.
 
+```
+
+(lifecycle-hooks-section)=
+## Lifecycle Hooks
+
+```{versionadded} 2.0.0
+```
+
+Lifecycle hooks let you run callbacks at specific points in a Mode's lifecycle. Hooks work with all three usage syntaxes (context manager, decorator, explicit enter/exit).
+
+### Available Hooks
+
+**Mode hooks** — receive the {class}`~wakepy.Mode` instance:
+
+| Hook | When Called |
+|------|-------------|
+| `before_enter` | Before entering the mode |
+| `after_enter` | After entering the mode (after `on_success` or `on_fail`) |
+| `before_exit` | Before exiting the mode |
+| `after_exit` | After exiting the mode |
+
+**Result hooks** — receive the {class}`~wakepy.ActivationResult` instance:
+
+| Hook | When Called |
+|------|-------------|
+| `on_success` | When activation succeeds |
+| `on_fail` | When activation fails (if set to a callable; see also [on-fail actions](#on-fail-actions-section)) |
+
+### Example
+
+```{code-block} python
+from wakepy import keep, ActivationResult, Mode
+
+def on_success(result: ActivationResult):
+    print(f"Active with: {result.method}")
+
+def on_fail(result: ActivationResult):
+    print(f"Could not activate {result.mode_name}")
+
+def after_enter(mode: Mode):
+    print(f"Starting {mode.name} task (active: {mode.active})")
+
+def after_exit(mode: Mode):
+    print(f"Exited {mode.name} mode")
+
+@keep.running(
+    on_success=on_success,
+    on_fail=on_fail,
+    after_enter=after_enter,
+    after_exit=after_exit,
+)
+def long_running_task():
+    print("Running...")
+```
+
+Output (success):
+
+```
+Active with: org.gnome.SessionManager
+Starting keep.running task (active: True)
+Running...
+Exited keep.running mode
+```
+
+```{seealso}
+- [Mode Lifecycle: Lifecycle Hooks](./wakepy-mode-lifecycle.md#lifecycle-hooks) — execution timeline and thread safety details
+- {class}`~wakepy.ActivationResult` — ActivationResult documentation
 ```
 
 # Recipes
