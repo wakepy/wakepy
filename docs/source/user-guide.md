@@ -148,6 +148,9 @@ with keep.running(on_fail="warn"):
 | "pass"  | Does nothing |
 | Callable | The callable is called with one argument: the result of the activation which is <br> a instance of {class}`~wakepy.ActivationResult`. The call occurs before the with block is entered. |
 
+An `ActivationWarning` points to the line where your code enters the mode, whether
+you use a `with` block, a decorator, or `Mode.enter()`.
+
 
 ```{seealso}
 {class}`Mode.__init__() <wakepy.Mode>` `on_fail` argument.

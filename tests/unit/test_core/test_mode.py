@@ -4,6 +4,7 @@ import asyncio
 import copy
 import queue
 import re
+import runpy
 import threading
 import typing
 import warnings
@@ -39,6 +40,7 @@ from wakepy.core.mode import (
 from wakepy.core.registry import get_methods
 
 if typing.TYPE_CHECKING:
+    from pathlib import Path
     from typing import List, Type
 
 
@@ -678,6 +680,58 @@ class TestHandleActivationFail:
                 on_fail="foo",  # type: ignore
                 result=result1,
             )
+
+
+class TestActivationWarningLocation:
+    @pytest.mark.parametrize(
+        "body",
+        [
+            "with keep.running():  # warning\n    pass",
+            "def invoke():\n"
+            "    with keep.running():  # warning\n"
+            "        pass\n"
+            "invoke()",
+            "mode = keep.running()\n"
+            "try:\n"
+            "    mode.enter()  # warning\n"
+            "finally:\n"
+            "    mode.exit()",
+            "def invoke():\n    mode = keep.running()\n    try:\n"
+            "        mode.enter()  # warning\n    finally:\n"
+            "        mode.exit()\ninvoke()",
+            "@keep.running\ndef invoke():\n    pass\ninvoke()  # warning",
+            "@keep.running()\ndef invoke():\n    pass\ninvoke()  # warning",
+            "from contextlib import ExitStack\n"
+            "with ExitStack() as stack:\n"
+            "    stack.enter_context(keep.running())  # warning",
+        ],
+    )
+    def test_warning_points_to_user_call(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, body: str
+    ) -> None:
+        script = tmp_path / "warning_script.py"
+        source = "from wakepy import keep\n" + body + "\n"
+        script.write_text(source, encoding="utf-8")
+        expected_line = next(
+            index
+            for index, line in enumerate(source.splitlines(), 1)
+            if "# warning" in line
+        )
+        monkeypatch.setenv("WAKEPY_FORCE_FAILURE", "1")
+        monkeypatch.delenv("WAKEPY_FAKE_SUCCESS", raising=False)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always", ActivationWarning)
+            runpy.run_path(str(script))
+
+        activation_warnings = [
+            warning
+            for warning in caught
+            if issubclass(warning.category, ActivationWarning)
+        ]
+        assert len(activation_warnings) == 1
+        assert activation_warnings[0].filename == str(script)
+        assert activation_warnings[0].lineno == expected_line
 
 
 @pytest.mark.usefixtures("provide_methods_a_f")
