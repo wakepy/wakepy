@@ -683,6 +683,8 @@ class TestHandleActivationFail:
 
 
 class TestActivationWarningLocation:
+    """Exercise warning locations through the public mode-entry styles."""
+
     @pytest.mark.parametrize(
         "body",
         [
@@ -709,6 +711,7 @@ class TestActivationWarningLocation:
     def test_warning_points_to_user_call(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, body: str
     ) -> None:
+        """Keep warning locations correct across public mode-entry patterns."""
         script = tmp_path / "warning_script.py"
         source = "from wakepy import keep\n" + body + "\n"
         script.write_text(source, encoding="utf-8")

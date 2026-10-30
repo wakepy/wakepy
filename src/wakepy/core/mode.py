@@ -1080,6 +1080,7 @@ def select_methods(
 
 
 def handle_activation_fail(on_fail: OnFail, result: ActivationResult) -> None:
+    """Apply the failure policy, reporting warnings at the mode entry call."""
     if on_fail == "pass":
         return
     elif on_fail == "warn":
