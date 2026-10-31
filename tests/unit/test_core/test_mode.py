@@ -644,14 +644,12 @@ class TestExitModeWithException:
 class TestHandleActivationFail:
     """Tests for handle_activation_fail"""
 
-    @staticmethod
     @pytest.fixture
-    def result1():
+    def result1(self):
         return ActivationResult([], mode_name="testmode")
 
-    @staticmethod
     @pytest.fixture
-    def error_text_match(result1):
+    def error_text_match(self, result1):
         return re.escape(result1.get_failure_text())
 
     def test_pass(self, result1):

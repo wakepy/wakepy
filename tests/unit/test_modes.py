@@ -28,9 +28,8 @@ class TestKeepRunninAndPresenting:
     `function_under_test` is either the keep.running or keep.presenting
     function"""
 
-    @staticmethod
     @pytest.fixture
-    def methods(name_prefix, mode_name_, monkeypatch, testutils):
+    def methods(self, name_prefix, mode_name_, monkeypatch, testutils):
         """This fixture creates three methods, which belong to a given mode."""
 
         testutils.empty_method_registry(monkeypatch)
