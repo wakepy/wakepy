@@ -17,6 +17,7 @@
 - Fix code coverage on devcontainers ([#601](https://github.com/wakepy/wakepy/pull/601))
 
 ### 📖 Documentation
+- Document lifecycle hook ordering, mode states, cleanup after exceptions, and exception chaining, with lifecycle diagrams.
 - Document Cinnamon support ([#587](https://github.com/wakepy/wakepy/pull/587))
 
 ## wakepy 1.0.0

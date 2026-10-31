@@ -1,6 +1,16 @@
 # Migration Guide
 ## Migration Guide: 2.0.0
 
+### on_fail configuration
+
+The public `Mode.on_fail` attribute has been removed. Configure failure handling when creating a mode with `keep.running(on_fail=...)` or `keep.presenting(on_fail=...)`.
+
+Replace `on_fail="pass"` with `on_fail=None`. The `"warn"`, `"error"`, and callable options remain available. This change does not affect `enter(if_already_entered="pass")`.
+
+### Exit hooks and cleanup
+
+Every `Mode.exit()` call invokes the new `before_exit` and `after_exit` hooks, including repeated exits and exits without entry. Make exit callbacks safe to call repeatedly. Context managers and decorators clean up failed entry automatically; explicit callers must call `exit()` in `finally`, including when an enter hook raises. See {ref}`lifecycle exception behavior <lifecycle-hook-exceptions>` for all failure scenarios and exception precedence.
+
 ### Mode.active type change
 
 {attr}`Mode.active <wakepy.Mode.active>` changed from `bool` to `bool | None`. The initial value and the value after deactivation is now `None` instead of `False`:

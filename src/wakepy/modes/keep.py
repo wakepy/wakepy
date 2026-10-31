@@ -32,14 +32,16 @@ on_fail: "error" | "warn" | callable or None
         ``None`` replaces the old ``"pass"`` option.
 after_enter: callable or None
     Lifecycle hook called after mode activation completes (whether
-    successful or failed). Receives the :class:`~wakepy.Mode` instance
-    as parameter.
+    successful or failed), unless an earlier enter hook raises. Receives
+    the :class:`~wakepy.Mode` instance as parameter.
 before_exit: callable or None
     Lifecycle hook called before mode deactivation begins. Receives the
-    :class:`~wakepy.Mode` instance as parameter.
+    :class:`~wakepy.Mode` instance as parameter. Called on every exit,
+    including when the mode was never entered or has already exited.
 after_exit: callable or None
-    Lifecycle hook called after mode deactivation completes. Receives the
-    :class:`~wakepy.Mode` instance as parameter.
+    Lifecycle hook called after deactivation is attempted and state is
+    reset, even if before_exit or deactivation raises. Receives the
+    :class:`~wakepy.Mode` instance as parameter. Called on every exit.
 dbus_adapter: class or sequence of classes
     Optional argument which can be used to define a custom DBus adapter.
     If given, should be a subclass of :class:`~wakepy.DBusAdapter`, or a

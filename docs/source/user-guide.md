@@ -291,6 +291,8 @@ The `methods_priority` is still an experimental feature and may change or be rem
 
 Lifecycle hooks let you run callbacks at specific points in a Mode's lifecycle. Hooks work with all three usage syntaxes (context manager, decorator, explicit enter/exit).
 
+If an enter hook raises, remaining enter hooks are skipped. Context managers and decorators automatically run exit cleanup; explicit callers must put `enter()` inside `try` and call `exit()` in `finally`. Every `exit()` invokes both exit hooks, including after failed entry or a previous exit. Exit-hook exceptions propagate after cleanup. See the {ref}`complete exception rules and failure scenarios <lifecycle-hook-exceptions>`.
+
 ### Available Hooks
 
 **Mode hooks** — receive the {class}`~wakepy.Mode` instance:

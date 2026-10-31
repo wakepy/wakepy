@@ -16,19 +16,347 @@ import typing
 
 import pytest
 
-from wakepy import Mode, keep, modecount
+from wakepy import (
+    ActivationError,
+    ActivationWarning,
+    Method,
+    Mode,
+    current_mode,
+    keep,
+    modecount,
+)
+from wakepy.core import PlatformType
 from wakepy.core.constants import ModeName
-from wakepy.core.mode import create_mode_params
+from wakepy.core.mode import ModeExit, create_mode_params
 from wakepy.methods._testing import WakepyFakeSuccess
 
 if typing.TYPE_CHECKING:
     from typing import List
 
     from wakepy import ActivationResult
+    from wakepy.core.mode import OnFail
+
+
+@pytest.fixture
+def lifecycle_case(
+    empty_method_registry: None, monkeypatch: pytest.MonkeyPatch
+) -> typing.Callable[[dict[str, BaseException], bool], tuple[Mode, list[str]]]:
+    """Real mode/method and recording hooks, with injectable failures."""
+    monkeypatch.delenv("WAKEPY_FAKE_SUCCESS", raising=False)
+    case_count = 0
+
+    def make_case(
+        errors: dict[str, BaseException], success: bool
+    ) -> tuple[Mode, list[str]]:
+        nonlocal case_count
+        case_count += 1
+        events: list[str] = []
+
+        def record(name: str) -> None:
+            events.append(name)
+            if name in errors:
+                raise errors[name]
+
+        def hook(name: str) -> typing.Callable[[object], None]:
+            def callback(_: object) -> None:
+                record(name)
+
+            return callback
+
+        class RecordingMethod(Method):
+            name = f"LifecycleRecording{case_count}"
+            mode_name = "lifecycle-recording"
+            supported_platforms = (PlatformType.ANY,)
+
+            def caniuse(self) -> bool:
+                return success
+
+            def enter_mode(self) -> None:
+                record("activate")
+
+            def exit_mode(self) -> None:
+                record("deactivate")
+
+        mode = Mode(
+            create_mode_params(
+                RecordingMethod.mode_name,
+                methods=[RecordingMethod.name],
+                before_enter=hook("before_enter"),
+                on_success=hook("on_success"),
+                on_fail=hook("on_fail"),
+                after_enter=hook("after_enter"),
+                before_exit=hook("before_exit"),
+                after_exit=hook("after_exit"),
+            )
+        )
+        return mode, events
+
+    return make_case
 
 
 class HookTestError(Exception):
     pass
+
+
+class TestLifecycleFailureCleanup:
+    @pytest.mark.parametrize("syntax", ["explicit", "context", "decorator"])
+    @pytest.mark.parametrize(
+        "hook_name, success",
+        [
+            ("before_enter", True),
+            ("on_success", True),
+            ("on_fail", False),
+            ("after_enter", True),
+            ("after_enter", False),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "error_type", [HookTestError, KeyboardInterrupt, SystemExit, ModeExit]
+    )
+    def test_enter_failure(
+        self,
+        lifecycle_case: typing.Callable[
+            [dict[str, BaseException], bool], tuple[Mode, list[str]]
+        ],
+        syntax: str,
+        hook_name: str,
+        success: bool,
+        error_type: type[BaseException],
+        do_assert: typing.Callable[[bool], None],
+    ) -> None:
+        error = error_type("enter hook")
+        mode, events = lifecycle_case({hook_name: error}, success)
+        outer, _ = lifecycle_case({}, True)
+
+        def body() -> None:
+            events.append("body")
+
+        with outer:
+            with pytest.raises(error_type) as caught:
+                if syntax == "explicit":
+                    try:
+                        mode.enter()
+                    finally:
+                        # Explicit entry leaves partial state to callers.
+                        do_assert(mode._entered is (hook_name != "before_enter"))
+                        do_assert(
+                            mode.active
+                            is (None if hook_name == "before_enter" else success)
+                        )
+                        mode.exit()
+                elif syntax == "context":
+                    with mode:
+                        body()
+                else:
+                    mode(body)()
+
+            do_assert(caught.value is error)
+            do_assert(current_mode() is outer)
+            do_assert(modecount() == 1)
+
+        entry_events = ["before_enter"]
+        if hook_name != "before_enter":
+            if success:
+                entry_events.append("activate")
+            entry_events.append("on_success" if success else "on_fail")
+        if hook_name == "after_enter":
+            entry_events.append("after_enter")
+        exit_events = ["before_exit"]
+        if success and hook_name != "before_enter":
+            exit_events.append("deactivate")
+        exit_events.append("after_exit")
+        do_assert(events == entry_events + exit_events)
+        do_assert(mode.active is None)
+        do_assert(mode._entered is False)
+        do_assert(not mode._guard._lock.locked())
+        do_assert(modecount() == 0)
+
+    @pytest.mark.parametrize("syntax", ["explicit", "context", "decorator"])
+    @pytest.mark.parametrize("hook_name", ["before_exit", "after_exit", "deactivate"])
+    @pytest.mark.parametrize(
+        "error_type", [HookTestError, KeyboardInterrupt, SystemExit, ModeExit]
+    )
+    def test_exit_failure(
+        self,
+        lifecycle_case: typing.Callable[
+            [dict[str, BaseException], bool], tuple[Mode, list[str]]
+        ],
+        syntax: str,
+        hook_name: str,
+        error_type: type[BaseException],
+    ) -> None:
+        error = error_type("exit hook")
+        mode, events = lifecycle_case({hook_name: error}, True)
+        outer, _ = lifecycle_case({}, True)
+
+        def body() -> None:
+            events.append("body")
+
+        with outer:
+            wrapped = hook_name == "deactivate" and isinstance(error, Exception)
+            with pytest.raises(RuntimeError if wrapped else error_type) as caught:
+                if syntax == "explicit":
+                    mode.enter()
+                    body()
+                    mode.exit()
+                elif syntax == "context":
+                    with mode:
+                        body()
+                else:
+                    mode(body)()
+            assert (caught.value.__context__ if wrapped else caught.value) is error
+            assert current_mode() is outer
+            assert modecount() == 1
+
+        assert events == [
+            "before_enter",
+            "activate",
+            "on_success",
+            "after_enter",
+            "body",
+            "before_exit",
+            "deactivate",
+            "after_exit",
+        ]
+        assert mode.active is None
+        assert mode._entered is False
+        assert not mode._guard._lock.locked()
+
+    @pytest.mark.parametrize("entered", [False, True])
+    def test_repeated_exit_calls_hooks_without_repeated_deactivation(
+        self,
+        lifecycle_case: typing.Callable[
+            [dict[str, BaseException], bool], tuple[Mode, list[str]]
+        ],
+        entered: bool,
+    ) -> None:
+        mode, events = lifecycle_case({}, True)
+        if entered:
+            mode.enter()
+            mode.exit()
+        events.clear()
+        mode.exit()
+        mode.exit()
+        assert events == ["before_exit", "after_exit"] * 2
+        assert mode.active is None
+
+    @pytest.mark.parametrize(
+        "failure_stages",
+        [
+            ("before_enter", "before_exit"),
+            ("after_enter", "after_exit"),
+            ("body", "before_exit"),
+            ("body", "after_exit"),
+            ("before_exit", "after_exit"),
+            ("before_exit", "deactivate"),
+            ("deactivate", "after_exit"),
+            ("body", "before_exit", "deactivate", "after_exit"),
+        ],
+    )
+    def test_multiple_failures_are_chained(
+        self,
+        lifecycle_case: typing.Callable[
+            [dict[str, BaseException], bool], tuple[Mode, list[str]]
+        ],
+        failure_stages: tuple[str, ...],
+    ) -> None:
+        errors: dict[str, BaseException] = {
+            stage: HookTestError(stage) for stage in failure_stages
+        }
+        mode, events = lifecycle_case(errors, True)
+        outer, _ = lifecycle_case({}, True)
+        with outer:
+            with pytest.raises(Exception) as caught:
+                with mode:
+                    if "body" in errors:
+                        raise errors["body"]
+            assert current_mode() is outer
+        chain: list[BaseException] = []
+        exception: BaseException | None = caught.value
+        while exception is not None:
+            chain.append(exception)
+            exception = exception.__context__
+        # Method deactivation wraps its error in RuntimeError; hook errors
+        # themselves keep their identity and order in the chain.
+        assert [error for error in chain if isinstance(error, HookTestError)] == [
+            errors[stage] for stage in reversed(failure_stages)
+        ]
+        assert events[-1] == "after_exit"
+        assert mode.active is None
+        assert mode._entered is False
+        assert modecount() == 0
+        assert not mode._guard._lock.locked()
+
+    @pytest.mark.usefixtures("empty_method_registry")
+    @pytest.mark.parametrize("syntax", ["explicit", "context", "decorator"])
+    @pytest.mark.parametrize("policy", ["error", "warn"])
+    def test_builtin_on_fail_skips_after_enter(
+        self, monkeypatch: pytest.MonkeyPatch, syntax: str, policy: OnFail
+    ) -> None:
+        monkeypatch.delenv("WAKEPY_FAKE_SUCCESS", raising=False)
+        events: list[str] = []
+        mode = keep.running(
+            on_fail=policy,
+            after_enter=lambda _: events.append("after_enter"),
+            before_exit=lambda _: events.append("before_exit"),
+            after_exit=lambda _: events.append("after_exit"),
+        )
+
+        def body() -> None:
+            events.append("body")
+
+        with pytest.raises(ActivationError if policy == "error" else ActivationWarning):
+            if syntax == "explicit":
+                try:
+                    mode.enter()
+                    body()
+                finally:
+                    mode.exit()
+            elif syntax == "context":
+                with mode:
+                    body()
+            else:
+                mode(body)()
+        assert events == ["before_exit", "after_exit"]
+        assert modecount() == 0
+
+    @pytest.mark.parametrize("syntax", ["context", "decorator"])
+    @pytest.mark.parametrize(
+        "error_type", [HookTestError, KeyboardInterrupt, SystemExit, ModeExit]
+    )
+    def test_body_failure(
+        self,
+        lifecycle_case: typing.Callable[
+            [dict[str, BaseException], bool], tuple[Mode, list[str]]
+        ],
+        syntax: str,
+        error_type: type[BaseException],
+    ) -> None:
+        mode, events = lifecycle_case({}, True)
+        outer, _ = lifecycle_case({}, True)
+        error = error_type("body")
+
+        def body() -> None:
+            events.append("body")
+            raise error
+
+        def run() -> None:
+            if syntax == "context":
+                with mode:
+                    body()
+            else:
+                mode(body)()
+
+        with outer:
+            if error_type is ModeExit:
+                run()
+            else:
+                with pytest.raises(error_type) as caught:
+                    run()
+                assert caught.value is error
+            assert current_mode() is outer
+        assert events[-4:] == ["body", "before_exit", "deactivate", "after_exit"]
+        assert modecount() == 0
 
 
 @pytest.mark.usefixtures("empty_method_registry")
@@ -256,9 +584,8 @@ class TestHookExceptionPropagation:
 
 
 @pytest.mark.usefixtures("empty_method_registry")
-class TestHookExceptionExitsMode:
-    """When a hook raises, mode is exited without exit hooks and exception
-    re-raised."""
+class TestExplicitHookExceptionCleanup:
+    """Explicit callers must exit after enter-hook failures."""
 
     @pytest.mark.parametrize(
         "hook_name, fake_success",
@@ -289,8 +616,8 @@ class TestHookExceptionExitsMode:
         with pytest.raises(HookTestError):
             mode.enter()
 
-        # enter() no longer auto-deactivates on hook exceptions; user must call
-        # exit() for cleanup (as with context manager / decorator syntax).
+        # Explicit enter() requires caller cleanup. Context managers and
+        # decorators perform this cleanup automatically.
         mode.exit()
 
         assert mode.active is None
@@ -558,8 +885,8 @@ class TestThreadSafetyLockOrdering:
 class TestStateTransitions:
     """Verify state machine transitions per spec."""
 
-    def test_exit_on_not_entered_mode_is_noop(self) -> None:
-        """exit() on a not-entered mode does nothing."""
+    def test_exit_on_not_entered_mode_keeps_reset_state(self) -> None:
+        """exit() without entry leaves the mode unentered and inactive."""
         params = create_mode_params(ModeName.KEEP_RUNNING)
         mode = Mode(params)
         mode.exit()  # must not raise

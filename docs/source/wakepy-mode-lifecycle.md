@@ -6,7 +6,7 @@
 
 ### Using Wakepy Modes in python
 
-Modes can be used in two ways. As **context managers**:
+Modes can be used in three ways. As **context managers**:
 
 (simple-example-code-block)=
 ```{code-block} python
@@ -45,6 +45,17 @@ from wakepy import keep
 def long_running_task():
     with keep.running():
         USER_CODE
+```
+
+or with **explicit entry and exit**:
+
+```{code-block} python
+mode = keep.running()
+try:
+    mode.enter()
+    USER_CODE
+finally:
+    mode.exit()
 ```
 
 
@@ -229,7 +240,7 @@ with mode:
 # Inactive
 ```
 
-This is handled automatically by the context manager. What actually gets called is `Mode.__exit__()`, which in turn calls `Mode._deactivate()`, which triggers deactivating the used Method. Deactivating a Method means stopping the `Method.heartbeat()` calls (if heartbeat is used) and calling `Method.exit_mode()`.
+This is handled automatically by the context manager. `Mode.__exit__()` calls `Mode.exit()`, which invokes exit hooks and deactivates the used Method if active. Deactivating a Method means stopping the `Method.heartbeat()` calls (if heartbeat is used) and calling `Method.exit_mode()`.
 
 ```{note}
 When using the `with` statement or the decorator syntax, the context manager takes care of calling `Mode._deactivate()` even if `USER_CODE` raises an exception.
@@ -275,24 +286,11 @@ with keep.running(
 
 The hooks are invoked at these points in the Mode lifecycle:
 
-```
-  ●  before_enter(mode)
-  │
-  │  try Method 1 … Method N
-  │
-  ├─[success]── on_success(result)
-  ├─[fail]───── on_fail(result)
-  │
-  ●  after_enter(mode)
-  │
-  │  [ USER CODE ]
-  │
-  ●  before_exit(mode)
-  │
-  │  deactivate the used Method
-  │
-  ●  after_exit(mode)
-```
+:::{figure-md} fig-lifecycle-hooks
+![Lifecycle hooks around mode activation, user code, and deactivation](./img/lifecycle-hooks.svg){width=700px}
+
+Lifecycle hooks in their normal execution order. Exceptions can interrupt entry; see {ref}`exception behavior <lifecycle-hook-exceptions>`.
+:::
 
 There are two groups of lifecycle hooks:
 
@@ -306,15 +304,73 @@ There are two groups of lifecycle hooks:
 3. **on_success(result)** or **on_fail(result)** - Called based on activation outcome:
    - `on_success` if activation succeeded (receives {class}`~wakepy.ActivationResult`)
    - `on_fail` if activation failed (receives {class}`~wakepy.ActivationResult` when callable; `"error"` raises {class}`~wakepy.ActivationError`; `"warn"` issues {class}`~wakepy.ActivationWarning`; `None` does nothing)
-4. **after_enter(mode)** - Called at the end of `Mode.__enter__()` / `Mode.enter()`, after activation completes (called whether activation succeeded or failed)
+4. **after_enter(mode)** - Called after activation succeeds or fails, provided no earlier enter hook raised. For example, `on_fail="error"` raises and skips `after_enter`.
 5. **USER_CODE runs** - Your application code executes
 6. **before_exit(mode)** - Called at the start of `Mode.__exit__()` / `Mode.exit()`, before deactivation
 7. **Deactivation process** - Active method is deactivated
 8. **after_exit(mode)** - Called at the end of `Mode.__exit__()` / `Mode.exit()`, after deactivation completes
 
+### Mode States and Repeated Calls
+
+:::{figure-md} fig-mode-states-and-lifecycle-hooks
+![Entered and unentered mode states with lifecycle hooks](./img/mode-states-and-lifecycle-hooks.svg){width=700px}
+
+Mode states and lifecycle hooks. “Mode.entered” in the diagram names the conceptual entered state; there is no public `Mode.entered` property. The unentered `exit()` loop also invokes both exit hooks, as described below.
+:::
+
+Before entry and after exit, `mode.active is None`. After activation is attempted, `mode.active` is `True` on success or `False` on failure. Failed activation still enters the mode when `on_fail` returns normally. `before_enter` runs before activation; result hooks and `after_enter` observe its outcome. `before_exit` sees the previous state; `after_exit` sees reset state (`active is None`).
+
+Calling `enter()` on an entered mode does not invoke hooks or activate again. Its `if_already_entered` argument controls whether it warns (default), returns silently (`"pass"`), or raises (`"error"`).
+
+Every `exit()` call invokes `before_exit` and `after_exit`, even if entry was never attempted, entry failed, or exit already ran. Only an active mode attempts native deactivation. Repeated calls, including concurrent exits serialized by the mode lock, invoke exit hooks once per call while deactivating at most once per activation.
+
+(lifecycle-hook-exceptions)=
+### Exception Behavior
+
+These rules apply to ordinary exceptions and to `BaseException` subclasses such as `KeyboardInterrupt` and `SystemExit`. Hooks execute synchronously; their exceptions propagate to the caller.
+
+| Failure point | Remaining enter hooks | `with` / decorator | Explicit `enter()` / `exit()` |
+|---|---|---|---|
+| `before_enter` | Skipped; activation is not attempted | Both exit hooks run; body is skipped | `enter()` raises; caller must call `exit()` |
+| `on_success` | `after_enter` is skipped | Both exit hooks run and active method is deactivated; body is skipped | `enter()` raises with mode still active; caller must call `exit()` |
+| Callable `on_fail`, `on_fail="error"`, or a warning treated as an error | `after_enter` is skipped | Both exit hooks run; no active method to deactivate; body is skipped | `enter()` raises after failed activation; caller must call `exit()` |
+| `after_enter` | None remain | Both exit hooks run; deactivate if active; body is skipped | `enter()` raises; caller must call `exit()` |
+| Application body | Entry already completed | Both exit hooks run; deactivate if active | Caller must arrange `exit()` in `finally` |
+| `before_exit` | Not applicable | Deactivation is attempted, state is reset, and `after_exit` runs before propagation | Same behavior |
+| Native deactivation | Not applicable | State is reset and `after_exit` runs before propagation | Same behavior |
+| `after_exit` | Not applicable | State is already reset; exception propagates | Same behavior |
+
+Context managers and decorators explicitly clean up when entry raises: Python itself does not call `__exit__` when `__enter__` fails. If entry succeeds, exiting restores the previous `current_mode()` even when an exit hook or native deactivation raises. The mode lock is released in all these cases. Exit hooks do not run a second time automatically after failed context entry.
+
+For explicit usage, put **both entry and application code inside `try`**, so that cleanup also runs if entry raises:
+
+```{code-block} python
+mode = keep.running(after_enter=after_activation)
+try:
+    mode.enter()
+    USER_CODE
+finally:
+    mode.exit()
+```
+
+If cleanup succeeds, the original exception is re-raised unchanged. If several steps raise, the **last exception propagates**, and earlier exceptions remain accessible through Python's exception chain (`__context__`). For example:
+
+| Failures in execution order | Exception propagated | Earlier exceptions retained |
+|---|---|---|
+| Enter hook or body only | Original exception | None |
+| Enter hook or body, then `before_exit` | `before_exit` exception | Enter hook or body exception |
+| `before_exit`, then `after_exit` | `after_exit` exception | `before_exit` exception |
+| `before_exit`, then native deactivation | Deactivation exception | `before_exit` exception |
+| Native deactivation, then `after_exit` | `after_exit` exception | Deactivation exception |
+| Body, `before_exit`, native deactivation, `after_exit` | `after_exit` exception | All earlier exceptions, newest first |
+
+The same rule applies to any combination of these failures and to interrupts. Native method exceptions may be wrapped in `RuntimeError`, retaining the method exception in the chain. Resetting wakepy's state after a deactivation error does not guarantee that the OS inhibitor was released; the error must be handled by the caller.
+
+`ModeExit` raised by application code is swallowed after successful context cleanup; a decorated function then returns `None`. Hook exceptions propagate, including `ModeExit` raised by a hook. A cleanup exception takes precedence over a body `ModeExit`.
+
 ### Thread Safety and Recursion Detection
 
-Lifecycle hooks are thread-safe. However, to prevent deadlocks, wakepy detects and rejects recursive calls to `Mode.enter()` from within hook callbacks:
+Lifecycle hooks run while the mode's enter/exit lock is held. Calls from other threads wait for that lock; hooks on different mode instances can run independently. To prevent deadlocks, wakepy rejects calls to either `enter()` or `exit()` on the same mode from within its hooks. Entering a different mode is allowed:
 
 ```{code-block} python
 from wakepy import keep
@@ -323,7 +379,7 @@ def bad_hook(mode):
     mode.enter()  # Raises RuntimeError!
 
 with keep.running(before_enter=bad_hook):
-    pass  # RuntimeError: Recursive Mode.enter() detected within lifecycle hook callback
+    pass  # RuntimeError: Mode.enter() — re-entrant call is not allowed.
 ```
 
 ```{seealso}

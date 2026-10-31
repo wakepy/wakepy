@@ -585,9 +585,8 @@ class Mode:
         self._context_token: Optional[Token[Mode]] = None
 
         self._entered: bool = False
-        """True just before after_enter is called; False just after before_exit
-        (or after rollback). Gates exit(). A bit different from `active`:
-        active is False if activation failed, but entered is still True."""
+        """True before result hooks run; False after exit state reset.
+        Unlike `active`, this is True even when activation failed."""
 
         # Lifecycle hooks
         self._before_enter = params.before_enter
@@ -608,8 +607,9 @@ class Mode:
             # the last one would be set to be self._mode. During the
             # __exit__() the last Mode instance would be used on every thread.
             with Mode(self._init_params):
-                retval = func(*args, **kwargs)
-            return retval
+                return func(*args, **kwargs)
+            # A body ModeExit is swallowed by __exit__; there is no result.
+            return typing.cast("R", None)
 
         return wrapper
 
@@ -624,7 +624,12 @@ class Mode:
             id(self),
             threading.get_ident(),
         )
-        self.enter()
+        try:
+            self.enter()
+        except BaseException:
+            # Python does not call __exit__ if __enter__ raises.
+            self.exit()
+            raise
         self._set_current_mode()
         return self
 
@@ -655,8 +660,10 @@ class Mode:
             id(self),
             threading.get_ident(),
         )
-        self.exit()
-        self._unset_current_mode()
+        try:
+            self.exit()
+        finally:
+            self._unset_current_mode()
 
         if exception is None or isinstance(exception, ModeExit):
             # Returning True means that the exception within the with block is
@@ -690,9 +697,9 @@ class Mode:
                 # your long-running work here
 
         When ``enter()`` is used directly, user is responsible for ensuring
-        that :meth:`exit` is guaranteed to run. Since :meth:`exit` is always a
-        safe no-op (even if ``enter()`` was never called or failed), it can
-        be called unconditionally in a ``finally`` block or cleanup handler.
+        that :meth:`exit` is guaranteed to run, including if a hook raises.
+        Call it unconditionally in a ``finally`` block or cleanup handler,
+        even if ``enter()`` was never called or failed. Exit hooks still run.
 
         .. seealso:: :meth:`exit` — the counterpart that deactivates the mode.
 
@@ -763,7 +770,7 @@ class Mode:
         self._apply_activation_result(result, active_method, heartbeat)
         # Note: self._entered must be set before calling the hooks, since if
         # the hooks raise an Exception, we want the .exit() call to cleanup
-        # properly (if ._entered is not set, .exit() would be a no-op
+        # properly, including when activation failed.
         self._entered = True
 
         if self.active:
@@ -835,14 +842,19 @@ class Mode:
     def exit(self) -> None:
         """Exit the mode, and deactivates if it is active.
 
-        This is the counterpart of :meth:`enter`. It is always safe to
-        call — even if :meth:`enter` was never called, failed, or was
-        already called once before. No guard like ``if mode.active:
-        mode.exit()`` is needed.
+        This is the counterpart of :meth:`enter`. It may be called even if
+        :meth:`enter` was never called, failed, or the mode already exited.
+        No guard like ``if mode.active: mode.exit()`` is needed. User hooks
+        may still raise exceptions.
 
         Put ``exit()`` unconditionally in a ``finally`` block or cleanup
         handler. See the try/finally pattern in :meth:`enter` for the
         recommended usage.
+
+        Both exit hooks run on every call, including when never entered.
+        Deactivation and state reset are attempted even if ``before_exit``
+        raises, and ``after_exit`` runs after state reset. If multiple steps
+        raise, the last exception propagates with earlier exceptions chained.
 
         .. seealso:: :meth:`enter` — the counterpart that enters the mode.
 
@@ -853,18 +865,16 @@ class Mode:
         self._guard.check_not_reentrant("Mode.exit()")
 
         with self._guard.held():
-            if not self._entered:
-                return
-
             try:
                 # If the user-provided before_exit hook raises an exception,
                 # we still want to make sure that the mode is exited properly.
                 _invoke_hook(self._before_exit, self, name="before_exit")
             finally:
-                self._exit()
-                self._reset_mode_state()
-
-            _invoke_hook(self._after_exit, self, name="after_exit")
+                try:
+                    self._exit()
+                finally:
+                    self._reset_mode_state()
+                    _invoke_hook(self._after_exit, self, name="after_exit")
 
     def _exit(self) -> None:
         """Deactivate the method if active. Called with self._guard held."""

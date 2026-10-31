@@ -301,12 +301,11 @@ class TestUnsetCurrentMode:
                 # Setting active method
                 mode0._active_method = None
 
-        # Need to manually cleanup after this test, as otherwise the global
-        # state will not be correct. As said, this should never ever happen
-        # in a real life situation.
-        mode0._unset_current_mode()
-        _mode_module._all_modes.remove(mode0)
-        mode0._entered = False
+        # Failed deactivation still resets the state and current context.
+        assert mode0.active is None
+        assert mode0 not in global_modes()
+        with pytest.raises(_mode_module.NoCurrentModeError):
+            _mode_module.current_mode()
 
     def test_unset_before_enter(
         self,
@@ -1011,13 +1010,12 @@ class TestModeThreadSafety:
         mode.exit()
 
     @pytest.mark.usefixtures("WAKEPY_FAKE_SUCCESS_eq_1")
-    def test_concurrent_exit_calls_before_exit_hook_only_once(
+    def test_concurrent_exit_calls_before_exit_hook_for_each_call(
         self,
         methods_abc: List[Type[Method]],
     ) -> None:
         """When two threads call exit() simultaneously, the before_exit
-        hook must fire exactly once — the second thread should see
-        entered=False and no-op."""
+        hook must fire for each call, including after deactivation."""
         call_count = 0
         call_count_lock = threading.Lock()
         exit_barrier = threading.Barrier(2)
@@ -1053,7 +1051,7 @@ class TestModeThreadSafety:
             t.join(timeout=5)
 
         assert errors == [], f"Unexpected errors: {errors}"
-        assert call_count == 1, f"before_exit called {call_count} times, expected 1"
+        assert call_count == 2, f"before_exit called {call_count} times, expected 2"
 
 
 class TestWakepyForceFailure:
