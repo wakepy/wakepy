@@ -112,12 +112,17 @@ Using the :ref:`context manager syntax <context-manager-syntax>`::
 """
 
 if typing.TYPE_CHECKING:
-    from typing import Callable, Literal, Optional, Type
+    from typing import Callable, Optional, Type
 
     from ..core.constants import StrCollection
     from ..core.dbus import DBusAdapter, DBusAdapterTypeSeq
     from ..core.mode import _ModeParams
     from ..core.prioritization import MethodsPriorityOrder
+
+    if sys.version_info < (3, 8):  # pragma: no-cover-if-py-gte-38
+        from typing_extensions import Literal
+    else:  # pragma: no-cover-if-py-lt-38
+        from typing import Literal
 
     if sys.version_info >= (3, 10):  # pragma: no-cover-if-py-gte-310
         from typing import ParamSpec, TypeVar
