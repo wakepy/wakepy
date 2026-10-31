@@ -263,9 +263,8 @@ class TestSortMethodsToPriorityGroups:
 
 @pytest.mark.usefixtures("provide_methods_a_f")
 class TestCheckMethodsPriority:
-    @staticmethod
     @pytest.fixture
-    def methods() -> List[Type[Method]]:
+    def methods(self) -> List[Type[Method]]:
         return get_methods(["A", "B", "C", "D", "E", "F"])
 
     def test_none(self, methods: List[Type[Method]]):

@@ -146,9 +146,9 @@ def method_activation_results4b(
 class TestActivationResult:
     """Tests for ActivationResult"""
 
-    @staticmethod
     @pytest.fixture
     def ar(
+        self,
         mr_platform_support_fail: MethodActivationResult,
         mr_requirements_fail: MethodActivationResult,
         mr_success_result: MethodActivationResult,
