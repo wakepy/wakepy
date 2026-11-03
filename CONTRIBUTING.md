@@ -88,41 +88,21 @@ You can develop wakepy in two ways:
 
 ➜ FreeBSD user? See [Platform-Specific Setup Notes](#freebsd) below
 
-### Option 2: Developing Inside a Devcontainer
+### Option 2: Developing in a Docker Sandbox
 
-[Devcontainers](https://code.visualstudio.com/docs/devcontainers/containers) provide a pre-configured development environment with all necessary tools installed and ready to use. They are supported by many editors, including [VS Code](https://code.visualstudio.com/docs/devcontainers/containers), [PyCharm](https://www.jetbrains.com/help/pycharm/connect-to-devcontainer.html), [Zed](https://zed.dev/docs/dev-containers), [Cursor](https://www.vcluster.com/blog/cursor-with-devpod) and [Windsurf](https://docs.windsurf.com/windsurf/advanced#dev-containers).
+Install [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/). From the repository root, create a shell sandbox with the [wakepy kit](.sbx-kit/README.md):
 
-**Why use a devcontainer?**
-- **Consistent environment** across different machines and contributors - no "works on my machine" issues
-- **Isolated sandbox** perfect for running AI agents and experimental tools without affecting your host system
-- **Zero local setup** - no need to install Python, uv, just, or other dependencies on your machine
-
-**Quick Start:**
-1. Open the repository a supported editor
-2. When prompted, click "Reopen in Container" (or use Command Palette: "Dev Containers: Reopen in Container")
-3. Wait for the container to build and start
-4. Run `just test` to verify
-
-**Want to add custom tools like AI agents?**: You could add for example these features to add claude-code, codex and custom firewall rules (Edit [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) in VS Code):
-
-```
-{
-  "dev.containers.defaultFeatures": {
-    "ghcr.io/w3cj/devcontainer-features/firewall@sha256:f8ae63faf64094305ef247befc0a9c66eecd7a01768df0cc826c7d4a81a92bfc": {
-      "verbose": true,
-      "pypi": true,
-      "anthropicApi": true,
-      "openaiApi": true,
-      "googleAiApi": true,
-      "vscodeMarketplace": true
-    },
-    "ghcr.io/fohrloop/devcontainer-features/codex@sha256:7d78dad69447100e6694d4eb73b4307566c07e678f3f346d06e0c6fe37ef959c": {},
-    "ghcr.io/fohrloop/anthropics-devcontainer-features-fork/claude-code@sha256:f76bc7179de085269881172935f6c5541321478f607c129872b0881d7109d5bf": {}
-  }
-}
+```bash
+sbx create docker.io/docker/sbx-kit-shell:1.0.0 . --name wakepy --kit ./.sbx-kit
 ```
 
-For more details on adding extensions, dotfiles, and features, see [.devcontainer/CUSTOMIZATIONS.md](.devcontainer/CUSTOMIZATIONS.md).
+Start a shell in it:
+
+```bash
+sbx exec -it wakepy bash
+```
+
+Run `just test-cli` inside. The kit adds `uv`, `just`, and the locked project dependencies. The [kit guide](.sbx-kit/README.md) lists other agents and network policy links.
 
 ## 3. Git Workflow
 

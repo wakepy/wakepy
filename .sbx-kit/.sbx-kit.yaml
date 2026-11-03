@@ -1,0 +1,22 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+kind: mixin
+displayName: wakepy development tools
+description: Add uv and just for developing wakepy
+
+build: |
+  FROM scratch
+  COPY --from=ghcr.io/astral-sh/uv:0.9.26 /uv /usr/local/bin/uv
+  COPY uv.toml /etc/uv/uv.toml
+
+capabilities:
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      install:
+        - command: apt-get update && apt-get install -y --no-install-recommends just
+          user: "0"
+          description: Install just
+        - command: cd "$WORKSPACE_DIR" && uv sync --locked --no-install-project
+          user: "1000"
+          env: [WORKSPACE_DIR]
+          description: Install wakepy dependencies
