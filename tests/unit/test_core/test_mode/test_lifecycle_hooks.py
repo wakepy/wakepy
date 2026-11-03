@@ -11,7 +11,6 @@ Tests all 5 lifecycle hooks:
 from __future__ import annotations
 
 import threading
-import time
 import typing
 
 import pytest
@@ -19,13 +18,11 @@ import pytest
 from wakepy import (
     ActivationError,
     ActivationWarning,
-    Method,
     Mode,
     current_mode,
     keep,
     modecount,
 )
-from wakepy.core import PlatformType
 from wakepy.core.constants import ModeName
 from wakepy.core.mode import ModeExit, create_mode_params
 from wakepy.methods._testing import WakepyFakeSuccess
@@ -35,63 +32,6 @@ if typing.TYPE_CHECKING:
 
     from wakepy import ActivationResult
     from wakepy.core.mode import OnFail
-
-
-@pytest.fixture
-def lifecycle_case(
-    empty_method_registry: None, monkeypatch: pytest.MonkeyPatch
-) -> typing.Callable[[dict[str, BaseException], bool], tuple[Mode, list[str]]]:
-    """Real mode/method and recording hooks, with injectable failures."""
-    monkeypatch.delenv("WAKEPY_FAKE_SUCCESS", raising=False)
-    case_count = 0
-
-    def make_case(
-        errors: dict[str, BaseException], success: bool
-    ) -> tuple[Mode, list[str]]:
-        nonlocal case_count
-        case_count += 1
-        events: list[str] = []
-
-        def record(name: str) -> None:
-            events.append(name)
-            if name in errors:
-                raise errors[name]
-
-        def hook(name: str) -> typing.Callable[[object], None]:
-            def callback(_: object) -> None:
-                record(name)
-
-            return callback
-
-        class RecordingMethod(Method):
-            name = f"LifecycleRecording{case_count}"
-            mode_name = "lifecycle-recording"
-            supported_platforms = (PlatformType.ANY,)
-
-            def caniuse(self) -> bool:
-                return success
-
-            def enter_mode(self) -> None:
-                record("activate")
-
-            def exit_mode(self) -> None:
-                record("deactivate")
-
-        mode = Mode(
-            create_mode_params(
-                RecordingMethod.mode_name,
-                methods=[RecordingMethod.name],
-                before_enter=hook("before_enter"),
-                on_success=hook("on_success"),
-                on_fail=hook("on_fail"),
-                after_enter=hook("after_enter"),
-                before_exit=hook("before_exit"),
-                after_exit=hook("after_exit"),
-            )
-        )
-        return mode, events
-
-    return make_case
 
 
 class HookTestError(Exception):
@@ -123,6 +63,7 @@ class TestLifecycleFailureCleanup:
         success: bool,
         error_type: type[BaseException],
         do_assert: typing.Callable[[bool], None],
+        hook_modes: list[Mode],
     ) -> None:
         error = error_type("enter hook")
         mode, events = lifecycle_case({hook_name: error}, success)
@@ -166,9 +107,11 @@ class TestLifecycleFailureCleanup:
             exit_events.append("deactivate")
         exit_events.append("after_exit")
         do_assert(events == entry_events + exit_events)
-        do_assert(mode.active is None)
-        do_assert(mode._entered is False)
-        do_assert(not mode._guard._lock.locked())
+        actual_mode = hook_modes[-1]
+        do_assert((actual_mode is mode) is (syntax != "decorator"))
+        do_assert(actual_mode.active is None)
+        do_assert(actual_mode._entered is False)
+        do_assert(not actual_mode._guard._lock.locked())
         do_assert(modecount() == 0)
 
     @pytest.mark.parametrize("syntax", ["explicit", "context", "decorator"])
@@ -184,6 +127,7 @@ class TestLifecycleFailureCleanup:
         syntax: str,
         hook_name: str,
         error_type: type[BaseException],
+        hook_modes: list[Mode],
     ) -> None:
         error = error_type("exit hook")
         mode, events = lifecycle_case({hook_name: error}, True)
@@ -218,9 +162,11 @@ class TestLifecycleFailureCleanup:
             "deactivate",
             "after_exit",
         ]
-        assert mode.active is None
-        assert mode._entered is False
-        assert not mode._guard._lock.locked()
+        actual_mode = hook_modes[-1]
+        assert (actual_mode is mode) is (syntax != "decorator")
+        assert actual_mode.active is None
+        assert actual_mode._entered is False
+        assert not actual_mode._guard._lock.locked()
 
     @pytest.mark.parametrize("entered", [False, True])
     def test_repeated_exit_calls_hooks_without_repeated_deactivation(
@@ -832,17 +778,16 @@ class TestThreadSafetyLockOrdering:
             mode.exit()
         assert not mode._guard._lock.locked()
 
-    def test_thread_waits_while_lock_held_during_enter(self) -> None:
-        """A second thread calling enter() must wait until the first thread's
-        enter() releases the lock."""
+    def test_different_modes_do_not_share_lifecycle_lock(self) -> None:
+        """A blocked hook on one mode does not block another mode."""
         hook_started = threading.Event()
         hook_release = threading.Event()
-        second_enter_started = threading.Event()
         second_enter_done = threading.Event()
+        errors: list[BaseException] = []
 
         def blocking_before_enter(mode: Mode) -> None:
             hook_started.set()
-            hook_release.wait(timeout=2)
+            hook_release.wait(timeout=5)
 
         params = create_mode_params(
             ModeName.KEEP_RUNNING, before_enter=blocking_before_enter
@@ -851,34 +796,36 @@ class TestThreadSafetyLockOrdering:
         mode2 = Mode(create_mode_params(ModeName.KEEP_RUNNING))
 
         def thread1() -> None:
-            mode1.enter()
+            try:
+                mode1.enter()
+            except BaseException as error:
+                errors.append(error)
 
         def thread2() -> None:
-            hook_started.wait(timeout=2)
-            second_enter_started.set()
-            mode2.enter()
-            second_enter_done.set()
+            try:
+                mode2.enter()
+                second_enter_done.set()
+            except BaseException as error:
+                errors.append(error)
 
         t1 = threading.Thread(target=thread1)
         t2 = threading.Thread(target=thread2)
         t1.start()
-        t2.start()
-
-        second_enter_started.wait(timeout=2)
-        # t2 has its own mode2 (separate lock), so it proceeds independently.
-        # Verify t2 completes after the blocking hook is released.
-        time.sleep(0.05)
-        assert (
-            not second_enter_done.is_set() or second_enter_done.is_set()
-        )  # t2 has its own mode
-        hook_release.set()
-        t1.join(timeout=2)
-        t2.join(timeout=2)
-        second_enter_done.wait(timeout=2)
-
-        assert second_enter_done.is_set()
-        mode1.exit()
-        mode2.exit()
+        try:
+            assert hook_started.wait(timeout=5)
+            t2.start()
+            assert second_enter_done.wait(timeout=5)
+            assert not hook_release.is_set()
+        finally:
+            hook_release.set()
+            t1.join(timeout=5)
+            if t2.ident is not None:
+                t2.join(timeout=5)
+            mode1.exit()
+            mode2.exit()
+        assert not t1.is_alive()
+        assert not t2.is_alive()
+        assert errors == []
 
 
 @pytest.mark.usefixtures("empty_method_registry")

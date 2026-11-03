@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import threading
-import time
 import typing
 
 from wakepy import Mode, keep
@@ -23,8 +22,9 @@ class TestThreadSafety:
         """Each thread gets independent hook invocations."""
         thread_events: dict[int, list[str]] = {}
         lock = threading.Lock()
-        ready_event = threading.Event()
+        ready_barrier = threading.Barrier(4)
         exit_event = threading.Event()
+        errors: list[BaseException] = []
 
         def before_enter_cb(mode: Mode) -> None:
             thread_id = threading.get_ident()
@@ -38,26 +38,31 @@ class TestThreadSafety:
             thread_id = threading.get_ident()
             with lock:
                 thread_events[thread_id].append("body")
-            ready_event.set()
-            exit_event.wait(2)  # Wait for test completion
+            ready_barrier.wait(timeout=5)
+            exit_event.wait(timeout=5)
+
+        def run_worker() -> None:
+            try:
+                worker()
+            except BaseException as error:
+                errors.append(error)
 
         threads = []
         for _ in range(3):
-            thread = threading.Thread(target=worker)
+            thread = threading.Thread(target=run_worker)
             thread.start()
             threads.append(thread)
 
-        # Wait for at least one thread to be ready
-        ready_event.wait(2)
-
-        # Give all threads time to execute
-        time.sleep(0.1)
-
-        exit_event.set()
-        for thread in threads:
-            thread.join(timeout=2)
+        try:
+            ready_barrier.wait(timeout=5)
+        finally:
+            exit_event.set()
+            for thread in threads:
+                thread.join(timeout=5)
 
         # Each thread should have its own events
         assert len(thread_events) == 3
+        assert errors == []
+        assert all(not thread.is_alive() for thread in threads)
         for thread_id, events in thread_events.items():
             assert events == ["before_enter", "body"]

@@ -322,6 +322,8 @@ Before entry and after exit, `mode.active is None`. After activation is attempte
 
 Calling `enter()` on an entered mode does not invoke hooks or activate again. Its `if_already_entered` argument controls whether it warns (default), returns silently (`"pass"`), or raises (`"error"`).
 
+Context entry requires exclusive ownership: `with mode` raises `ContextAlreadyEnteredError` if the mode is already entered or belongs to a live context. It invokes no hooks and preserves the existing activation and `current_mode()` token. This also applies after an explicit `mode.exit()` inside a still-open context. Use separate instances for nested or concurrent contexts; decorators create them automatically. After context exit, the same instance can be reused.
+
 Every `exit()` call invokes `before_exit` and `after_exit`, even if entry was never attempted, entry failed, or exit already ran. Only an active mode attempts native deactivation. Repeated calls, including concurrent exits serialized by the mode lock, invoke exit hooks once per call while deactivating at most once per activation.
 
 (lifecycle-hook-exceptions)=
@@ -341,6 +343,8 @@ These rules apply to ordinary exceptions and to `BaseException` subclasses such 
 | `after_exit` | Not applicable | State is already reset; exception propagates | Same behavior |
 
 Context managers and decorators explicitly clean up when entry raises: Python itself does not call `__exit__` when `__enter__` fails. If entry succeeds, exiting restores the previous `current_mode()` even when an exit hook or native deactivation raises. The mode lock is released in all these cases. Exit hooks do not run a second time automatically after failed context entry.
+
+Failed context entry and its cleanup run under one lock acquisition. A waiting thread cannot enter between the failure and its cleanup. Rejected duplicate or recursive context entry performs no cleanup of the existing owner's activation.
 
 For explicit usage, put **both entry and application code inside `try`**, so that cleanup also runs if entry raises:
 
@@ -381,6 +385,8 @@ def bad_hook(mode):
 with keep.running(before_enter=bad_hook):
     pass  # RuntimeError: Mode.enter() — re-entrant call is not allowed.
 ```
+
+A hook must not wait for another thread that needs the same mode's lock. If hooks acquire other mode instances, keep their acquisition order consistent across threads.
 
 ```{seealso}
 - [Lifecycle Hooks](lifecycle-hooks-section) in the User Guide

@@ -12,6 +12,7 @@ Mode:
 from __future__ import annotations
 
 import contextlib
+import inspect
 import logging
 import threading
 import typing
@@ -130,15 +131,16 @@ class ModeExit(Exception):
 
 class ContextAlreadyEnteredError(RuntimeError):
     """Raised when :meth:`Mode.enter() <wakepy.Mode.enter>` is called on a
-    Mode that is already active and ``if_already_entered="error"`` is passed.
+    Mode that is already entered and ``if_already_entered="error"`` is passed,
+    or when a context tries to reuse an entered or context-owned Mode.
     This is a subclass of `RuntimeError <https://docs.python.org/3/library/exceptions.html#RuntimeError>`_.
 
     .. versionadded:: 1.0.0
 
     .. versionchanged:: 2.0.0
-        Previously raised unconditionally on double entry. Now only raised when
-        ``if_already_entered="error"`` is explicitly passed to
-        :meth:`Mode.enter() <wakepy.Mode.enter>`.
+        Explicit :meth:`Mode.enter() <wakepy.Mode.enter>` raises only when
+        ``if_already_entered="error"`` is passed. Duplicate context entry
+        always raises, preserving the existing owner's activation.
 
     .. seealso:: :meth:`Mode.enter() <wakepy.Mode.enter>`
     """
@@ -271,7 +273,8 @@ def current_mode() -> Mode:
 
     - This function cannot return any Modes from other threads. This means that
       even if you have entered a Mode in an another thread, but not in the
-      current thread, this function will return ``None``
+      current thread/context, this function raises NoCurrentModeError.
+      Explicit enter()/exit() calls do not set the current context.
     - You may access the current :class:`Mode` instance from anywhere
       throughout the call stack, as long you are in the same thread and
       context.
@@ -284,9 +287,9 @@ def current_mode() -> Mode:
 
     Returns
     -------
-    current_mode: Mode | None
-        The current Mode instance for the thread and context. ``None``, if not
-        entered in any Mode.
+    current_mode: Mode
+        The current Mode instance for the thread and context. Raises
+        NoCurrentModeError if not entered in any Mode context.
 
 
     Examples
@@ -617,6 +620,9 @@ class Mode:
         """Called automatically when entering a with block and a instance of
         Mode is used as the context expression. This tries to enter the
         Mode using :attr:`~wakepy.Mode.method_classes`.
+
+        Rejects an already-entered mode or a mode owned by a live context.
+        Failed entry is cleaned up under the same lifecycle lock.
         """
         logger.debug(
             'Calling Mode.__enter__() for "%s" mode on object with id=%s, thread=%s',
@@ -624,13 +630,18 @@ class Mode:
             id(self),
             threading.get_ident(),
         )
-        try:
-            self.enter()
-        except BaseException:
-            # Python does not call __exit__ if __enter__ raises.
-            self.exit()
-            raise
-        self._set_current_mode()
+        self._guard.check_not_reentrant("Mode.enter()")
+        with self._guard.held():
+            if self._entered or self._context_token is not None:
+                # A context must own its activation and ContextVar token.
+                _handle_already_entered("error")
+            try:
+                self._enter_with_hooks()
+            except BaseException:
+                # Keep failed entry and cleanup atomic against other threads.
+                self._exit_with_hooks()
+                raise
+            self._set_current_mode()
         return self
 
     def __exit__(
@@ -758,11 +769,15 @@ class Mode:
                 _handle_already_entered(if_already_entered)
                 return self.result
 
-            _invoke_hook(self._before_enter, self, name="before_enter")
-            self._enter()
-            _invoke_hook(self._after_enter, self, name="after_enter")
+            self._enter_with_hooks()
 
         return self.result
+
+    def _enter_with_hooks(self) -> None:
+        """Enter and invoke hooks. Called with self._guard held."""
+        _invoke_hook(self._before_enter, self, name="before_enter")
+        self._enter()
+        _invoke_hook(self._after_enter, self, name="after_enter")
 
     def _enter(self) -> None:
         """Activate mode and fire on_success/on_fail hook. Lock held."""
@@ -865,16 +880,18 @@ class Mode:
         self._guard.check_not_reentrant("Mode.exit()")
 
         with self._guard.held():
+            self._exit_with_hooks()
+
+    def _exit_with_hooks(self) -> None:
+        """Exit and invoke hooks. Called with self._guard held."""
+        try:
+            _invoke_hook(self._before_exit, self, name="before_exit")
+        finally:
             try:
-                # If the user-provided before_exit hook raises an exception,
-                # we still want to make sure that the mode is exited properly.
-                _invoke_hook(self._before_exit, self, name="before_exit")
+                self._exit()
             finally:
-                try:
-                    self._exit()
-                finally:
-                    self._reset_mode_state()
-                    _invoke_hook(self._after_exit, self, name="after_exit")
+                self._reset_mode_state()
+                _invoke_hook(self._after_exit, self, name="after_exit")
 
     def _exit(self) -> None:
         """Deactivate the method if active. Called with self._guard held."""
@@ -962,6 +979,7 @@ class Mode:
                 "Cannot unset current mode, because it was never set! "
             )
         _current_mode.reset(self._context_token)
+        self._context_token = None
 
     @staticmethod
     def _add_fake_success_if_needed(
@@ -1236,10 +1254,16 @@ def _resolve_on_fail(on_fail: OnFail) -> ResultHook | None:
     if on_fail == "warn":
 
         def _warn(result: ActivationResult) -> None:
+            frame = inspect.currentframe()
+            stacklevel = 1
+            while frame is not None and frame.f_globals.get("__name__") == __name__:
+                stacklevel += 1
+                frame = frame.f_back
+            del frame
             warnings.warn(
                 result.get_failure_text(style="block"),
                 ActivationWarning,
-                stacklevel=7,
+                stacklevel=stacklevel,
             )
 
         return _warn
