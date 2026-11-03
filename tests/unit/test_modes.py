@@ -28,9 +28,8 @@ class TestKeepRunninAndPresenting:
     `function_under_test` is either the keep.running or keep.presenting
     function"""
 
-    @staticmethod
     @pytest.fixture
-    def methods(name_prefix, mode_name_, monkeypatch, testutils):
+    def methods(self, name_prefix, mode_name_, monkeypatch, testutils):
         """This fixture creates three methods, which belong to a given mode."""
 
         testutils.empty_method_registry(monkeypatch)
@@ -140,8 +139,15 @@ class TestOnFail:
     parameter)"""
 
     @pytest.mark.filterwarnings("ignore:.*:wakepy.core.mode.NoMethodsWarning")
-    def test_on_fail_pass(self, mode_under_test, expected_name):
-        with mode_under_test(methods=[], on_fail="pass") as m:
+    def test_on_fail_default_is_warn(self, mode_under_test, expected_name):
+        err_txt = f'Could not activate wakepy Mode "{expected_name}"!'
+        with pytest.warns(ActivationWarning, match=re.escape(err_txt)):
+            with mode_under_test(methods=[]) as m:
+                self._assertions_for_activation_failure(m, expected_name)
+
+    @pytest.mark.filterwarnings("ignore:.*:wakepy.core.mode.NoMethodsWarning")
+    def test_on_fail_none(self, mode_under_test, expected_name):
+        with mode_under_test(methods=[], on_fail=None) as m:
             self._assertions_for_activation_failure(m, expected_name)
 
     @pytest.mark.filterwarnings("ignore:.*:wakepy.core.mode.NoMethodsWarning")

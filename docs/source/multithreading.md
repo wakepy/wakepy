@@ -3,7 +3,8 @@
 
 ## General guidelines
 - Every [Wakepy Method](#wakepy-methods) is multiprocessing and multithreading safe. Wakepy by default does not alter any settings or have such side effects that would make it not possible have multiple wakepy Modes (inhibitors) active at the same time.
-- It is _not_ safe to share {class}`Mode <wakepy.Mode>` instances between threads (the ones returned by {func}`keep.running() <wakepy.keep.running>` and {func}`keep.presenting() <wakepy.keep.presenting>`)
+- Explicit `Mode.enter()` / `Mode.exit()` calls on a shared instance are serialized, including lifecycle hooks. Entry and exit may occur on different threads. These calls control one shared activation; they do not give each caller an independent lifetime.
+- A Mode context has one owner. Use separate instances for overlapping `with` blocks across threads; duplicate context entry raises `ContextAlreadyEnteredError` without changing the original activation. Exit a context on the thread that entered it.
 - It _is_ safe to share the functions decorated with wakepy factory functions 
   with multiple threads, as each of them creates a new {class}`Mode <wakepy.Mode>` internally.
 
@@ -43,7 +44,7 @@ def long_running_function(n):
 
 ### Unsafe usage
 
-Any usage pattern sharing a {class}`Mode <wakepy.Mode>` instance between threads is unsafe. The following is *ok* for single-threaded code, but ***not ok*** if `long_running_function` is running on a separate thread.
+Reading the decorator template's state does not inspect its per-call activation. Use `current_mode()` inside the decorated function instead:
 
 ```{code-block} python
 
@@ -52,7 +53,7 @@ keepawake = keep.running()
 
 @keepawake
 def long_running_function():
-    # UNSAFE! Using the Mode instance in separate thread
+    # The template is not the Mode created for this invocation.
     print(f'Using: {keepawake.method}')
 
 ```
