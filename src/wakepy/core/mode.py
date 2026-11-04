@@ -22,6 +22,7 @@ from functools import wraps
 from wakepy.core.constants import WAKEPY_FAKE_SUCCESS_METHOD, StageName
 from wakepy.core.platform import CURRENT_PLATFORM, get_platform_supported
 
+from ._warnings import warn_at_user_call
 from .activationresult import (
     ActivationResult,
     MethodActivationResult,
@@ -1083,9 +1084,7 @@ def handle_activation_fail(on_fail: OnFail, result: ActivationResult) -> None:
     if on_fail == "pass":
         return
     elif on_fail == "warn":
-        warnings.warn(
-            result.get_failure_text(style="block"), ActivationWarning, stacklevel=5
-        )
+        warn_at_user_call(result.get_failure_text(style="block"), ActivationWarning)
         return
     elif on_fail == "error":
         raise ActivationError(result.get_failure_text(style="block"))
