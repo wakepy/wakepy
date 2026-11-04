@@ -81,14 +81,14 @@ class TestWarningEmission:
         """Error filters must not retain the selected frame in locals."""
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-            try:
+            with pytest.raises(UserWarning, match="release frame") as raised:
                 warn_at_user_call("release frame", UserWarning)
-            except UserWarning as exc:
-                traceback = exc.__traceback__
-                assert traceback is not None
-                traceback = traceback.tb_next
-                assert traceback is not None
-                assert "frame" not in traceback.tb_frame.f_locals
+        traceback = raised.value.__traceback__
+        assert traceback is not None
+        traceback = traceback.tb_next
+        assert traceback is not None
+        assert traceback.tb_frame.f_code is warn_at_user_call.__code__
+        assert "frame" not in traceback.tb_frame.f_locals
 
 
 class TestInternalFrameSelection:
