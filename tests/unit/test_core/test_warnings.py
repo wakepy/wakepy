@@ -12,6 +12,11 @@ import pytest
 from wakepy.core import _warnings
 from wakepy.core._warnings import currentframe, warn_at_user_call
 
+if sys.version_info < (3, 8):
+    from typing_extensions import Literal
+else:
+    from typing import Literal
+
 
 class TestCurrentFrame:
     @pytest.mark.parametrize("use_fallback", [False, True])
@@ -48,7 +53,9 @@ class TestWarningEmission:
     @pytest.mark.parametrize(
         "action, count", [("default", 1), ("always", 2), ("ignore", 0)]
     )
-    def test_repeat_filter(self, action: str, count: int) -> None:
+    def test_repeat_filter(
+        self, action: Literal["default", "always", "ignore"], count: int
+    ) -> None:
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter(action)
             for _ in range(2):
