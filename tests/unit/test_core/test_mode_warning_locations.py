@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import runpy
 import subprocess
 import sys
@@ -45,9 +46,15 @@ class TestActivationWarningLocation:
             "my_app.py",
         )
         args = ["-m", "my_app"] if as_module else [str(script)]
+        # Preserve cwd so subprocess coverage finds the project's config,
+        # including platform exclusions. Make the test module importable.
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.pathsep.join(
+            filter(None, [str(script.parent), env.get("PYTHONPATH", "")])
+        )
         result = subprocess.run(  # noqa: S603 - Execute our test script.
             [sys.executable, "-W", "default", *args],
-            cwd=script.parent,
+            env=env,
             capture_output=True,
             text=True,
             timeout=30,
