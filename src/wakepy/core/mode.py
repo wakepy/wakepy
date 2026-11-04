@@ -12,7 +12,6 @@ Mode:
 from __future__ import annotations
 
 import logging
-import sys
 import threading
 import typing
 import warnings
@@ -23,6 +22,7 @@ from functools import wraps
 from wakepy.core.constants import WAKEPY_FAKE_SUCCESS_METHOD, StageName
 from wakepy.core.platform import CURRENT_PLATFORM, get_platform_supported
 
+from ._warnings import warn_at_user_call
 from .activationresult import (
     ActivationResult,
     MethodActivationResult,
@@ -36,8 +36,9 @@ from .registry import get_method, get_methods_for_mode
 from .utils import is_env_var_truthy
 
 if typing.TYPE_CHECKING:
+    import sys
     from contextvars import Token
-    from types import FrameType, TracebackType
+    from types import TracebackType
     from typing import Callable, List, Optional, Tuple, Type, Union
 
     from .constants import Collection, ModeName, StrCollection
@@ -1084,21 +1085,7 @@ def handle_activation_fail(on_fail: OnFail, result: ActivationResult) -> None:
     if on_fail == "pass":
         return
     elif on_fail == "warn":
-        frame: FrameType | None = sys._getframe()
-        stacklevel = 1
-        # ExitStack enters the mode on behalf of its caller.
-        while frame is not None and frame.f_globals.get("__name__") in (
-            __name__,
-            "contextlib",
-        ):
-            stacklevel += 1
-            frame = frame.f_back
-        del frame
-        warnings.warn(
-            result.get_failure_text(style="block"),
-            ActivationWarning,
-            stacklevel=stacklevel,
-        )
+        warn_at_user_call(result.get_failure_text(style="block"), ActivationWarning)
         return
     elif on_fail == "error":
         raise ActivationError(result.get_failure_text(style="block"))

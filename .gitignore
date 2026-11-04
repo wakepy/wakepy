@@ -24,3 +24,6 @@ venv/
 .vscode/*
 .idea/*
 .claude/*
+
+# temporary files
+tmp/*
