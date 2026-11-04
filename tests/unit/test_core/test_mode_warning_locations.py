@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import runpy
+import subprocess
+import sys
 import warnings
 from pathlib import Path
 from textwrap import dedent
@@ -16,6 +18,45 @@ from wakepy import ActivationWarning
 
 class TestActivationWarningLocation:
     """Identify entry lines and framework calls for deferred work."""
+
+    @pytest.mark.parametrize("as_module", [True, False])
+    def test_main_subprocess(
+        self, write_script: Callable[[str, str], Path], as_module: bool
+    ) -> None:
+        """Activation failure must not crash an application launched with -m.
+
+        CPython gh-123011 makes warn_explicit raise ImportError when given
+        __main__ globals whose loader belongs to the original module name.
+        A real subprocess exercises that loader/name mismatch, which mocked
+        frames or runpy.run_path would miss. Direct script execution covers
+        the entry point without a spec loader. Both must continue, display
+        the user's source line, and preserve duplicate-warning suppression.
+
+        https://github.com/python/cpython/issues/123011
+        """
+        script = write_script(
+            """
+            from wakepy import keep
+
+            for _ in range(2):
+                with keep.running():
+                    print("continued")
+            """,
+            "my_app.py",
+        )
+        args = ["-m", "my_app"] if as_module else [str(script)]
+        result = subprocess.run(  # noqa: S603 - Execute our test script.
+            [sys.executable, "-W", "default", *args],
+            cwd=script.parent,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.splitlines() == ["continued", "continued"]
+        assert result.stderr.count("ActivationWarning:") == 1
+        assert f"{script}:4: ActivationWarning:" in result.stderr
+        assert "\n  with keep.running():\n" in result.stderr
 
     @pytest.fixture(autouse=True)
     def force_activation_failure(self, monkeypatch: pytest.MonkeyPatch) -> None:

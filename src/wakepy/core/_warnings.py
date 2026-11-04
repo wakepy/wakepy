@@ -42,11 +42,17 @@ def warn_at_user_call(message: str, category: Type[Warning]) -> None:
         if frame is None:
             warnings.warn_explicit(message, category, filename="<unknown>", lineno=0)
             return
-        # runpy and __main__ may have no spec/loader. Passing those globals
-        # to warn_explicit raises ValueError on newer Python versions.
+        # Globals help retrieve source through import loaders (e.g. ZIPs).
+        # Missing spec/loaders can raise ValueError during source lookup.
+        # With -m, __main__ has a loader for the original module name;
+        # affected CPython asks it for "__main__" and raises ImportError.
+        # See https://github.com/python/cpython/issues/123011.
+        # Omit globals in these cases: linecache can still read ordinary files
+        # using filename. The module name and warning registry stay intact.
         module_globals = (
             frame.f_globals
             if getattr(frame.f_globals.get("__spec__"), "loader", None) is not None
+            and frame.f_globals.get("__name__") != "__main__"
             else None
         )
         warnings.warn_explicit(
