@@ -198,7 +198,7 @@ def get_methods_for_mode(
 
     Parameters
     ----------
-    mode: str | ModeName
+    mode_name: str | ModeName
         The name of the Mode from which to select the Methods.
 
     Returns
